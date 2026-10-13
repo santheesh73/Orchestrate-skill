@@ -244,7 +244,7 @@ hackerrank-orchestrate/           the skill
     └── editions/                 log-format profiles per edition, plus a template
 docs/COVERAGE.md                  rubric criteria and orchestrate-loop capabilities mapped to guidance and checks
 docs/INSTALL.md                   install folder per agent (Claude Code, Claude.ai, Codex, OpenCode, Antigravity, Cursor), with evidence labels
-evals/triggers.json               44 prompts that should (22) and should not (22) trigger the skill
+evals/triggers.json               56 prompts that should (28) and should not (28) trigger the skill
 tests/                            script and tool tests, hostile inputs, golden outputs on small fixtures
 tools/validate_skill.py           structure, policy and context-budget check, run in CI
 tools/package_skill.py            builds dist/hackerrank-orchestrate.zip; installs a clean copy into a folder or a project (--for claude, agents, all)
@@ -285,7 +285,7 @@ Every link above was fetched on 2026-10-13 and loaded. The community `hackerrank
 
 - Scoring sub-weights come from the May 2026 post-mortem, and later editions may reweight. Check the live page.
 - Patterns come from the few public top-finisher repos and write-ups that were reachable. They describe what top finishers did, not proof of what caused their rank.
-- **Trigger accuracy against a live model: UNKNOWN.** `tools/run_trigger_evals.py --live` exists but has not been run, because no API key was available where this was built. What *was* measured is an offline lexical-overlap proxy over the 44 cases in `evals/triggers.json` (22 should trigger, 22 should not): precision 0.72, recall 0.59 at threshold 0.3 (MEASURED, proxy only; it is not model behavior).
+- **Trigger accuracy against a live model: UNKNOWN.** `tools/run_trigger_evals.py --live` exists but has not been run, because no API key was available where this was built. What *was* measured is an offline lexical-overlap proxy over the 56 cases in `evals/triggers.json` (28 should trigger, 28 should not; 12 of them phrased as Codex, Cursor, OpenCode and Antigravity users): precision 0.76, recall 0.68 at threshold 0.3 (MEASURED, proxy only; it is not model behavior). In Claude Code the skill was invoked for one Orchestrate question and not for one near miss (VERIFIED, one run each; see [docs/INSTALL.md](docs/INSTALL.md)).
 - **Leaderboard per-stage figures in `references/rubric.md` are INFERRED.** They were computed by orchestrate-loop from public leaderboard data; the leaderboard API was not reachable here to re-derive them.
 - **The toolkit digest in `references/kit-repo.md` is secondhand.** The toolkit repository could not be located, so its commands are unverified.
 - **Script behavior is MEASURED** by the 119 tests in `tests/`, run on Python 3.9, 3.11 and 3.13 (CI matrix). The fixtures are small and synthetic; real starter repos may differ, and the log-format profiles cover only the editions whose starters were public. Each profile states its provenance: `sept-2026` and `june-2026` are VERIFIED against the official starters' `AGENTS.md`, except that `june-2026`'s strict tool-name checks are INFERRED from September; `template` is UNKNOWN until filled.

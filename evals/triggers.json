@@ -174,5 +174,53 @@
  {
   "query": "Create a CSV validator in Python that checks column names against a schema.",
   "should_trigger": false
+ },
+ {
+  "query": "I'm doing HackerRank Orchestrate in Codex. The starter repo is cloned; what do I check in AGENTS.md before writing any code?",
+  "should_trigger": true
+ },
+ {
+  "query": "Using Cursor for the Orchestrate hackathon this weekend. Write the kickoff message I should paste into the agent chat.",
+  "should_trigger": true
+ },
+ {
+  "query": "My OpenCode agent finished an iteration on my Orchestrate entry. Its summary is below; check it and give me the next iteration prompt.",
+  "should_trigger": true
+ },
+ {
+  "query": "Antigravity is my harness for HackerRank Orchestrate. What exactly should go on the tool= line in log.txt?",
+  "should_trigger": true
+ },
+ {
+  "query": "Codex CLI says my Orchestrate output.csv is done. How do I check it against the template columns before I zip the submission?",
+  "should_trigger": true
+ },
+ {
+  "query": "Prep me for the AI judge interview after HackerRank Orchestrate; I built the whole thing with Cursor's agent.",
+  "should_trigger": true
+ },
+ {
+  "query": "Write an AGENTS.md for my open-source Rust repo so Codex follows our lint rules.",
+  "should_trigger": false
+ },
+ {
+  "query": "How do I install a skill in Cursor so it shows up in the agent's available skills?",
+  "should_trigger": false
+ },
+ {
+  "query": "Set up OpenCode with a local model and a custom system prompt for my Django project.",
+  "should_trigger": false
+ },
+ {
+  "query": "Give me a prompt for Antigravity that migrates my Flutter app to null safety.",
+  "should_trigger": false
+ },
+ {
+  "query": "My Codex agent keeps editing files outside the repo. How do I restrict its sandbox?",
+  "should_trigger": false
+ },
+ {
+  "query": "We hire engineers through HackerRank Interview. How do I let candidates use Cursor during the live coding test?",
+  "should_trigger": false
  }
 ]
