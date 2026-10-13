@@ -71,7 +71,12 @@ def main(argv=None):
         print(f"error: {exc}", file=sys.stderr)
         return 2
     with fh:
-        for lineno, line in enumerate(fh, 1):
+        try:
+            lines = fh.read().splitlines()
+        except UnicodeDecodeError:
+            print(f"error: {args.log} is not valid UTF-8", file=sys.stderr)
+            return 2
+        for lineno, line in enumerate(lines, 1):
             line = line.strip()
             if not line:
                 continue

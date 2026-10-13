@@ -31,6 +31,7 @@ import ast
 import os
 import re
 import sys
+import warnings
 
 TRIVIAL_NUMBERS = {0, 1, -1, 2, 100}
 STAT_FUNCS = {"mean", "median", "mode", "quantile", "quantiles", "percentile", "stdev", "pstdev",
@@ -72,11 +73,19 @@ def func_name(call):
     return ""
 
 
+def parse_quietly(src):
+    """ast.parse without SyntaxWarnings (invalid escapes in the participant's code), which
+    would otherwise print to stderr, or raise under -W error and hide the whole file."""
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        return ast.parse(src)
+
+
 def scan_python(path, rel):
     with open(path, encoding="utf-8-sig", errors="replace") as fh:
         src = fh.read()
     try:
-        tree = ast.parse(src)
+        tree = parse_quietly(src)
     except SyntaxError as exc:
         return [("parse", rel, exc.lineno or 0, f"could not parse: {exc.msg}")], []
     findings, constants = [], []
@@ -200,6 +209,9 @@ def main(argv=None):
                 doc = fh.read()
         except OSError as exc:
             print(f"error: {exc}", file=sys.stderr)
+            return 2
+        except UnicodeDecodeError:
+            print(f"error: {args.constants} is not valid UTF-8", file=sys.stderr)
             return 2
         missing = missing_constants(constants, doc)
         out += [f"## Constants missing from {os.path.basename(args.constants)} ({len(missing)})", ""]

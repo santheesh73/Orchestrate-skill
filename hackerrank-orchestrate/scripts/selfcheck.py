@@ -77,6 +77,8 @@ class Runner:
         self.cfg, self.base = cfg, base
 
     def p(self, path):
+        if "\\" in path and not os.path.exists(os.path.join(self.base, path)):
+            path = path.replace("\\", "/")  # a config written on Windows
         return path if os.path.isabs(path) else os.path.join(self.base, path)
 
     def missing(self, *paths):
@@ -189,6 +191,29 @@ def run(cfg, base):
     return results
 
 
+LIST_FIELDS = ("docs", "csv", "code", "data", "spec", "nonempty", "columns", "exclude")
+
+
+def shape_errors(cfg):
+    """Return config-shape problems; a wrong shape would otherwise crash or be iterated per character."""
+    errs = []
+    for name, sec in cfg.items():
+        if not isinstance(sec, dict):
+            errs.append(f"section '{name}' must be a JSON object")
+            continue
+        for key, val in sec.items():
+            if key in LIST_FIELDS:
+                if not (isinstance(val, list) and all(isinstance(x, str) for x in val)):
+                    errs.append(f"{name}.{key} must be a list of strings")
+            elif key == "enums":
+                if not (isinstance(val, dict) and all(isinstance(v, list) and all(isinstance(x, str) for x in v)
+                                                      for v in val.values())):
+                    errs.append(f"{name}.enums must map column names to lists of strings")
+            elif key != "min_length" and not isinstance(val, str):
+                errs.append(f"{name}.{key} must be a string")
+    return errs
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("config", help="selfcheck JSON config")
@@ -205,6 +230,11 @@ def main(argv=None):
     unknown = set(cfg) - set(CHECKS)
     if unknown:
         print(f"error: unknown config sections {sorted(unknown)}; expected {CHECKS}", file=sys.stderr)
+        return 4
+    errs = shape_errors(cfg)
+    for e in errs:
+        print(f"error: {e}", file=sys.stderr)
+    if errs:
         return 4
     results = run(cfg, os.path.dirname(os.path.abspath(args.config)))
     width = max(len(n) for n in CHECKS)
