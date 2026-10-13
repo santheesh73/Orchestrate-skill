@@ -14,7 +14,8 @@ Modes:
   rerun_diff.py --cmd "python code/main.py --from-cache" --output output.csv --id-col request_id
       runs the command twice, snapshotting the output after each run, then diffs
 
-Exit code 0 when the runs are identical, 1 when any row differs, 2 on usage errors.
+Exit code 0 when the runs are identical, 1 when any row differs, 2 on usage errors, 3 when
+neither run has a data row (nothing was compared, so "identical" would mean nothing).
 Standard library only.
 """
 
@@ -26,6 +27,7 @@ import os
 import shlex
 import shutil
 import subprocess
+import stat
 import sys
 import tempfile
 
@@ -86,6 +88,19 @@ def bounded_int(low):
     return parse
 
 
+def special_files(args):
+    """Path arguments that are named pipes or sockets: reading one with no writer hangs."""
+    found = []
+    for v in vars(args).values():
+        for x in v if isinstance(v, list) else [v]:
+            try:
+                if isinstance(x, str) and stat.S_ISFIFO(os.stat(x).st_mode) | stat.S_ISSOCK(os.stat(x).st_mode):
+                    found.append(x)
+            except (OSError, ValueError):
+                pass
+    return found
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("files", nargs="*", help="two CSVs to compare (A then B)")
@@ -97,6 +112,9 @@ def main(argv=None):
                     help="column to exclude from the diff, e.g. a free-text explanation (repeatable)")
     ap.add_argument("--show", type=bounded_int(0), default=5, help="example ids to print per column")
     args = ap.parse_args(argv)
+    for x in special_files(args):
+        print(f"error: {x} is a named pipe or socket; reading it would hang", file=sys.stderr)
+        return 2
 
     if args.cmd and not args.output:
         ap.error("--cmd needs --output")
@@ -111,6 +129,9 @@ def main(argv=None):
         return 2
     print(f"A sha256 {a_hash[:16]}  rows {len(a)}")
     print(f"B sha256 {b_hash[:16]}  rows {len(b)}")
+    if not a and not b:
+        print("UNKNOWN neither run has a data row, so nothing was compared")
+        return 3
     if a_hash == b_hash:
         print("identical bytes: 0 rows changed")
         return 0

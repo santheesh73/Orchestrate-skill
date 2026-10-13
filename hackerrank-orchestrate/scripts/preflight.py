@@ -21,13 +21,16 @@ Examples:
       --inputs dataset/requests.csv --id-col request_id \
       --enum "status=replied|escalated" --nonempty justification
 
-Exit code 0 when clean, 1 when any error is found, 2 on usage errors.
+Exit code 0 when clean, 1 when any error is found, 2 on usage errors, 3 when the file
+has no data rows and nothing else is wrong (nothing was checked, so nothing passed).
 Standard library only.
 """
 
 import argparse
 import csv
 import io
+import os
+import stat
 import sys
 from collections import Counter
 
@@ -68,6 +71,19 @@ def bounded_int(low):
     return parse
 
 
+def special_files(args):
+    """Path arguments that are named pipes or sockets: reading one with no writer hangs."""
+    found = []
+    for v in vars(args).values():
+        for x in v if isinstance(v, list) else [v]:
+            try:
+                if isinstance(x, str) and stat.S_ISFIFO(os.stat(x).st_mode) | stat.S_ISSOCK(os.stat(x).st_mode):
+                    found.append(x)
+            except (OSError, ValueError):
+                pass
+    return found
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("output", help="the output CSV to check")
@@ -81,6 +97,9 @@ def main(argv=None):
     ap.add_argument("--nonempty", action="append", default=[], help="column that must never be blank (repeatable)")
     ap.add_argument("--max-show", type=bounded_int(0), default=10, help="examples to print per problem")
     args = ap.parse_args(argv)
+    for x in special_files(args):
+        print(f"error: {x} is a named pipe or socket; reading it would hang", file=sys.stderr)
+        return 2
 
     errors, warnings = [], []
 
@@ -192,7 +211,12 @@ def main(argv=None):
     for e in errors:
         print(f"ERROR {e}")
     print(f"{len(data)} rows checked: {len(errors)} errors, {len(warnings)} warnings")
-    return 1 if errors else 0
+    if errors:
+        return 1
+    if not data:
+        print("UNKNOWN no data rows, so no row was checked")
+        return 3
+    return 0
 
 
 if __name__ == "__main__":

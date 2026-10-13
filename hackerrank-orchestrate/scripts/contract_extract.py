@@ -23,13 +23,16 @@ Usage:
 Each line carries its source file:line. Standard library only.
 
 Exit 0 when the checklist or diff is written, 2 on usage errors (missing starter files,
-unreadable input, an --out path that cannot be written).
+unreadable input, an --out path that cannot be written), 3 when no requirement line was
+found at all (an empty checklist is not a clean contract; read the files by hand).
+--out creates missing parent folders.
 """
 
 import argparse
 import difflib
 import os
 import re
+import stat
 import sys
 
 FILES = ("AGENTS.md", "problem_statement.md")
@@ -144,24 +147,58 @@ def diff(old_items, new_items):
     return "\n".join(out)
 
 
+def overwrites_input(out, inputs):
+    """True when --out names a file this run reads (AGENTS.md, a source file, the log)."""
+    if not os.path.isfile(out):
+        return False
+    return any(os.path.isfile(i) and os.path.samefile(out, i) for i in inputs)
+
+
+def special_files(args):
+    """Path arguments that are named pipes or sockets: reading one with no writer hangs."""
+    found = []
+    for v in vars(args).values():
+        for x in v if isinstance(v, list) else [v]:
+            try:
+                if isinstance(x, str) and stat.S_ISFIFO(os.stat(x).st_mode) | stat.S_ISSOCK(os.stat(x).st_mode):
+                    found.append(x)
+            except (OSError, ValueError):
+                pass
+    return found
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("starter", nargs="?", help="directory holding AGENTS.md and/or problem_statement.md")
     ap.add_argument("--diff", nargs=2, metavar=("OLD_DIR", "NEW_DIR"), help="compare two editions")
     ap.add_argument("--out", help="write markdown here (default: stdout)")
     args = ap.parse_args(argv)
+    for x in special_files(args):
+        print(f"error: {x} is a named pipe or socket; reading it would hang", file=sys.stderr)
+        return 2
     try:
         if args.diff:
-            report = diff(extract_dir(args.diff[0]), extract_dir(args.diff[1]))
+            old, new = extract_dir(args.diff[0]), extract_dir(args.diff[1])
+            found = len(old) + len(new)
+            report = diff(old, new)
         elif args.starter:
-            report = render(extract_dir(args.starter))
+            items = extract_dir(args.starter)
+            found = len(items)
+            report = render(items)
         else:
             ap.error("give a starter directory or --diff OLD_DIR NEW_DIR")
     except (FileNotFoundError, OSError) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
     if args.out:
+        dirs = args.diff or [args.starter]
+        if overwrites_input(args.out, [os.path.join(d, f) for d in dirs for f in FILES]):
+            print(f"error: --out {args.out} is one of the starter files being read; refusing to overwrite it",
+                  file=sys.stderr)
+            return 2
         try:
+            if os.path.dirname(args.out):
+                os.makedirs(os.path.dirname(args.out), exist_ok=True)
             with open(args.out, "w", encoding="utf-8") as fh:
                 fh.write(report + "\n")
         except OSError as exc:
@@ -170,6 +207,9 @@ def main(argv=None):
         print(f"wrote {args.out}")
     else:
         print(report)
+    if not found:
+        print("UNKNOWN no requirement line found; read AGENTS.md and problem_statement.md in full", file=sys.stderr)
+        return 3
     return 0
 
 
