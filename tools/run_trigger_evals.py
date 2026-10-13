@@ -29,6 +29,7 @@ Standard library only. The only network access is --live.
 import argparse
 import hashlib
 import json
+import math
 import os
 import re
 import sys
@@ -183,6 +184,33 @@ def live(args, name, desc, evals):
     return 0
 
 
+def bounded_int(low):
+    """argparse type: a whole number of at least low (out-of-range values used to be accepted)."""
+    def parse(text):
+        try:
+            n = int(text)
+        except ValueError:
+            raise argparse.ArgumentTypeError(f"expected a whole number, got {text!r}")
+        if n < low:
+            raise argparse.ArgumentTypeError(f"must be at least {low}, got {n}")
+        return n
+    return parse
+
+
+def bounded_float(low, high=None):
+    """argparse type: a finite number in [low, high] (NaN and out-of-range values used to be accepted)."""
+    def parse(text):
+        try:
+            x = float(text)
+        except ValueError:
+            raise argparse.ArgumentTypeError(f"expected a number, got {text!r}")
+        if not math.isfinite(x) or x < low or (high is not None and x > high):
+            rng = f"between {low} and {high}" if high is not None else f"at least {low}"
+            raise argparse.ArgumentTypeError(f"must be {rng}, got {text!r}")
+        return x
+    return parse
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     mode = ap.add_mutually_exclusive_group(required=True)
@@ -191,13 +219,13 @@ def main(argv=None):
     ap.add_argument("--evals", default=DEFAULT_EVALS)
     ap.add_argument("--skill", default=DEFAULT_SKILL, help="SKILL.md whose name and description are tested")
     ap.add_argument("--split", choices=["train", "test", "all"], default="all")
-    ap.add_argument("--threshold", type=float, default=0.3, help="offline: overlap share that counts as a trigger")
-    ap.add_argument("--min-precision", type=float, help="offline: exit 1 if proxy precision is below this")
-    ap.add_argument("--min-recall", type=float, help="offline: exit 1 if proxy recall is below this")
+    ap.add_argument("--threshold", type=bounded_float(0, 1), default=0.3, help="offline: overlap share that counts as a trigger")
+    ap.add_argument("--min-precision", type=bounded_float(0, 1), help="offline: exit 1 if proxy precision is below this")
+    ap.add_argument("--min-recall", type=bounded_float(0, 1), help="offline: exit 1 if proxy recall is below this")
     ap.add_argument("--model", help="live: model id to query (required for --live)")
-    ap.add_argument("--runs", type=int, default=3, help="live: runs per query")
-    ap.add_argument("--timeout", type=int, default=60, help="live: seconds per request")
-    ap.add_argument("--delay", type=float, default=0.2, help="live: seconds between requests")
+    ap.add_argument("--runs", type=bounded_int(1), default=3, help="live: runs per query")
+    ap.add_argument("--timeout", type=bounded_int(1), default=60, help="live: seconds per request")
+    ap.add_argument("--delay", type=bounded_float(0), default=0.2, help="live: seconds between requests")
     args = ap.parse_args(argv)
 
     try:

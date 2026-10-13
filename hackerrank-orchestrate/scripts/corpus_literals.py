@@ -202,13 +202,26 @@ def scan(data_paths, code_paths, spec_paths=(), allowlist=None, min_length=6):
     return findings
 
 
+def bounded_int(low):
+    """argparse type: a whole number of at least low (out-of-range values used to be accepted)."""
+    def parse(text):
+        try:
+            n = int(text)
+        except ValueError:
+            raise argparse.ArgumentTypeError(f"expected a whole number, got {text!r}")
+        if n < low:
+            raise argparse.ArgumentTypeError(f"must be at least {low}, got {n}")
+        return n
+    return parse
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--data", nargs="+", required=True, help="dataset CSV files or globs")
     ap.add_argument("--code", nargs="+", required=True, help="source directories or files")
     ap.add_argument("--spec", nargs="*", default=[], help="contract files whose literals are allowed")
     ap.add_argument("--allowlist", help="file of allowed literals, one per line")
-    ap.add_argument("--min-length", type=int, default=6, help="shortest non-id string to compare (default 6)")
+    ap.add_argument("--min-length", type=bounded_int(1), default=6, help="shortest non-id string to compare (default 6)")
     args = ap.parse_args(argv)
 
     data = []

@@ -186,7 +186,7 @@ class TriggerEvals(unittest.TestCase):
         self.assertRegex(out1, r"precision=\d\.\d\d recall=\d\.\d\d")
 
     def test_offline_floor_fails_when_unmet(self):
-        rc, _ = run(run_trigger_evals, ["--offline", "--min-recall", "1.01"])
+        rc, _ = run(run_trigger_evals, ["--offline", "--min-recall", "1.0"])
         self.assertEqual(rc, 1)
 
     def test_live_without_key_is_unknown_and_makes_no_request(self):

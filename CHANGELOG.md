@@ -5,7 +5,7 @@
 Figures below are MEASURED in this repository unless labeled otherwise. The scripts check a participant's own work; they are not part of a submission.
 
 ### Fixed
-- `claim_audit.py` exits 3 and `selfcheck.py` reports the claims section as UNKNOWN when no claim could be checked; v2.2.0 reported PASS after checking nothing. The repo's own live counts are now phrased so they are audited: 110 tests.
+- `claim_audit.py` exits 3 and `selfcheck.py` reports the claims section as UNKNOWN when no claim could be checked; v2.2.0 reported PASS after checking nothing. The repo's own live counts are now phrased so they are audited: 111 tests.
 
 ## 2.2.0
 

@@ -55,6 +55,19 @@ def parse_enum(spec):
     return col.strip(), set(v.strip() for v in values.split("|"))
 
 
+def bounded_int(low):
+    """argparse type: a whole number of at least low (out-of-range values used to be accepted)."""
+    def parse(text):
+        try:
+            n = int(text)
+        except ValueError:
+            raise argparse.ArgumentTypeError(f"expected a whole number, got {text!r}")
+        if n < low:
+            raise argparse.ArgumentTypeError(f"must be at least {low}, got {n}")
+        return n
+    return parse
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("output", help="the output CSV to check")
@@ -66,7 +79,7 @@ def main(argv=None):
     ap.add_argument("--enum", action="append", default=[], type=parse_enum,
                     help='allowed values, e.g. "status=a|b|c" (repeatable)')
     ap.add_argument("--nonempty", action="append", default=[], help="column that must never be blank (repeatable)")
-    ap.add_argument("--max-show", type=int, default=10, help="examples to print per problem")
+    ap.add_argument("--max-show", type=bounded_int(0), default=10, help="examples to print per problem")
     args = ap.parse_args(argv)
 
     errors, warnings = [], []

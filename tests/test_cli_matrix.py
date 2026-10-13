@@ -158,6 +158,23 @@ BAD_CONFIGS = [
 ]
 
 
+# Numeric options outside their meaningful range must be usage errors (exit 2), not silently used.
+BAD_ARGS = [
+    (S("corpus_literals.py"), ["--data", "{ok_csv}", "--code", "{code}", "--min-length", "0"]),
+    (S("corpus_literals.py"), ["--data", "{ok_csv}", "--code", "{code}", "--min-length", "-5"]),
+    (S("preflight.py"), ["{ok_csv}", "--columns", "id,status", "--max-show", "-1"]),
+    (S("rerun_diff.py"), ["--id-col", "id", "{ok_csv}", "{ok_csv}", "--show", "-1"]),
+    (S("rerun_diff.py"), ["--id-col", "id", "--cmd", "true", "--output", "{ok_csv}", "--timeout", "0"]),
+    (T("run_trigger_evals.py"), ["--offline", "--threshold", "nan"]),
+    (T("run_trigger_evals.py"), ["--offline", "--threshold", "-1"]),
+    (T("run_trigger_evals.py"), ["--offline", "--min-precision", "1.5"]),
+    (T("run_trigger_evals.py"), ["--offline", "--min-recall", "nan"]),
+    (T("run_trigger_evals.py"), ["--live", "--model", "m", "--runs", "0"]),
+    (T("run_trigger_evals.py"), ["--live", "--model", "m", "--timeout", "-1"]),
+    (T("run_trigger_evals.py"), ["--live", "--model", "m", "--delay", "-1"]),
+]
+
+
 def _run(argv):
     try:
         proc = subprocess.run([sys.executable, "-W", "error"] + argv, capture_output=True, text=True,
@@ -229,6 +246,12 @@ class CliMatrix(unittest.TestCase):
             jobs.append((f"selfcheck bad{i}", [S("selfcheck.py"), p], {4}))
             jobs.append((f"check_log --profile bad{i}", [S("check_log.py"), self.fx["log"], "--profile", p], {2}))
             jobs.append((f"run_trigger_evals --evals bad{i}", [T("run_trigger_evals.py"), "--offline", "--evals", p], {2}))
+        self.check_all(jobs)
+
+
+    def test_out_of_range_numeric_options(self):
+        jobs = [(f"{os.path.basename(script)} {' '.join(template)}", [script] + _fill(template, self.fx), {2})
+                for script, template in BAD_ARGS]
         self.check_all(jobs)
 
 
