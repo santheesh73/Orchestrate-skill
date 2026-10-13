@@ -62,9 +62,9 @@ Four artifacts, 100 points:
 Sub-weights are from the organizer's post-mortem of the May 2026 edition. Rules worth knowing:
 
 - **The code grader reads source only.** README claims earn nothing in the code score; design reasons belong in code comments and docstrings.
-- **A generic justification caps a row at about 70%,** even when the label is right.
+- **A generic justification caps a row at about 70 out of 100,** even when the label is right.
 - **Escalating everything is invalid, and so is replying to everything.**
-- **Short interview answers score low.** The organizer measured a correlation of about −0.57.
+- **Very short interview answers score low.** In the organizer's interview transcripts, its "very short answers" measure correlated with interview score at r = −0.568; total words spoken correlated positively (r = 0.615), and the number of turns only weakly negatively (no value published).
 - **Ties break on interview, then code, then output, then transcript.**
 - Since September 2026, `code.zip` must include **`evaluation/usage_report.md`** (model calls, tokens and estimated cost for the final run), and every log entry needs a valid **`tool=` line** naming your coding harness.
 
@@ -72,7 +72,7 @@ Sub-weights are from the organizer's post-mortem of the May 2026 edition. Rules 
 
 Labels: **VERIFIED** means read in the organizer's post-mortem; **INFERRED** means computed by [orchestrate-loop](https://github.com/bsrikumar855-dot/orchestrate-loop) from public leaderboard data that could not be re-checked here. The full table is in [`rubric.md`](hackerrank-orchestrate/references/rubric.md#5-what-the-leaderboards-show).
 
-- **Balance beats a peak.** Every top-10 finisher in May was in the top quartile on all four artifacts (VERIFIED). Most of each top 50 in May, June and August was too (INFERRED).
+- **Balance beats a peak.** Every top-10 finisher in May was in the top quartile on all four artifacts, and so were 37 of the May top 50, with 11 more on three of the four (VERIFIED). Most of the June and August top 50 were too (INFERRED).
 - **The output CSV is where strong teams lose.** It was the weakest stage for 49 of the June top 50 and 34 of the August top 50 (INFERRED). Great code with a mediocre CSV is the typical top-50 profile, so getting the rows right is how you separate.
 - **The transcript and interview are cheap points most people leave behind.** Across the field, the median transcript score sat roughly between 1.4 and 3.8 of 10, and the median interview score between 11 and 15 of 30, while top-50 averages were 63% to 89% of the maximum (INFERRED).
 - **Simple, explainable architectures win.** A single agent with tools held 7 of the May top 10 (VERIFIED). One June author had earlier entered with a 15-stage pipeline and placed mid-table, unable to show what any one stage added; their next, smaller design did far better (INFERRED, from that author's write-up as summarized in orchestrate-loop).

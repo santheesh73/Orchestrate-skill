@@ -44,7 +44,7 @@ What the code grader looked for (VERIFIED, May criteria): separation of concerns
 - **Source only.** "We reward only what is observable in the source code." README claims, comments describing intent and unused imports don't count toward the code score. A runnable README still matters for reproducibility.
 - **Generic justifications are capped** at about 70 for that row, even when the action is right.
 - **Escalating everything was invalid; so was replying to everything.**
-- **Very short interview answers correlated negatively with interview score** (r = −0.568).
+- **Interview length matters.** Against interview score: very short answers r = −0.568; total candidate words r = 0.615; share of longer answers r = 0.631; number of candidate turns weakly negative (no value published).
 - **Tie-break order:** interview, then code zip, then output CSV, then transcript.
 
 ## 4. Where effort pays
@@ -54,7 +54,7 @@ What the code grader looked for (VERIFIED, May criteria): separation of concerns
 | Code | A findable, named agent loop; prompts and tool descriptions as first-class files; then robustness | Architecture plus prompt and tool craft is 60% of the code score; engineering rigor is 15% |
 | Code | Rationale in docstrings and comments beside constants | The grader reads behavior in source, not README claims |
 | Output CSV | Boundary calls and specific, evidence-anchored justifications | Generic justifications are capped; top finishers most often lose ground on the CSV |
-| Interview | Long, specific answers about your own decisions | Depth and ownership is 40%; short answers correlate with low scores |
+| Interview | Long, specific answers about your own decisions | Depth and ownership is 40%; very short answers correlate with low scores (r = −0.568) |
 | Transcript | Stating the plan, choosing architecture yourself, verifying out loud | Ownership 35%, iteration and verification 25% |
 
 ## 5. What the leaderboards show
@@ -76,7 +76,7 @@ Calibration, not targets.
 | August (1,983) | 84.2 / 80.8 / 74.0 | 89 / 95 / 89 | 87 / 82 / 80 | 77 / 70 / 68 | 87 / 89 / 82 |
 
 Readings from the same data (INFERRED):
-- **Balance wins.** In every edition, a majority of the top 50 placed in the top quarter of the field on each of the four stages (May 37 of 50, June 33, August 41).
+- **Balance wins.** In every edition, a majority of the top 50 placed in the top quarter of the field on each of the four stages (May 37 of 50, which the post-mortem confirms, VERIFIED; June 33 and August 41, INFERRED).
 - **The output CSV is the usual weak stage at the top.** It was the weakest stage for 49 of the June top 50 and 34 of the August top 50.
 - **Transcript and interview are cheap points.** Field medians were roughly 1.4 to 3.8 of 10 for transcript and 11 to 15 of 30 for interview.
 
