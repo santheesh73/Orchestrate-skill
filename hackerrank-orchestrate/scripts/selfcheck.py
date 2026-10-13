@@ -15,7 +15,8 @@ Checks (each section of the config is optional):
 A section missing from the config prints UNKNOWN, never PASS. A configured file that
 does not exist is FAIL. Results: PASS, WARN, UNKNOWN, FAIL. The exit code is the worst
 result: 0 PASS, 1 WARN, 2 UNKNOWN, 3 FAIL; 4 means the config itself is unusable.
-Paths in the config are relative to the config file's directory.
+Paths in the config are relative to the config file's directory, except claims.exclude,
+which is relative to claims.repo and adds to claim_audit's default (tests/fixtures).
 
 Example config (selfcheck.json):
   {
@@ -28,7 +29,8 @@ Example config (selfcheck.json):
     "corpus_literals": {"data": ["dataset/*.csv"], "code": ["code"],
                         "spec": ["problem_statement.md", "AGENTS.md"]},
     "claims": {"docs": ["code/README.md", "CONSTANTS.md"], "repo": ".",
-               "csv": ["output.csv"], "constants": "CONSTANTS.md"}
+               "csv": ["output.csv"], "constants": "CONSTANTS.md",
+               "exclude": ["code/vendor"]}
   }
 
 These scripts check the participant's work; they are not part of the submission.
@@ -160,6 +162,8 @@ class Runner:
             argv += ["--csv"] + [self.p(x) for x in c["csv"]]
         if c.get("constants"):
             argv += ["--constants", self.p(c["constants"])]
+        for x in c.get("exclude") or []:
+            argv += ["--exclude", x]
         rc, out = capture(claim_audit.main, argv)
         if rc not in (0, 1):
             return "FAIL", last_line(out), out

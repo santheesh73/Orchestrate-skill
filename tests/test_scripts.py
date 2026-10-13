@@ -234,6 +234,7 @@ def copy_project(d):
 
 
 def write(path, text):
+    os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "w", encoding="utf-8") as fh:
         fh.write(text)
 
@@ -345,6 +346,32 @@ class ClaimAudit(unittest.TestCase):
 
     def test_csv_with_quoted_newlines_counts_rows(self):
         self.assertEqual(claim_audit.count_csv_rows(f("output_good.csv")), 3)
+
+    def test_fixture_tests_excluded_by_default(self):
+        # Regression: v2.1.0 counted the fixture project's tests and reported 71 for a 69-test suite.
+        with tempfile.TemporaryDirectory() as d:
+            write(os.path.join(d, "tests", "test_a.py"), "def test_one():\n    pass\ndef test_two():\n    pass\n")
+            write(os.path.join(d, "tests", "fixtures", "proj", "tests", "test_b.py"),
+                  "def test_x():\n    pass\ndef test_y():\n    pass\ndef test_z():\n    pass\n")
+            write(os.path.join(d, "vendor", "test_c.py"), "def test_v():\n    pass\n")
+            self.assertEqual(claim_audit.count_tests(d), 3)
+            self.assertEqual(claim_audit.count_tests(d, ()), 6)
+            self.assertEqual(claim_audit.count_tests(d, ("tests/fixtures", "vendor")), 2)
+            self.assertEqual(claim_audit.count_tests(d, ("ven*",)), 5)
+            doc = os.path.join(d, "README.md")
+            write(doc, "2 tests\n")
+            self.assertIn("0 mismatches", run(claim_audit, [doc, "--repo", d, "--exclude", "vendor"])[1])
+            self.assertIn("(live: 6)", run(claim_audit, [doc, "--repo", d, "--no-default-exclude"])[1])
+
+    def test_repo_count_equals_real_suite(self):
+        suite = unittest.defaultTestLoader.discover(HERE, pattern="test_*.py", top_level_dir=HERE)
+        self.assertEqual(claim_audit.count_tests(os.path.join(HERE, "..")), suite.countTestCases())
+
+    def test_selfcheck_on_this_repo_reports_the_suite_count(self):
+        suite = unittest.defaultTestLoader.discover(HERE, pattern="test_*.py", top_level_dir=HERE)
+        rc, out = run(selfcheck, [os.path.join(HERE, "..", "selfcheck.json")])
+        self.assertRegex(out, r"claims\s+PASS")
+        self.assertIn(f"tests={suite.countTestCases()}", out)
 
 
 class ContractExtract(unittest.TestCase):

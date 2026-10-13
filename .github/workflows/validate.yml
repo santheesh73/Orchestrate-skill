@@ -32,3 +32,7 @@ jobs:
           python tools/validate_skill.py --skill-dir "$dest/hackerrank-orchestrate" --standalone
       - name: Selfcheck against fixtures
         run: python hackerrank-orchestrate/scripts/selfcheck.py tests/fixtures/project/selfcheck.json
+      - name: Selfcheck on this repo (claims must PASS; unconfigured sections are UNKNOWN)
+        run: |
+          python hackerrank-orchestrate/scripts/selfcheck.py selfcheck.json | tee "$RUNNER_TEMP/self.txt"
+          grep -E "^claims +PASS" "$RUNNER_TEMP/self.txt"

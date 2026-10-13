@@ -7,7 +7,10 @@ tests" when 198 exist), which the judge can check against the code.
 It scans the given docs for claims like "N tests", "N rows", "N constants" and
 "N requests", then compares them with what it can count:
   - tests: functions named test_* in test_*.py / *_test.py files under --repo
-    (counted with ast, nothing is executed), plus it/test( calls in *.test.js/ts files
+    (counted with ast, nothing is executed), plus it/test( calls in *.test.js/ts files.
+    Paths under tests/fixtures are skipped by default, because fixture projects carry
+    their own tests that the real suite never runs. --exclude adds paths (relative to
+    --repo, globs allowed); --no-default-exclude counts tests/fixtures too.
   - rows / requests: data-row counts of the --csv files (a claim matches if it equals
     any of them)
   - constants: data rows in the CONSTANTS.md table (--constants)
@@ -26,6 +29,7 @@ Standard library only.
 import argparse
 import ast
 import csv
+import fnmatch
 import glob
 import io
 import os
@@ -35,14 +39,27 @@ import sys
 CLAIM_RE = re.compile(r"\b(\d[\d,]*)\s+(?:unit\s+|passing\s+|labeled\s+|sample\s+|input\s+|output\s+)?"
                       r"(tests?|rows?|constants?|requests?)\b", re.I)
 SKIP_DIRS = {".git", "__pycache__", "node_modules", ".venv", "venv", "env", "dist", "build"}
+DEFAULT_EXCLUDES = ("tests/fixtures",)
 
 
-def count_tests(repo):
+def excluded(rel, patterns):
+    rel = rel.replace(os.sep, "/")
+    for pat in patterns:
+        pat = pat.replace(os.sep, "/").strip("/")
+        if rel == pat or rel.startswith(pat + "/") or fnmatch.fnmatch(rel, pat):
+            return True
+    return False
+
+
+def count_tests(repo, exclude=DEFAULT_EXCLUDES):
     n = 0
     for dirpath, dirnames, filenames in os.walk(repo):
-        dirnames[:] = [d for d in dirnames if d not in SKIP_DIRS and not d.startswith(".")]
+        dirnames[:] = [d for d in dirnames if d not in SKIP_DIRS and not d.startswith(".")
+                       and not excluded(os.path.relpath(os.path.join(dirpath, d), repo), exclude)]
         for f in filenames:
             p = os.path.join(dirpath, f)
+            if excluded(os.path.relpath(p, repo), exclude):
+                continue
             if f.endswith(".py") and (f.startswith("test_") or f.endswith("_test.py")):
                 with open(p, encoding="utf-8-sig", errors="replace") as fh:
                     try:
@@ -84,10 +101,10 @@ def find_claims(path):
     return claims
 
 
-def audit(docs, repo=None, csvs=(), constants=None):
+def audit(docs, repo=None, csvs=(), constants=None, exclude=DEFAULT_EXCLUDES):
     live = {}
     if repo:
-        live["test"] = [count_tests(repo)]
+        live["test"] = [count_tests(repo, exclude)]
     if csvs:
         live["row"] = live["request"] = [count_csv_rows(c) for c in csvs]
     if constants:
@@ -110,6 +127,10 @@ def main(argv=None):
     ap.add_argument("--repo", help="repo root to count tests in")
     ap.add_argument("--csv", nargs="*", default=[], help="CSV files whose row counts claims may refer to")
     ap.add_argument("--constants", help="CONSTANTS.md to count table rows in")
+    ap.add_argument("--exclude", action="append", default=[],
+                    help="path under --repo to skip when counting tests (repeatable, globs allowed)")
+    ap.add_argument("--no-default-exclude", action="store_true",
+                    help=f"also count tests under {', '.join(DEFAULT_EXCLUDES)}")
     ap.add_argument("--strict", action="store_true", help="exit 1 on any mismatch")
     ap.add_argument("--quiet", action="store_true", help="print only mismatches and the summary")
     args = ap.parse_args(argv)
@@ -121,7 +142,8 @@ def main(argv=None):
     if not docs or missing:
         print(f"error: missing {missing or 'docs'}", file=sys.stderr)
         return 2
-    results, live = audit(docs, args.repo, args.csv, args.constants)
+    exclude = ([] if args.no_default_exclude else list(DEFAULT_EXCLUDES)) + args.exclude
+    results, live = audit(docs, args.repo, args.csv, args.constants, exclude)
     for status, doc, lineno, text, actual in results:
         if args.quiet and status != "MISMATCH":
             continue

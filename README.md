@@ -258,6 +258,7 @@ python tools/validate_skill.py
 python -W error -m unittest discover -s tests -v
 python tools/run_trigger_evals.py --offline
 python hackerrank-orchestrate/scripts/selfcheck.py tests/fixtures/project/selfcheck.json
+python hackerrank-orchestrate/scripts/selfcheck.py selfcheck.json   # claims check on this repo; other sections UNKNOWN
 
 # Opt-in, needs ANTHROPIC_API_KEY, makes network calls, never run in CI:
 python tools/run_trigger_evals.py --live --model <model-id>
