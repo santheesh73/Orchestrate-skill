@@ -1,0 +1,13 @@
+request_id,action,locker_size,justification
+r_001,assign,S,"size S, 1.2 kg: smallest locker that fits"
+r_002,assign,M,"4.0 kg, size M: the smallest locker that fits"
+r_003,assign,L,"size L, 12.5 kg: smallest locker that fits"
+r_004,assign,S,"size S, 0.4 kg: smallest locker that fits"
+r_005,reject,none,"31.0 kg is over the 30 kg carrier limit"
+r_006,escalate,none,"message threatens to break the locker"
+r_007,assign,M,"size M, 2.2 kg: smallest locker that fits"
+r_008,assign,L,"29.9 kg is under the 30 kg limit; size L fits L"
+r_009,assign,S,"size S, 0.9 kg: smallest locker that fits"
+r_010,escalate,none,"message reads as unclear; sent to a human"
+r_011,reject,none,"40.0 kg is over the 30 kg carrier limit"
+r_012,assign,S,"size S, 1.0 kg: smallest locker that fits"

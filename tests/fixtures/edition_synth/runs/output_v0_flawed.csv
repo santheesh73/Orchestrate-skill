@@ -1,0 +1,12 @@
+request_id,locker_size,action,justification
+r_001,S,assign,"size S, 1.2 kg fits S"
+r_002,M,assign,"size M, 4.0 kg fits M"
+r_003,L,assign,"size L, 12.5 kg fits L"
+r_004,S,assign,"size S, 0.4 kg fits S"
+r_005,none,reject,"31.0 kg over the 30 kg limit"
+r_006,none,escalate,"threat to break the locker"
+r_007,M,hold,"unclear"
+r_008,L,assign,"29.9 kg is under the limit; size L fits L"
+r_009,S,assign,"size S, 0.9 kg fits S"
+r_010,M,assign,"size M, 8.0 kg fits M"
+r_011,none,reject,"40.0 kg over the 30 kg limit"

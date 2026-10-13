@@ -1,0 +1,12 @@
+## [2026-11-01T09:00:00+05:30] SESSION START
+tool=Codex
+
+## [2026-11-01T09:05:00+05:30] Read the contract
+User Prompt (verbatim, secrets redacted):
+Read AGENTS.md and problem_statement.md and list every MUST.
+Agent Response Summary:
+Listed the output contract and the log rule.
+Actions:
+- read AGENTS.md
+Context:
+tool=Codex
