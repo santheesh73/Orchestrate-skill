@@ -30,6 +30,7 @@ This repository has two parts:
 - [Repository layout](#repository-layout)
 - [Sources](#sources)
 - [Caveats and license](#caveats-and-license)
+- [Credits](#credits)
 
 ---
 
@@ -274,7 +275,13 @@ python -m unittest discover -s tests -v
 
 - Scoring sub-weights come from the May 2026 post-mortem, and later editions may reweight. Check the live page.
 - Patterns come from the few public top-finisher repos and write-ups that were reachable. They describe what top finishers did, not proof of what caused their rank.
-- Trigger accuracy is covered by `evals/triggers.json` but hasn't been measured against a live model run yet.
+- **Trigger accuracy against a live model: UNKNOWN.** `tools/run_trigger_evals.py --live` exists but has not been run, because no API key was available where this was built. What *was* measured is an offline lexical-overlap proxy over the 44 cases in `evals/triggers.json` (22 should trigger, 22 should not): precision 0.72, recall 0.59 at threshold 0.3 (MEASURED, proxy only; it is not model behavior).
 - Not affiliated with or endorsed by HackerRank.
 
 MIT licensed. See [LICENSE](LICENSE).
+
+## Credits
+
+- Ideas, structure and the first set of lessons came from [orchestrate-loop](https://github.com/bsrikumar855-dot/orchestrate-loop), an earlier Orchestrate skill. That repository has no license, so none of its text is copied here; this repository is an independent rewrite that credits it as a source of ideas.
+- The optional toolkit digest summarizes the community `hackerrank-orchestrate-skills` toolkit, as described secondhand in orchestrate-loop. Credit for that method belongs to its authors.
+- Neither project is affiliated with this one, and none of them is affiliated with or endorsed by HackerRank.

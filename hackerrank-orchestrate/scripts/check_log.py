@@ -9,22 +9,42 @@ Checks, per entry (an entry starts at a line like "## [2026-09-12T10:00:00+05:30
   - timestamps never go backwards (the log is append-only)
   - no apparent secrets (API keys, tokens, private keys)
 
-The rules come from the September 2026 starter AGENTS.md section 5. Re-read your
-edition's AGENTS.md: if its format differs, adjust with --entry-regex and
---prompt-header, or treat this script's findings as hints.
+Failure it prevents: a transcript log with missing, placeholder or model-name tool=
+lines, empty prompt blocks or leaked secrets, which the starter contract calls invalid.
+
+The format comes from an edition profile in ../assets/editions/ (default: sept-2026,
+the September 2026 starter AGENTS.md section 5). Use --profile june-2026, or a path to
+your own JSON copied from template.json, when your edition's format differs.
+--list-profiles shows what ships. --entry-regex and --prompt-header still override the
+profile. If no entries match, the script says which shipped profile does match, if any.
 
 Exit code 0 when clean, 1 when any error is found, 2 on usage errors.
 Standard library only.
 """
 
 import argparse
+import json
+import os
 import re
 import sys
 from datetime import datetime
 
-DEFAULT_ENTRY_REGEX = r"^##\s*\[(?P<ts>[^\]]+)\]\s*(?P<title>.*)$"
-DEFAULT_PROMPT_HEADER = "User Prompt"
-SECTION_HEADERS = {"agent response summary:", "actions:", "context:"}
+PROFILE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "assets", "editions")
+DEFAULT_PROFILE = "sept-2026"
+# Built-in copy of sept-2026.json so the script still works if copied on its own.
+BUILTIN_PROFILE = {
+    "name": "sept-2026",
+    "entry_regex": r"^##\s*\[(?P<ts>[^\]]+)\]\s*(?P<title>.*)$",
+    "prompt_header": "User Prompt",
+    "section_headers": ["Agent Response Summary:", "Actions:", "Context:"],
+    "session_start_title_match": "session start",
+    "tool_rule": {"key": "tool", "required_in": "all", "exactly_one": True, "harness_not_model": True},
+    "required_turn_sections": [],
+    "title_max_length": 80,
+    "secret_scan": True,
+}
+DEFAULT_ENTRY_REGEX = BUILTIN_PROFILE["entry_regex"]
+DEFAULT_PROMPT_HEADER = BUILTIN_PROFILE["prompt_header"]
 
 GENERIC_TOOL_VALUES = {
     "ai", "llm", "assistant", "agent", "bot", "chatbot", "model", "unknown",
@@ -93,7 +113,7 @@ def tool_problem(value, expect):
     return None
 
 
-def prompt_block_empty(body, header):
+def prompt_block_empty(body, header, section_headers):
     """True when the prompt header exists but nothing follows before the next header."""
     for i, (_, line) in enumerate(body):
         if line.strip().lower().startswith(header.lower()):
@@ -102,27 +122,88 @@ def prompt_block_empty(body, header):
                 if not s:
                     continue
                 # The next section header ends the block.
-                if s.lower() in SECTION_HEADERS:
+                if s.lower() in section_headers:
                     return True
                 return False
             return True
     return None  # header absent
 
 
-def check(path, expect_tool, entry_regex, prompt_header):
+def shipped_profiles():
+    names = []
+    if os.path.isdir(PROFILE_DIR):
+        names = sorted(f[:-5] for f in os.listdir(PROFILE_DIR) if f.endswith(".json") and f != "template.json")
+    return names
+
+
+def load_profile(name_or_path):
+    """Load a profile by shipped name or by path. None means the default profile."""
+    if name_or_path is None:
+        name_or_path = DEFAULT_PROFILE
+        path = os.path.join(PROFILE_DIR, DEFAULT_PROFILE + ".json")
+        if not os.path.exists(path):
+            return dict(BUILTIN_PROFILE)
+    elif os.path.exists(name_or_path):
+        path = name_or_path
+    else:
+        path = os.path.join(PROFILE_DIR, name_or_path + ".json")
+        if not os.path.exists(path):
+            raise ValueError(f"unknown profile {name_or_path!r}; shipped: {', '.join(shipped_profiles()) or 'none'}")
+    with open(path, encoding="utf-8") as fh:
+        prof = json.load(fh)
+    merged = dict(BUILTIN_PROFILE)
+    merged.update(prof)
+    merged["tool_rule"] = dict(BUILTIN_PROFILE["tool_rule"], **prof.get("tool_rule", {}))
+    re.compile(merged["entry_regex"])
+    if merged["tool_rule"]["required_in"] not in ("all", "turns", "none"):
+        raise ValueError("tool_rule.required_in must be all, turns or none")
+    return merged
+
+
+def matching_profiles(lines, skip):
+    found = []
+    for name in shipped_profiles():
+        if name == skip:
+            continue
+        try:
+            prof = load_profile(name)
+        except (ValueError, OSError, json.JSONDecodeError):
+            continue
+        rx = re.compile(prof["entry_regex"])
+        if any(rx.match(line) for line in lines):
+            found.append(name)
+    return found
+
+
+def check(path, expect_tool, profile):
     try:
         with open(path, encoding="utf-8") as fh:
             text = fh.read()
     except UnicodeDecodeError:
         return [f"{path}: not valid UTF-8"], [], 0
-    lines = text.splitlines()
     errors, warnings = [], []
+    if text.startswith("\ufeff"):
+        warnings.append("file starts with a UTF-8 BOM")
+        text = text[1:]
+    lines = text.splitlines()
     if "\r\n" in text:
         warnings.append("file uses CRLF line endings; the starter asks for \\n")
 
-    entries = split_entries(lines, re.compile(entry_regex))
+    prompt_header = profile["prompt_header"]
+    section_headers = {h.lower() for h in profile["section_headers"]}
+    rule = profile["tool_rule"]
+    key = re.escape(rule["key"])
+    start_match = profile["session_start_title_match"].lower()
+
+    entries = split_entries(lines, re.compile(profile["entry_regex"]))
     if not entries:
         errors.append("no log entries found (expected lines like '## [ISO-8601 TIMESTAMP] Title')")
+        others = matching_profiles(lines, profile.get("name"))
+        if others:
+            warnings.append(f"this log matches shipped profile(s) {', '.join(others)}; try --profile {others[0]}")
+        else:
+            warnings.append("this log matches no shipped profile; copy assets/editions/template.json and fill it "
+                            "from your AGENTS.md, then pass --profile PATH")
         return errors, warnings, 0
 
     prev_ts = None
@@ -140,45 +221,72 @@ def check(path, expect_tool, entry_regex, prompt_header):
         if ts is not None:
             prev_ts = ts
 
-        tool_lines = [(n, l.split("=", 1)[1]) for n, l in e["body"] if re.match(r"^\s*tool\s*=", l)]
-        if not tool_lines:
-            errors.append(f"{where}: missing tool= line")
-        elif len(tool_lines) > 1:
-            errors.append(f"{where}: {len(tool_lines)} tool= lines; the rule asks for exactly one")
-        for n, value in tool_lines:
-            problem = tool_problem(value, expect_tool)
-            if problem:
-                errors.append(f"line {n}: {problem}")
+        is_session_start = start_match in e["title"].lower()
+        needs_tool = rule["required_in"] == "all" or (rule["required_in"] == "turns" and not is_session_start)
+        tool_lines = [(n, l.split("=", 1)[1]) for n, l in e["body"] if re.match(r"^\s*" + key + r"\s*=", l)]
+        if needs_tool and not tool_lines:
+            errors.append(f"{where}: missing {rule['key']}= line")
+        elif rule["exactly_one"] and len(tool_lines) > 1:
+            errors.append(f"{where}: {len(tool_lines)} {rule['key']}= lines; the rule asks for exactly one")
+        if rule["harness_not_model"] or expect_tool:
+            for n, value in tool_lines:
+                problem = tool_problem(value, expect_tool)
+                if problem:
+                    errors.append(f"line {n}: {problem}")
 
-        is_session_start = "session start" in e["title"].lower()
         if not is_session_start:
-            empty = prompt_block_empty(e["body"], prompt_header)
+            empty = prompt_block_empty(e["body"], prompt_header, section_headers)
             if empty is None:
                 errors.append(f"{where}: per-turn entry has no '{prompt_header}' block")
             elif empty:
                 errors.append(f"{where}: '{prompt_header}' block is empty")
-        if len(e["title"]) > 80:
-            warnings.append(f"{where}: title longer than 80 characters")
+            body_lower = {l.strip().lower() for _, l in e["body"]}
+            for sec in profile["required_turn_sections"]:
+                if sec.strip().lower() not in body_lower:
+                    errors.append(f"{where}: per-turn entry has no '{sec}' section")
+        if len(e["title"]) > profile["title_max_length"]:
+            warnings.append(f"{where}: title longer than {profile['title_max_length']} characters")
 
-    for lineno, line in enumerate(lines, 1):
-        for name, pattern in SECRET_PATTERNS:
-            if pattern.search(line):
-                errors.append(f"line {lineno}: possible secret ({name}); redact as [REDACTED]")
+    if profile["secret_scan"]:
+        for lineno, line in enumerate(lines, 1):
+            for name, pattern in SECRET_PATTERNS:
+                if pattern.search(line):
+                    errors.append(f"line {lineno}: possible secret ({name}); redact as [REDACTED]")
     return errors, warnings, len(entries)
 
 
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("log", help="path to log.txt")
+    ap.add_argument("log", nargs="?", help="path to log.txt")
     ap.add_argument("--expect-tool", help='exact harness name every tool= line must equal, e.g. "Claude Code"')
-    ap.add_argument("--entry-regex", default=DEFAULT_ENTRY_REGEX,
-                    help="regex for an entry header line, with named groups ts and title")
-    ap.add_argument("--prompt-header", default=DEFAULT_PROMPT_HEADER,
-                    help="label that starts the verbatim prompt block in per-turn entries")
+    ap.add_argument("--profile", help=f"edition profile name or JSON path (default: {DEFAULT_PROFILE})")
+    ap.add_argument("--list-profiles", action="store_true", help="list shipped edition profiles and exit")
+    ap.add_argument("--entry-regex", help="override: regex for an entry header line, with named groups ts and title")
+    ap.add_argument("--prompt-header", help="override: label that starts the verbatim prompt block in per-turn entries")
     args = ap.parse_args(argv)
 
+    if args.list_profiles:
+        for name in shipped_profiles():
+            with open(os.path.join(PROFILE_DIR, name + ".json"), encoding="utf-8") as fh:
+                desc = json.load(fh).get("description", "")
+            mark = " (default)" if name == DEFAULT_PROFILE else ""
+            print(f"{name}{mark}: {desc}")
+        return 0
+    if not args.log:
+        ap.error("the log path is required")
     try:
-        errors, warnings, n = check(args.log, args.expect_tool, args.entry_regex, args.prompt_header)
+        profile = load_profile(args.profile)
+        if args.entry_regex:
+            re.compile(args.entry_regex)
+            profile["entry_regex"] = args.entry_regex
+        if args.prompt_header:
+            profile["prompt_header"] = args.prompt_header
+    except (ValueError, OSError, json.JSONDecodeError, re.error) as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
+
+    try:
+        errors, warnings, n = check(args.log, args.expect_tool, profile)
     except OSError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2

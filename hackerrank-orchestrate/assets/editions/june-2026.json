@@ -1,0 +1,17 @@
+{
+  "name": "june-2026",
+  "description": "June 2026 starter AGENTS.md section 5: same entry header; SESSION START carries 'Agent:' instead of tool=, per-turn entries carry tool= in Context.",
+  "entry_regex": "^##\\s*\\[(?P<ts>[^\\]]+)\\]\\s*(?P<title>.*)$",
+  "prompt_header": "User Prompt",
+  "section_headers": ["Agent Response Summary:", "Actions:", "Context:"],
+  "session_start_title_match": "session start",
+  "tool_rule": {
+    "key": "tool",
+    "required_in": "turns",
+    "exactly_one": true,
+    "harness_not_model": true
+  },
+  "required_turn_sections": ["Agent Response Summary:"],
+  "title_max_length": 80,
+  "secret_scan": true
+}
