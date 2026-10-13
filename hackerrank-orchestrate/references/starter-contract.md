@@ -5,7 +5,7 @@ Every edition ships a new starter repo, and the contract in it changes. Points a
 ## Checklist
 
 1. **Read `AGENTS.md`, `problem_statement.md` and `README.md` in full.** Do not skim from a previous edition's memory.
-2. **Confirm `CLAUDE.md` is `@AGENTS.md` and leave it alone.** Add strategy below the import or as the first message.
+2. **Leave `AGENTS.md` unedited, and confirm `CLAUDE.md` (if present) is just `@AGENTS.md`.** Add strategy below that import or as the first message.
 3. **Extract every MUST into one list**, with the section it came from. `scripts/contract_extract.py STARTER_DIR` drafts it with file:line; confirm every line against the files:
    - output file name and location (for example root-level `output.csv`, not `dataset/output.csv`)
    - exact columns and order, allowed values per column, formats (dates, separators like `YYYY-MM-DD:amount|...`, `none` sentinels)
@@ -18,7 +18,7 @@ Every edition ships a new starter repo, and the contract in it changes. Points a
 4. **Diff against the last edition you know.** `scripts/contract_extract.py --diff OLD NEW` lists added, changed and removed requirement lines (a heuristic; still read both files). New sections are where the new traps are. Known changes so far:
    - June 2026: onboarding flow with a recited rules agreement; log entries had an `Agent:` line in session start.
    - September 2026: onboarding replaced by a session-start greeting with a countdown; mandatory `tool=` line in **every** entry (invalid if missing, blank, a placeholder, a generic label like `AI`, only a model name, or a different harness); mandatory submission-link rule; `evaluation/usage_report.md` required; a stated conflict-resolution order; sample rows declared "not labels".
-5. **Write the MUST list into the kickoff prompt** (`prompt-templates.md` §1) so Claude Code builds against it from the first turn.
+5. **Write the MUST list into the kickoff prompt** (`prompt-templates.md` §1) so the coding agent builds against it from the first turn.
 6. **Turn the MUST list into checks.** Most map to a bundled script:
    - log format: `scripts/check_log.py log.txt --expect-tool "<exact harness name>"`, with `--profile` when the format matches a shipped edition other than the default (`--list-profiles`)
    - output shape: `scripts/preflight.py output.csv --template dataset/output.csv --inputs <input csv> --id-col <id>` plus `--enum` for each allowed-value column
@@ -28,6 +28,7 @@ Every edition ships a new starter repo, and the contract in it changes. Points a
 ## The `tool=` rule in practice
 
 - The value is the harness name, not the model. For Claude Code, `tool=Claude Code`. Not `claude-opus-…`, not `AI`, not `assistant`.
+- Illustrative `--expect-tool` values per agent (illustrative; copy the exact string the starter's AGENTS.md and your harness produce): `"Claude Code"`, `"Codex"`, `"Cursor"`, `"OpenCode"`, `"Antigravity"`. These are product names, not names any harness was seen to report; the September 2026 starter says "Never guess the tool name."
 - Sub-agents log to the same file with `parent_agent=` set.
 - Run `check_log.py` after the first few turns and again before packaging. A transcript with invalid entries is a compliance miss on the 10% artifact and visible to the code grader.
 

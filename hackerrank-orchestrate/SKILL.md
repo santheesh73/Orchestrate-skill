@@ -1,6 +1,6 @@
 ---
 name: hackerrank-orchestrate
-description: Playbook for competing in HackerRank Orchestrate, the timed AI-agent hackathon graded on code zip, output CSV, AI judge interview and chat transcript. Covers the per-artifact scoring breakdown, the first-15-minutes starter-repo contract check (AGENTS.md, log.txt tool= rule, usage_report.md), agent architecture by problem type, the change-record iteration loop, output-CSV and interview prep, paste-ready Claude Code prompts for the event, and bundled checker scripts. Use when the user is preparing for, competing in, or reviewing a HackerRank Orchestrate submission, pastes an Orchestrate problem_statement.md or AGENTS.md, or asks for a kickoff, iteration or freeze prompt for that hackathon. Do not use for general prompt writing, other hackathons, or ordinary Claude Code work that has no Orchestrate context.
+description: Playbook for competing in HackerRank Orchestrate, the timed AI-agent hackathon graded on code zip, output CSV, AI judge interview and chat transcript. Covers the per-artifact scoring breakdown, the first-15-minutes starter-repo contract check (AGENTS.md, log.txt tool= rule, usage_report.md), agent architecture by problem type, the change-record iteration loop, output-CSV and interview prep, paste-ready prompts for the user's coding agent, and bundled checker scripts. Use when the user is preparing for, competing in, or reviewing a HackerRank Orchestrate submission, pastes an Orchestrate problem_statement.md or AGENTS.md, or asks for a kickoff, iteration or freeze prompt for that hackathon. Do not use for general prompt writing, other hackathons, or ordinary coding-agent work that has no Orchestrate context.
 ---
 
 # HackerRank Orchestrate
@@ -10,8 +10,8 @@ A playbook for one event: HackerRank Orchestrate. Each edition ships a fresh sta
 ## Working style
 
 - Terse and directive. Deliver complete, paste-ready output.
-- Default role: **draft prompts; Claude Code builds.** The user drives Claude Code. Produce submission code directly only on request; building scaffolding when a prompt was wanted is a common mistake.
-- A pasted Claude Code report gets checked against real artifacts (files, hashes, live test counts, script output) before you reply with the following prompt.
+- Default role: **draft prompts; the user's coding agent builds.** The user drives that agent (Claude Code, Codex, Cursor, OpenCode, Antigravity or another harness). Produce submission code directly only on request; building scaffolding when a prompt was wanted is a common mistake.
+- A pasted agent report gets checked against real artifacts (files, hashes, live test counts, script output) before you reply with the following prompt.
 - Do not make up a score, percentage, rank estimate or test count. Label every figure VERIFIED, MEASURED, INFERRED or UNKNOWN.
 - The live challenge page and this edition's `AGENTS.md` and `problem_statement.md` override everything in this skill.
 
@@ -23,7 +23,7 @@ A playbook for one event: HackerRank Orchestrate. Each edition ships a fresh sta
 | The starter repo drops (first 15 minutes) | `references/starter-contract.md` and `scripts/contract_extract.py`; run `scripts/check_log.py` once logging starts |
 | Choosing an architecture once the problem is known | `references/archetypes/index.md` (pick the closest page; say so when none fits) and `references/winning-approaches.md` |
 | Building and iterating | `references/loop-patterns.md` and `references/evaluation.md` |
-| Writing a Claude Code prompt | `references/prompt-templates.md` |
+| Writing a prompt for the coding agent | `references/prompt-templates.md` |
 | Improving output rows and justifications | `references/output-csv.md` |
 | Preparing for the AI judge interview | `references/interview.md`, then run `scripts/interview_drill.py` |
 | Self-scoring, with or without the community toolkit | `references/self-score.md` and `scripts/selfcheck.py` |
@@ -38,7 +38,7 @@ Templates live in `assets/`: `change_record.md`, `decision_log.md`, `CONSTANTS.m
 
 ## Hard rules (canonical copy; other files link here)
 
-1. **Leave the starter `CLAUDE.md` intact.** Its content is `@AGENTS.md`, the file that makes `log.txt` logging mandatory. Add text under it, or put strategy in the opening message.
+1. **Leave the starter's agent-instruction files intact.** `AGENTS.md` is the contract that makes `log.txt` logging mandatory; never edit it. When `CLAUDE.md` is just `@AGENTS.md`, keep that line: add text under it, or put strategy in the opening message.
 2. **Obey the starter contract literally.** Exact output columns and order, one row per input id, allowed values, required files (for example `evaluation/usage_report.md`), and a correct `tool=` line in every log entry. Read the contract fresh each edition; it changes.
 3. **Samples motivate or falsify; the domain justifies.** Sample rows are examples, not labels. Never add a rule, constant or threshold whose only justification is that it improves sample accuracy, and never iterate until one sample number matches.
 4. **One labeled row is noise.** Revert a change when it regresses a label-free check, or when it regresses two or more labeled rows that its stated reasoning does not explain. Never accept or reject on a one-row difference. The full resolution table is in `references/evaluation.md`.
@@ -61,7 +61,7 @@ Standard-library Python 3.9+, no installs. Each takes paths and schemas as argum
 |---|---|
 | `scripts/selfcheck.py selfcheck.json` | Gate 7 in one command: runs the checks below from one config; skipped means UNKNOWN |
 | `scripts/contract_extract.py STARTER_DIR [--diff OLD NEW]` | MUST / MUST NOT / files / columns / allowed values / order lines with file:line (heuristic) |
-| `scripts/check_log.py log.txt --expect-tool "Claude Code" [--profile NAME]` | One valid `tool=` line per entry, prompt block present, no secrets, append-only; formats in `assets/editions/` |
+| `scripts/check_log.py log.txt --expect-tool "HARNESS" [--profile NAME]` | One valid `tool=` line per entry, prompt block present, no secrets, append-only; formats in `assets/editions/` |
 | `scripts/preflight.py output.csv --template … --inputs … --id-col …` | Exact header and order, one row per input id, no duplicates, enums, blanks |
 | `scripts/rerun_diff.py run_a.csv run_b.csv --id-col …` | Row and column churn between two runs; the noise floor |
 | `scripts/usage_report.py usage.jsonl --price MODEL=IN:OUT` | Builds `evaluation/usage_report.md` from a per-call token log |

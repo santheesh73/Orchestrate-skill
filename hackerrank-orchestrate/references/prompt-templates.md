@@ -1,6 +1,8 @@
-# Prompt templates for Claude Code
+# Prompt templates for the coding agent
 
 Hand the user whole blocks they can paste unchanged. Every bracket gets its value from the edition's own `problem_statement.md` and `AGENTS.md`; a schema, column, allowed value or deadline that is not in those files must not appear. If a bracket cannot be filled from the files, ask the user instead of guessing.
+
+`[AGENT]` is the user's coding agent. Tell the user to give that agent its own harness name for `tool=`: the September 2026 starter's `AGENTS.md` requires "the exact name of the coding harness or agent writing the entry" and says the entry is invalid if it "contains only a model name, or names a different harness."
 
 ## Contents
 1. Kickoff
@@ -9,12 +11,12 @@ Hand the user whole blocks they can paste unchanged. Every bracket gets its valu
 4. Output-row pass
 5. Final freeze
 
-## 1. Kickoff (opening message of the Claude Code session)
+## 1. Kickoff (opening message of the [AGENT] session)
 
 ```
 AGENTS.md is already loaded and you are writing log.txt the way it requires. Continue
 on every turn without being asked, putting tool=[exact harness name] on each entry. What
-follows is strategy layered on top of AGENTS.md, not a substitute. Leave CLAUDE.md as is.
+follows is strategy layered on top of AGENTS.md, not a substitute. Leave AGENTS.md and CLAUDE.md as is.
 
 Submission closes: [date, time, timezone].
 
@@ -117,7 +119,7 @@ score, percentage or rank; describe likely outcomes in words.
 2. Run from a fresh clone and fresh environment using only the README's steps.
 3. Run the full dataset once; confirm the usage report describes exactly this run.
 4. Check that code.zip, output.csv and log.txt agree with each other. Confirm no secrets,
-   no organizer-only files, CLAUDE.md unchanged.
+   no organizer-only files, AGENTS.md and CLAUDE.md unchanged.
 Finish with the words TECHNICAL FREEZE, then the three most valuable non-code tasks left,
 highest value first.
 ```

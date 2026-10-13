@@ -20,7 +20,7 @@ Skip depth inside a gate, never the gate. Every cut below keeps all four artifac
 ## T-1h: package and verify
 1. `scripts/selfcheck.py` once more: log, output, usage report must be PASS.
 2. Re-derive every number you will cite (`scripts/claim_audit.py`).
-3. Confirm no secrets, no organizer-only files, `CLAUDE.md` untouched, zip contains the required files.
+3. Confirm no secrets, no organizer-only files, `AGENTS.md` and `CLAUDE.md` untouched, zip contains the required files.
 4. Submit. Do not make a last-minute change you cannot re-run end to end.
 
 ## Freeze first, verify last

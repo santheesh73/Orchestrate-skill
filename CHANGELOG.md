@@ -1,11 +1,39 @@
 # Changelog
 
+## 2.3.0
+
+Figures below are MEASURED in this repository unless labeled otherwise. Per-agent claims use VERIFIED (the skill was run in that agent), DOCS-READ (the agent's own docs, URL and date in `docs/INSTALL.md`) or UNKNOWN. This is a portability change; no hard rule, rubric figure or evidence label changed meaning.
+
+### Fixed
+- Installing ran each bundled script's `--help` (to validate the copy) without `-B`, so every installed skill got a `scripts/__pycache__/` folder, the dev files packaging is meant to leave out. `validate_skill.py` now runs them with `python -I -B`; a test fails on the old behavior.
+
+### Added
+- `docs/INSTALL.md`: project and global folders for Claude Code, Claude.ai, OpenAI Codex, OpenCode, Google Antigravity and Cursor, each with an evidence label, source URL, the date read (2026-10-13) and known caveats. It also has a fallback opening message and how to run the scripts with `python3 -I` on POSIX and Windows. The README points to it.
+- `package_skill.py --project DIR --for {claude,agents,all}`: installs into `DIR/.claude/skills`, `DIR/.agents/skills` or both, through the existing atomic install. Every target is checked before any is written. `--install DIR` is unchanged.
+- `validate_skill.py`: `docs/INSTALL.md` must exist and name all six agents, and the `SKILL.md` body must not name an agent-specific install folder.
+- Tests: both layouts, two identical copies with `--for all`, an existing target without `--force` (exit 2, nothing written), a mid-copy failure that keeps the old copy, and a smoke test. The smoke test installs each layout, then runs the validator and every installed script's `--help` with `python -I`, with the proxy pointed at a closed port. 127 tests.
+- `evals/triggers.json`: 12 cases phrased by Codex, Cursor, OpenCode and Antigravity users (6 should trigger, 6 near misses), giving 56 cases. Offline proxy: precision 0.76, recall 0.68 (was 0.72 and 0.59 on 44 cases; the original 44 still score 0.72 and 0.59). This is a lexical proxy, not model behavior.
+- `docs/COVERAGE.md` section 5, Portability.
+
+### Changed
+- Agent-neutral wording in the description, the `SKILL.md` working style, and `references/` (prompt templates, starter contract, loop patterns, interview, behind schedule): "the user's coding agent" in place of Claude Code where the text was generic. Claude Code remains where it is a literal example.
+- Hard rule 1 now protects the starter's agent-instruction files: `AGENTS.md` first, and `CLAUDE.md` when it is just `@AGENTS.md`. There are still 14 hard rules.
+- `references/prompt-templates.md` uses an `[AGENT]` placeholder and quotes the September 2026 starter's `tool=` rule. `references/starter-contract.md` lists illustrative `--expect-tool` values per agent, labeled as such.
+- Footprint (characters): description 815 to 818, SKILL.md body 6894 to 7049, always loaded 7709 to 7867, on demand 164301 to 165077. All are within budget, so no budget was raised.
+
+### Not done
+- Claude Code: VERIFIED once only. On 2026-10-13, Claude Code 2.1.296 listed the skill from `.claude/skills/` and invoked it for one Orchestrate question, and did not invoke it for one near miss. One run of each is not a trigger-accuracy figure.
+- Running the skill in Codex, OpenCode, Antigravity and Cursor: UNKNOWN. None of them is installed in the build environment. Their install folders are DOCS-READ.
+- Claude.ai upload: DOCS-READ. The zip was built and its layout checked, but it was not uploaded.
+- Trigger accuracy against a live model: UNKNOWN. `ANTHROPIC_API_KEY` was not set, so `--live` was not run.
+- Tags `v2.1.0` and `v2.2.0` are still missing on GitHub (see 2.2.1).
+
 ## 2.2.1
 
 Figures below are MEASURED in this repository unless labeled otherwise. The scripts check a participant's own work; they are not part of a submission.
 
 ### Fixed
-- `claim_audit.py` exits 3 and `selfcheck.py` reports the claims section as UNKNOWN when no claim could be checked; v2.2.0 reported PASS after checking nothing. The repo's own live count is now phrased so it is audited (README, this section, `docs/COVERAGE.md`): 119 tests. Older release sections keep historic counts in a form the audit does not match ("test count at the 2.2.0 release: 102"), and a test enforces that, so a past number never becomes a false mismatch.
+- `claim_audit.py` exits 3 and `selfcheck.py` reports the claims section as UNKNOWN when no claim could be checked; v2.2.0 reported PASS after checking nothing. The repo's own live count is now phrased so it is audited (README, the latest release section, `docs/COVERAGE.md`); test count at the 2.2.1 release: 119. Older release sections keep historic counts in a form the audit does not match ("test count at the 2.2.0 release: 102"), and a test enforces that, so a past number never becomes a false mismatch.
 - `package_skill.py --install --force` deleted the installed copy before copying; a failed copy left nothing. It now builds and validates the new copy beside the old one, swaps it in, and restores the old copy (folder, file or symlink, which is replaced and never followed) on any failure.
 - Hostile-input hunting, four rounds, 9 reproduced defects, all fixed with a failing test first:
   - Round 1 (3): `run_trigger_evals.py` raised tracebacks on a missing, directory, non-UTF-8 or non-JSON eval or skill file, and exited 0 on an empty eval list; `check_log.py --profile` crashed on a non-object JSON and silently ignored wrong-typed or misspelled keys; four scripts did not document their exit codes.
