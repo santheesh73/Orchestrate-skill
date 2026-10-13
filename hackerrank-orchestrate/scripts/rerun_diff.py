@@ -73,16 +73,29 @@ def run_twice(cmd, output, timeout):
     return snaps
 
 
+def bounded_int(low):
+    """argparse type: a whole number of at least low (out-of-range values used to be accepted)."""
+    def parse(text):
+        try:
+            n = int(text)
+        except ValueError:
+            raise argparse.ArgumentTypeError(f"expected a whole number, got {text!r}")
+        if n < low:
+            raise argparse.ArgumentTypeError(f"must be at least {low}, got {n}")
+        return n
+    return parse
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("files", nargs="*", help="two CSVs to compare (A then B)")
     ap.add_argument("--id-col", required=True, help="row id column")
     ap.add_argument("--cmd", help="command that writes the output; run twice and compare")
     ap.add_argument("--output", help="output path the command writes (with --cmd)")
-    ap.add_argument("--timeout", type=int, default=3600, help="seconds per run (with --cmd)")
+    ap.add_argument("--timeout", type=bounded_int(1), default=3600, help="seconds per run (with --cmd)")
     ap.add_argument("--ignore", action="append", default=[],
                     help="column to exclude from the diff, e.g. a free-text explanation (repeatable)")
-    ap.add_argument("--show", type=int, default=5, help="example ids to print per column")
+    ap.add_argument("--show", type=bounded_int(0), default=5, help="example ids to print per column")
     args = ap.parse_args(argv)
 
     if args.cmd and not args.output:
@@ -130,4 +143,7 @@ def main(argv=None):
 
 
 if __name__ == "__main__":
+    for _stream in (sys.stdout, sys.stderr):  # a console that cannot encode the data must not crash
+        if hasattr(_stream, "reconfigure"):
+            _stream.reconfigure(errors="backslashreplace")
     sys.exit(main())

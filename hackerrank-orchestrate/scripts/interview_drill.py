@@ -24,6 +24,9 @@ Example:
   python interview_drill.py code/ --constants CONSTANTS.md --out drill.md
 
 Standard library only.
+
+Exit 0 when the drill is written, 2 on usage errors (missing paths, unreadable
+--constants, an --out path that cannot be written).
 """
 
 import argparse
@@ -88,6 +91,8 @@ def scan_python(path, rel):
         tree = parse_quietly(src)
     except SyntaxError as exc:
         return [("parse", rel, exc.lineno or 0, f"could not parse: {exc.msg}")], []
+    except (ValueError, RecursionError) as exc:  # ValueError: a NUL byte on Python 3.9-3.11
+        return [("parse", rel, 0, f"could not parse: {exc}")], []
     findings, constants = [], []
     for node in ast.walk(tree):
         if isinstance(node, (ast.Assign, ast.AnnAssign)):
@@ -254,4 +259,7 @@ def main(argv=None):
 
 
 if __name__ == "__main__":
+    for _stream in (sys.stdout, sys.stderr):  # a console that cannot encode the data must not crash
+        if hasattr(_stream, "reconfigure"):
+            _stream.reconfigure(errors="backslashreplace")
     sys.exit(main())

@@ -21,6 +21,9 @@ Usage:
   contract_extract.py --diff OLD_DIR NEW_DIR      added / changed / removed requirements
 
 Each line carries its source file:line. Standard library only.
+
+Exit 0 when the checklist or diff is written, 2 on usage errors (missing starter files,
+unreadable input, an --out path that cannot be written).
 """
 
 import argparse
@@ -171,4 +174,7 @@ def main(argv=None):
 
 
 if __name__ == "__main__":
+    for _stream in (sys.stdout, sys.stderr):  # a console that cannot encode the data must not crash
+        if hasattr(_stream, "reconfigure"):
+            _stream.reconfigure(errors="backslashreplace")
     sys.exit(main())

@@ -1,5 +1,33 @@
 # Changelog
 
+## 2.2.1
+
+Figures below are MEASURED in this repository unless labeled otherwise. The scripts check a participant's own work; they are not part of a submission.
+
+### Fixed
+- `claim_audit.py` exits 3 and `selfcheck.py` reports the claims section as UNKNOWN when no claim could be checked; v2.2.0 reported PASS after checking nothing. The repo's own live count is now phrased so it is audited (README, this section, `docs/COVERAGE.md`): 119 tests. Older release sections keep historic counts in a form the audit does not match ("test count at the 2.2.0 release: 102"), and a test enforces that, so a past number never becomes a false mismatch.
+- `package_skill.py --install --force` deleted the installed copy before copying; a failed copy left nothing. It now builds and validates the new copy beside the old one, swaps it in, and restores the old copy (folder, file or symlink, which is replaced and never followed) on any failure.
+- Hostile-input hunting, four rounds, 9 reproduced defects, all fixed with a failing test first:
+  - Round 1 (3): `run_trigger_evals.py` raised tracebacks on a missing, directory, non-UTF-8 or non-JSON eval or skill file, and exited 0 on an empty eval list; `check_log.py --profile` crashed on a non-object JSON and silently ignored wrong-typed or misspelled keys; four scripts did not document their exit codes.
+  - Round 2 (3): JSON nested 100,000 deep raised `RecursionError` in four scripts; `usage_report.py` crashed on null records, list-valued models and NaN or infinite token counts, and summed negative or boolean counts, negative prices and a negative `--requests`; out-of-range numeric options (`--min-length 0`, negative `--show`, NaN `--threshold` and others) were accepted.
+  - Round 3 (2): a console that cannot encode the data (ASCII, or cp1252 and cp437 on Windows) turned printed values into `UnicodeEncodeError` in five CLIs; `claim_audit.py --repo` naming a file reported every test claim as a mismatch against 0.
+  - Round 4 (1): on Python 3.9 to 3.11 a NUL byte in a participant's `.py` file crashed `interview_drill.py` and aborted `corpus_literals.py` and `claim_audit.py`.
+  - Round 4 still found a defect, so no clean round was reached within the four-round limit.
+
+### Added
+- `tests/test_cli_matrix.py`: runs all 13 scripts and tools as subprocesses against 24 hostile input classes (binary, empty, header-only, directory, nonexistent, a 3 MB field, NUL, BOM, CR-only and mixed line endings, non-UTF-8, dangling symlink, symlink loop, unreadable, spaces and unicode, a very long path, wrong JSON types, deep JSON, newline or leading dash in a name, symlink to a directory, `/dev/null`, 400,000 lines, unicode content), unwritable output paths, wrong-typed configs, out-of-range options and an ASCII console. Every run must print no traceback and exit with a documented code. Adding a case is one line. Prevents the next crash on input nobody tried.
+
+### Changed
+- Exit codes: `claim_audit.py` adds 3 (nothing checked); `run_trigger_evals.py`, `contract_extract.py`, `interview_drill.py` and `usage_report.py` now document theirs; `validate_skill.py` documents 2 for usage errors.
+- No footprint budget was raised.
+
+### Not done
+- Tags: the git proxy in the build environment refused the push of `v2.1.0` (on 6790467) and `v2.2.0` (on f6d9834) again; `git ls-remote --tags origin` shows none. The owner has to create them on GitHub.
+- Trigger accuracy against a live model: UNKNOWN. `ANTHROPIC_API_KEY` and `TRIGGER_EVAL_MODEL` were not set. The offline proxy is unchanged: precision 0.72, recall 0.59 (MEASURED, proxy only). The description was not changed.
+- Leaderboard per-stage figures: still INFERRED; the leaderboard pages refuse automated fetches (robots) and the API was unreachable.
+- Toolkit digest: still secondhand; a search found no `hackerrank-orchestrate-skills` repository.
+- October 2026 edition: UNKNOWN. The challenge page (read 2026-10-13) links no starter repository, and the candidate repository names are not public. No profile was added.
+
 ## 2.2.0
 
 Figures below are MEASURED in this repository unless labeled otherwise. The scripts check a participant's own work; they are not part of a submission.

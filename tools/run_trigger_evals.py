@@ -19,12 +19,17 @@ Modes:
 Splits: each query is assigned to "train" or "test" by a stable hash, so a description
 can be tuned on train and reported on test (--split train|test|all).
 
+Exit codes: 0 when done (or live mode without a key, which prints UNKNOWN); 1 when the
+offline proxy falls below --min-precision or --min-recall; 2 on usage errors, including
+an unreadable, malformed or empty eval file or SKILL.md.
+
 Standard library only. The only network access is --live.
 """
 
 import argparse
 import hashlib
 import json
+import math
 import os
 import re
 import sys
@@ -58,11 +63,11 @@ def stems(words):
 
 
 def read_skill(path):
-    with open(path, encoding="utf-8") as fh:
+    with open(path, encoding="utf-8-sig") as fh:
         text = fh.read()
     m = re.match(r"^---\n(.*?)\n---\n", text, re.S)
     if not m:
-        raise SystemExit(f"error: {path} has no frontmatter")
+        raise ValueError(f"{path} has no frontmatter")
     fields = {}
     for line in m.group(1).splitlines():
         if ":" in line and not line.startswith(" "):
@@ -76,8 +81,12 @@ def split_of(query):
 
 
 def load_evals(path, split):
-    with open(path, encoding="utf-8") as fh:
+    with open(path, encoding="utf-8-sig") as fh:
         evals = json.load(fh)
+    if not (isinstance(evals, list) and evals and all(
+            isinstance(e, dict) and isinstance(e.get("query"), str) and isinstance(e.get("should_trigger"), bool)
+            for e in evals)):
+        raise ValueError(f"{path} must be a non-empty JSON list of {{\"query\": str, \"should_trigger\": bool}}")
     for e in evals:
         e["split"] = split_of(e["query"])
     return [e for e in evals if split == "all" or e["split"] == split]
@@ -175,6 +184,33 @@ def live(args, name, desc, evals):
     return 0
 
 
+def bounded_int(low):
+    """argparse type: a whole number of at least low (out-of-range values used to be accepted)."""
+    def parse(text):
+        try:
+            n = int(text)
+        except ValueError:
+            raise argparse.ArgumentTypeError(f"expected a whole number, got {text!r}")
+        if n < low:
+            raise argparse.ArgumentTypeError(f"must be at least {low}, got {n}")
+        return n
+    return parse
+
+
+def bounded_float(low, high=None):
+    """argparse type: a finite number in [low, high] (NaN and out-of-range values used to be accepted)."""
+    def parse(text):
+        try:
+            x = float(text)
+        except ValueError:
+            raise argparse.ArgumentTypeError(f"expected a number, got {text!r}")
+        if not math.isfinite(x) or x < low or (high is not None and x > high):
+            rng = f"between {low} and {high}" if high is not None else f"at least {low}"
+            raise argparse.ArgumentTypeError(f"must be {rng}, got {text!r}")
+        return x
+    return parse
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     mode = ap.add_mutually_exclusive_group(required=True)
@@ -183,21 +219,28 @@ def main(argv=None):
     ap.add_argument("--evals", default=DEFAULT_EVALS)
     ap.add_argument("--skill", default=DEFAULT_SKILL, help="SKILL.md whose name and description are tested")
     ap.add_argument("--split", choices=["train", "test", "all"], default="all")
-    ap.add_argument("--threshold", type=float, default=0.3, help="offline: overlap share that counts as a trigger")
-    ap.add_argument("--min-precision", type=float, help="offline: exit 1 if proxy precision is below this")
-    ap.add_argument("--min-recall", type=float, help="offline: exit 1 if proxy recall is below this")
+    ap.add_argument("--threshold", type=bounded_float(0, 1), default=0.3, help="offline: overlap share that counts as a trigger")
+    ap.add_argument("--min-precision", type=bounded_float(0, 1), help="offline: exit 1 if proxy precision is below this")
+    ap.add_argument("--min-recall", type=bounded_float(0, 1), help="offline: exit 1 if proxy recall is below this")
     ap.add_argument("--model", help="live: model id to query (required for --live)")
-    ap.add_argument("--runs", type=int, default=3, help="live: runs per query")
-    ap.add_argument("--timeout", type=int, default=60, help="live: seconds per request")
-    ap.add_argument("--delay", type=float, default=0.2, help="live: seconds between requests")
+    ap.add_argument("--runs", type=bounded_int(1), default=3, help="live: runs per query")
+    ap.add_argument("--timeout", type=bounded_int(1), default=60, help="live: seconds per request")
+    ap.add_argument("--delay", type=bounded_float(0), default=0.2, help="live: seconds between requests")
     args = ap.parse_args(argv)
 
-    name, desc = read_skill(args.skill)
-    evals = load_evals(args.evals, args.split)
+    try:
+        name, desc = read_skill(args.skill)
+        evals = load_evals(args.evals, args.split)
+    except (OSError, ValueError, RecursionError) as exc:  # bad or too deeply nested JSON, non-UTF-8 bytes
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
     if args.offline:
         return offline(args, name, desc, evals)
     return live(args, name, desc, evals)
 
 
 if __name__ == "__main__":
+    for _stream in (sys.stdout, sys.stderr):  # a console that cannot encode the data must not crash
+        if hasattr(_stream, "reconfigure"):
+            _stream.reconfigure(errors="backslashreplace")
     sys.exit(main())

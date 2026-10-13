@@ -12,8 +12,9 @@ Checks (each section of the config is optional):
   corpus_literals corpus_literals.py: code literals copied from the dataset
   claims          claim_audit.py: numbers in docs versus the live repo (hints only)
 
-A section missing from the config prints UNKNOWN, never PASS. A configured file that
-does not exist is FAIL. Results: PASS, WARN, UNKNOWN, FAIL. The exit code is the worst
+A section missing from the config prints UNKNOWN, never PASS, and so does a claims
+section whose docs make no claim that could be checked (claim_audit exit 3). A
+configured file that does not exist is FAIL. Results: PASS, WARN, UNKNOWN, FAIL. The exit code is the worst
 result: 0 PASS, 1 WARN, 2 UNKNOWN, 3 FAIL; 4 means the config itself is unusable.
 Paths in the config are relative to the config file's directory, except claims.exclude,
 which is relative to claims.repo and adds to claim_audit's default (tests/fixtures).
@@ -167,6 +168,8 @@ class Runner:
         for x in c.get("exclude") or []:
             argv += ["--exclude", x]
         rc, out = capture(claim_audit.main, argv)
+        if rc == 3:  # nothing was checked, so nothing passed
+            return "UNKNOWN", last_line(out), out
         if rc not in (0, 1):
             return "FAIL", last_line(out), out
         return ("WARN" if "MISMATCH" in out else "PASS"), last_line(out), out
@@ -227,7 +230,7 @@ def main(argv=None):
             cfg = json.load(fh)
         if not isinstance(cfg, dict):
             raise ValueError("config must be a JSON object")
-    except (OSError, ValueError) as exc:
+    except (OSError, ValueError, RecursionError) as exc:  # RecursionError: JSON nested too deeply
         print(f"error: {exc}", file=sys.stderr)
         return 4
     unknown = set(cfg) - set(CHECKS)
@@ -253,4 +256,7 @@ def main(argv=None):
 
 
 if __name__ == "__main__":
+    for _stream in (sys.stdout, sys.stderr):  # a console that cannot encode the data must not crash
+        if hasattr(_stream, "reconfigure"):
+            _stream.reconfigure(errors="backslashreplace")
     sys.exit(main())

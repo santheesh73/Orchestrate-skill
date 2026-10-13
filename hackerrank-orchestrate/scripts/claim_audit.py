@@ -16,8 +16,13 @@ It scans the given docs for claims like "N tests", "N rows", "N constants" and
   - constants: data rows in the CONSTANTS.md table (--constants)
 
 Mismatches are HINTS, never proof: a doc may describe another set on purpose. Read
-each one and either fix the doc or say why it differs. Exit 0 unless --strict is set,
-in which case any mismatch exits 1. Exit 2 on usage errors.
+each one and either fix the doc or say why it differs. A claim counts as checked only
+when the matching live count was available (a "rows" claim needs --csv, and so on).
+
+Exit codes: 0 when at least one claim was checked (mismatches included, unless
+--strict); 1 with --strict and any mismatch; 2 on usage errors; 3 when no claim could
+be checked, because the docs make none or none matches a live count you supplied. A
+check that examined nothing is not a pass.
 
 Example:
   python claim_audit.py README.md CONSTANTS.md docs/*.md --repo . \
@@ -70,7 +75,7 @@ def count_tests(repo, exclude=DEFAULT_EXCLUDES):
                         with warnings.catch_warnings():  # invalid escapes must not hide a test file
                             warnings.simplefilter("ignore")
                             tree = ast.parse(fh.read())
-                    except SyntaxError:
+                    except (SyntaxError, ValueError, RecursionError):  # ValueError: NUL byte on 3.9-3.11
                         continue
                 n += sum(1 for node in ast.walk(tree)
                          if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name.startswith("test"))
@@ -157,6 +162,9 @@ def main(argv=None):
     if not docs or missing:
         print(f"error: missing {missing or 'docs'}", file=sys.stderr)
         return 2
+    if args.repo and not os.path.isdir(args.repo):
+        print(f"error: --repo {args.repo} is not a directory", file=sys.stderr)
+        return 2
     exclude = ([] if args.no_default_exclude else list(DEFAULT_EXCLUDES)) + args.exclude
     try:
         results, live = audit(docs, args.repo, args.csv, args.constants, exclude)
@@ -169,10 +177,16 @@ def main(argv=None):
         extra = "" if actual is None else f" (live: {', '.join(map(str, actual))})"
         print(f"{status:<9} {doc}:{lineno}: {text!r}{extra}")
     mism = sum(1 for r in results if r[0] == "MISMATCH")
+    checked = sum(1 for r in results if r[0] in ("OK", "MISMATCH"))
     counted = ", ".join(f"{k}s={'/'.join(map(str, v))}" for k, v in live.items()) or "nothing"
-    print(f"{len(results)} claims, {mism} mismatches (hints, not proof); live counts: {counted}")
+    print(f"{len(results)} claims, {checked} checked, {mism} mismatches (hints, not proof); live counts: {counted}")
+    if not checked:
+        return 3
     return 1 if (args.strict and mism) else 0
 
 
 if __name__ == "__main__":
+    for _stream in (sys.stdout, sys.stderr):  # a console that cannot encode the data must not crash
+        if hasattr(_stream, "reconfigure"):
+            _stream.reconfigure(errors="backslashreplace")
     sys.exit(main())

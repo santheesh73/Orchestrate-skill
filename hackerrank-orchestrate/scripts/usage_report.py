@@ -18,10 +18,14 @@ Example:
       --price "model-a=3:15" --requests 250 --out code/evaluation/usage_report.md
 
 Standard library only.
+
+Exit 0 when the report is written, 2 on usage errors (unreadable or malformed log,
+bad --price, an --out path that cannot be written).
 """
 
 import argparse
 import json
+import math
 import sys
 from collections import OrderedDict, defaultdict
 from datetime import datetime, timezone
@@ -38,9 +42,42 @@ def parse_price(spec):
         vals = [float(p) for p in parts]
     except ValueError:
         raise argparse.ArgumentTypeError(f"--price values must be numbers, got {nums!r}")
+    if not all(math.isfinite(v) and v >= 0 for v in vals):
+        raise argparse.ArgumentTypeError(f"--price values must be finite and not negative, got {nums!r}")
     if len(vals) == 2:
         vals += [None, None]
     return model.strip(), vals
+
+
+def positive_int(text):
+    try:
+        n = int(text)
+    except ValueError:
+        raise argparse.ArgumentTypeError(f"expected a whole number, got {text!r}")
+    if n < 1:
+        raise argparse.ArgumentTypeError(f"must be at least 1, got {n}")
+    return n
+
+
+TOKEN_FIELDS = ("input_tokens", "output_tokens", "cache_read_input_tokens", "cache_creation_input_tokens")
+
+
+def record_error(rec):
+    """Why a parsed log line cannot be counted, or None. Wrong types used to crash or be summed."""
+    if not isinstance(rec, dict):
+        return "is not a JSON object"
+    missing = [k for k in ("provider", "model", "input_tokens", "output_tokens") if k not in rec]
+    if missing:
+        return f"is missing {missing}"
+    if not (isinstance(rec["provider"], str) and isinstance(rec["model"], str)):
+        return "has a provider or model that is not a string"
+    for k in TOKEN_FIELDS:
+        v = rec.get(k)
+        if v is None and k not in ("input_tokens", "output_tokens"):
+            continue
+        if isinstance(v, bool) or not isinstance(v, int) or v < 0:
+            return f"has {k} = {v!r}; token counts must be whole numbers, not negative"
+    return None
 
 
 def fmt_int(n):
@@ -56,7 +93,7 @@ def main(argv=None):
     ap.add_argument("log", help="JSONL file, one object per model call")
     ap.add_argument("--run-id", help="only include calls with this run_id (the final full run)")
     ap.add_argument("--price", action="append", default=[], type=parse_price, help="model=in:out[:cache_read:cache_write] in $/MTok")
-    ap.add_argument("--requests", type=int, help="number of input rows in the run (default: distinct request_id values)")
+    ap.add_argument("--requests", type=positive_int, help="number of input rows in the run (default: distinct request_id values)")
     ap.add_argument("--title", default="Token usage and cost report")
     ap.add_argument("--out", help="write the report here (default: stdout)")
     args = ap.parse_args(argv)
@@ -82,15 +119,15 @@ def main(argv=None):
                 continue
             try:
                 rec = json.loads(line)
-            except json.JSONDecodeError:
+            except (json.JSONDecodeError, RecursionError):  # RecursionError: nested too deeply
                 print(f"error: line {lineno} is not valid JSON", file=sys.stderr)
                 return 2
-            if args.run_id is not None and str(rec.get("run_id")) != args.run_id:
+            if args.run_id is not None and isinstance(rec, dict) and str(rec.get("run_id")) != args.run_id:
                 skipped += 1
                 continue
-            missing = [k for k in ("provider", "model", "input_tokens", "output_tokens") if k not in rec]
-            if missing:
-                print(f"error: line {lineno} is missing {missing}", file=sys.stderr)
+            problem = record_error(rec)
+            if problem:
+                print(f"error: line {lineno} {problem}", file=sys.stderr)
                 return 2
             key = (rec["provider"], rec["model"])
             s = stats.setdefault(key, defaultdict(int))
@@ -207,4 +244,7 @@ def main(argv=None):
 
 
 if __name__ == "__main__":
+    for _stream in (sys.stdout, sys.stderr):  # a console that cannot encode the data must not crash
+        if hasattr(_stream, "reconfigure"):
+            _stream.reconfigure(errors="backslashreplace")
     sys.exit(main())

@@ -75,7 +75,7 @@ class NonUtf8Inputs(Tmp):
             self.assertEqual(rc, 2, flag)
             self.assertIn("not valid UTF-8", out)
         rc, out = run(claim_audit, [self.path("bin.md", BINARY), "--repo", self.d])
-        self.assertEqual(rc, 0)  # docs are read leniently: a stray byte must not stop the audit
+        self.assertEqual(rc, 3)  # read leniently, not a crash; exit 3 because the doc makes no claim
 
     def test_corpus_literals_binary_allowlist_is_a_usage_error(self):
         data = self.path("d.csv", "id,v\nabc123,1\n")
@@ -130,7 +130,7 @@ class ParserWarnings(Tmp):
         cfg = self.path("selfcheck.json", json.dumps({"claims": {"docs": ["README.md"], "repo": "."}}))
         rc, out = run(selfcheck, [cfg])
         self.assertNotIn("SyntaxWarning", out)
-        self.assertRegex(out, r"claims\s+PASS\s+1 claims, 0 mismatches")
+        self.assertRegex(out, r"claims\s+PASS\s+1 claims, 1 checked, 0 mismatches")
 
     def test_drill_and_literals_parse_files_that_warn(self):
         p = self.path("code/m.py", WARNY_TEST + "LIMIT = 7\n")
@@ -173,7 +173,7 @@ class CsvShapes(Tmp):
                           (claim_audit, [other, "--csv", nul]),
                           (corpus_literals, ["--data", nul, "--code", other])):
             rc, text = run(mod, args)
-            self.assertIn(rc, (0, 1, 2), mod.__name__)
+            self.assertIn(rc, (0, 1, 2, 3), mod.__name__)
             if sys.version_info < (3, 10):
                 self.assertIn("not parseable as CSV", text, mod.__name__)
 
@@ -215,6 +215,69 @@ class UnwritableOut(Tmp):
             rc, text = run(mod, args + ["--out", bad])
             self.assertEqual(rc, 2, mod.__name__)
             self.assertIn("cannot write", text)
+
+
+
+class UsageRecordTypes(Tmp):
+    """v2.2.1 round 2: a JSON null record, a list as the model name, or a NaN or infinite
+    token count crashed usage_report.py; negative or boolean token counts and negative
+    prices were summed into the report as if real."""
+
+    GOOD = '{"provider":"a","model":"m","input_tokens":1,"output_tokens":2}'
+
+    def report(self, line, *extra):
+        log = self.path("u.jsonl", line + "\n")
+        return run(usage_report, [log, "--price", "m=1:2", "--requests", "1"] + list(extra))
+
+    def test_bad_records_are_usage_errors(self):
+        for line in ("null", "[1]", '{"provider":"a","model":["m"],"input_tokens":1,"output_tokens":2}',
+                     '{"provider":"a","model":"m","input_tokens":NaN,"output_tokens":2}',
+                     '{"provider":"a","model":"m","input_tokens":1e309,"output_tokens":2}',
+                     '{"provider":"a","model":"m","input_tokens":-1,"output_tokens":2}',
+                     '{"provider":"a","model":"m","input_tokens":true,"output_tokens":2}',
+                     '{"provider":"a","model":"m","input_tokens":"5","output_tokens":2}',
+                     '{"provider":"a","model":"m","input_tokens":1,"output_tokens":2,"cache_read_input_tokens":-4}'):
+            rc, out = self.report(line)
+            self.assertEqual(rc, 2, line)
+            self.assertIn("error: line 1", out, line)
+
+    def test_negative_or_non_finite_prices_and_requests_are_rejected(self):
+        for extra in (["--price", "m=-1:2"], ["--price", "m=nan:2"], ["--price", "m=inf:2"], ["--requests", "-3"]):
+            rc, out = self.report(self.GOOD, *extra)
+            self.assertEqual(rc, 2, extra)
+        self.assertEqual(self.report(self.GOOD)[0], 0)
+
+
+
+class ClaimRepoIsAFile(Tmp):
+    """v2.2.1 round 3: --repo naming a file was walked as an empty tree, so every test-count
+    claim was reported as a mismatch against "tests=0" instead of as a usage error."""
+
+    def test_repo_that_is_a_file_is_a_usage_error(self):
+        doc = self.path("x.md", "3 tests\n")
+        rc, out = run(claim_audit, [doc, "--repo", doc])
+        self.assertEqual(rc, 2)
+        self.assertIn("is not a directory", out)
+        rc, out = run(selfcheck, [self.path("c.json", json.dumps({"claims": {"docs": ["x.md"], "repo": "x.md"}}))])
+        self.assertRegex(out, r"claims\s+FAIL")
+
+
+
+class NulInPythonSource(Tmp):
+    """v2.2.1 round 4: on Python 3.9 to 3.11, ast.parse raises ValueError (not SyntaxError)
+    for a NUL byte, so one such file crashed interview_drill and aborted corpus_literals
+    and claim_audit; later Pythons skipped it. Every Python must skip it the same way."""
+
+    def test_nul_source_is_skipped_like_a_syntax_error(self):
+        self.path("code/bad.py", b"X = 1\x00\n")
+        self.path("code/good.py", "LIMIT = 5\n")
+        self.path("code/test_bad.py", b"def test_a():\n    pass\x00\n")
+        self.path("code/test_good.py", "def test_a():\n    pass\n")
+        code = os.path.join(self.d, "code")
+        _, names = interview_drill.scan_paths([code])
+        self.assertIn("LIMIT", names)
+        self.assertEqual(claim_audit.count_tests(code), 1)
+        self.assertEqual(corpus_literals.python_literals(os.path.join(code, "bad.py")), ([], []))
 
 
 if __name__ == "__main__":

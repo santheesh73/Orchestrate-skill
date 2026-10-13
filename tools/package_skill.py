@@ -10,9 +10,10 @@ What it does:
   2. Runs tools/validate_skill.py --standalone on the staged copy; stops on any error.
   3. Writes dist/hackerrank-orchestrate.zip with one top-level folder entry,
      hackerrank-orchestrate/, holding SKILL.md, references/, scripts/ and assets/.
-  4. With --install DIR, also copies the clean folder to DIR/hackerrank-orchestrate
+  4. With --install DIR, also installs the clean folder at DIR/hackerrank-orchestrate
      (for example DIR = .claude/skills). An existing copy there is replaced only with
-     --force.
+     --force, and atomically: the new copy is built and validated beside it first, and
+     on any failure the previous copy is left as it was.
 
 Exit 0 on success, 1 when validation fails, 2 on usage errors. Standard library only;
 no network. The packaged scripts check a participant's own work; they are not part of
@@ -68,6 +69,39 @@ def write_zip(staged, zip_path):
             zf.write(path, SKILL_NAME + "/" + rel.replace(os.sep, "/"))
 
 
+def install(staged, target):
+    """Install atomically: copy into a sibling temp folder, validate it, then swap it in.
+
+    Failure it prevents: a failed copy (full disk, permissions) leaving no installed skill,
+    because the old copy was deleted first. The old copy (a folder, file or symlink, which
+    is replaced, not followed) is moved aside, and deleted only after the new one is in
+    place; on any failure it is moved back. Raises OSError, or ValueError on validation.
+    """
+    parent = os.path.dirname(os.path.abspath(target))
+    os.makedirs(parent, exist_ok=True)
+    work = tempfile.mkdtemp(prefix=".install-", dir=parent)
+    old = None
+    try:
+        new = os.path.join(work, SKILL_NAME)
+        shutil.copytree(staged, new)
+        errors = []
+        validate_skill.check_skill(new, errors)
+        if errors:
+            raise ValueError(f"the copied skill failed validation: {errors[0]}")
+        if os.path.lexists(target):
+            old = os.path.join(work, "previous")
+            os.rename(target, old)
+        try:
+            os.rename(new, target)
+        except OSError:
+            if old:
+                os.rename(old, target)
+                old = None
+            raise
+    finally:
+        shutil.rmtree(work, ignore_errors=True)  # holds the old copy only after a successful swap
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--skill-dir", default=os.path.join(ROOT, SKILL_NAME), help="skill folder to package")
@@ -80,7 +114,7 @@ def main(argv=None):
         print(f"error: no SKILL.md in {args.skill_dir}", file=sys.stderr)
         return 2
     target = os.path.join(os.path.expanduser(args.install), SKILL_NAME) if args.install else None
-    if target and os.path.exists(target) and not args.force:
+    if target and os.path.lexists(target) and not args.force:
         print(f"error: {target} exists; pass --force to replace it", file=sys.stderr)
         return 2
 
@@ -105,17 +139,17 @@ def main(argv=None):
         print(f"wrote {zip_path}: {n} files, {os.path.getsize(zip_path)} bytes; staged copy validated")
         if target:
             try:
-                if os.path.isdir(target) and not os.path.islink(target):
-                    shutil.rmtree(target)
-                elif os.path.lexists(target):
-                    os.remove(target)
-                shutil.copytree(staged, target)
-            except OSError as exc:
-                print(f"error: cannot install to {target}: {exc.strerror}", file=sys.stderr)
+                install(staged, target)
+            except (OSError, ValueError) as exc:
+                reason = exc.strerror if isinstance(exc, OSError) and exc.strerror else exc
+                print(f"error: cannot install to {target}: {reason}; any previous copy is unchanged", file=sys.stderr)
                 return 2
             print(f"installed {target}")
     return 0
 
 
 if __name__ == "__main__":
+    for _stream in (sys.stdout, sys.stderr):  # a console that cannot encode the data must not crash
+        if hasattr(_stream, "reconfigure"):
+            _stream.reconfigure(errors="backslashreplace")
     sys.exit(main())
