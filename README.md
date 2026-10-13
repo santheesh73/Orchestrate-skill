@@ -179,6 +179,8 @@ The skill keeps one canonical list of 14 hard rules in [`SKILL.md`](hackerrank-o
 python tools/package_skill.py --install .claude/skills   # clean, validated copy; add --force to replace one
 ```
 
+With `--force`, the new copy is built and validated beside the old one and swapped in; if anything fails, the old copy stays as it was.
+
 A plain `cp -r hackerrank-orchestrate .claude/skills/` also works, but it copies any `__pycache__` folders left by running the scripts.
 
 **Claude.ai:** run `python tools/package_skill.py` and upload `dist/hackerrank-orchestrate.zip` as a custom skill. The zip holds one top-level `hackerrank-orchestrate/` folder with `SKILL.md` in it, and leaves out caches, tests and fixtures. Packaging stops if the staged copy fails validation.
@@ -203,7 +205,7 @@ The interview opens in two hours. Build my drill from code/ and quiz me.
 
 ### Checker scripts
 
-Standard-library Python 3.9+, nothing to install, no network. Each takes paths and schemas as arguments and embeds no dataset. Bad input (non-UTF-8 files, CR-only or NUL-containing CSVs, very long fields, broken symlinks, a malformed config) gives a one-line error and exit code, not a traceback; `tests/test_hostile_inputs.py` holds those cases.
+Standard-library Python 3.9+, nothing to install, no network. Each takes paths and schemas as arguments and embeds no dataset. Bad input (non-UTF-8 files, CR-only or NUL-containing CSVs, very long fields, broken symlinks, a malformed config) gives a one-line error and a documented exit code, not a traceback. `tests/test_cli_matrix.py` runs every script and tool against every input class on each test run; `tests/test_hostile_inputs.py` holds the individual regressions.
 
 | Script | What it catches |
 |---|---|
@@ -286,7 +288,7 @@ Every link above was fetched on 2026-10-13 and loaded. The community `hackerrank
 - **Trigger accuracy against a live model: UNKNOWN.** `tools/run_trigger_evals.py --live` exists but has not been run, because no API key was available where this was built. What *was* measured is an offline lexical-overlap proxy over the 44 cases in `evals/triggers.json` (22 should trigger, 22 should not): precision 0.72, recall 0.59 at threshold 0.3 (MEASURED, proxy only; it is not model behavior).
 - **Leaderboard per-stage figures in `references/rubric.md` are INFERRED.** They were computed by orchestrate-loop from public leaderboard data; the leaderboard API was not reachable here to re-derive them.
 - **The toolkit digest in `references/kit-repo.md` is secondhand.** The toolkit repository could not be located, so its commands are unverified.
-- **Script behavior is MEASURED** by the 114 tests in `tests/`, run on Python 3.9, 3.11 and 3.13 (CI matrix). The fixtures are small and synthetic; real starter repos may differ, and the log-format profiles cover only the editions whose starters were public. Each profile states its provenance: `sept-2026` and `june-2026` are VERIFIED against the official starters' `AGENTS.md`, except that `june-2026`'s strict tool-name checks are INFERRED from September; `template` is UNKNOWN until filled.
+- **Script behavior is MEASURED** by the 119 tests in `tests/`, run on Python 3.9, 3.11 and 3.13 (CI matrix). The fixtures are small and synthetic; real starter repos may differ, and the log-format profiles cover only the editions whose starters were public. Each profile states its provenance: `sept-2026` and `june-2026` are VERIFIED against the official starters' `AGENTS.md`, except that `june-2026`'s strict tool-name checks are INFERRED from September; `template` is UNKNOWN until filled.
 - **Context footprint is ESTIMATED** by `tools/footprint.py` as characters / 4, not by a tokenizer. The budgets in `tools/validate_skill.py` are the measured sizes plus about 10%.
 - Not affiliated with or endorsed by HackerRank.
 

@@ -197,5 +197,97 @@ class HostileSkillFolders(unittest.TestCase):
         self.assertIn("cannot install", text)
 
 
+
+class AtomicInstall(unittest.TestCase):
+    """v2.2.1 (D5): --install --force deleted the installed copy before copying the new one,
+    so a failed copy left the user with no skill at all."""
+
+    def setUp(self):
+        self.d = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, self.d)
+        self.inst = os.path.join(self.d, "skills")
+        self.target = os.path.join(self.inst, "hackerrank-orchestrate")
+        os.makedirs(self.target)
+        with open(os.path.join(self.target, "SKILL.md"), "w", encoding="utf-8") as fh:
+            fh.write("OLD COPY\n")
+
+    def old_copy_intact(self):
+        with open(os.path.join(self.target, "SKILL.md"), encoding="utf-8") as fh:
+            self.assertEqual(fh.read(), "OLD COPY\n")
+        self.assertEqual(sorted(os.listdir(self.inst)), ["hackerrank-orchestrate"])  # no temp debris
+
+    def install(self, *extra):
+        return run(package_skill, ["--out", os.path.join(self.d, "dist"), "--install", self.inst] + list(extra))
+
+    def test_failure_mid_copy_keeps_the_old_copy(self):
+        real = shutil.copytree
+
+        def broken(src, dst, *a, **k):
+            if dst.startswith(self.inst):
+                os.makedirs(dst)
+                with open(os.path.join(dst, "SKILL.md"), "w") as fh:
+                    fh.write("half")
+                raise OSError(28, "No space left on device")
+            return real(src, dst, *a, **k)
+
+        package_skill.shutil.copytree = broken
+        try:
+            rc, text = self.install("--force")
+        finally:
+            package_skill.shutil.copytree = real
+        self.assertEqual(rc, 2, text)
+        self.assertIn("cannot install", text)
+        self.old_copy_intact()
+
+    def test_failure_at_the_swap_restores_the_old_copy(self):
+        real, calls = os.rename, []
+
+        def flaky(src, dst):
+            calls.append((src, dst))
+            if len(calls) == 2:  # moving the new copy into place
+                raise OSError(13, "Permission denied")
+            return real(src, dst)
+
+        package_skill.os.rename = flaky
+        try:
+            rc, text = self.install("--force")
+        finally:
+            package_skill.os.rename = real
+        self.assertEqual(rc, 2, text)
+        self.old_copy_intact()
+
+    def test_force_replaces_and_leaves_no_debris(self):
+        self.assertEqual(self.install()[0], 2)
+        self.old_copy_intact()
+        rc, text = self.install("--force")
+        self.assertEqual(rc, 0, text)
+        self.assertEqual(sorted(os.listdir(self.inst)), ["hackerrank-orchestrate"])
+        rc, text = run(validate_skill, ["--skill-dir", self.target, "--standalone"])
+        self.assertEqual(rc, 0, text)
+
+    def test_target_that_is_a_file(self):
+        shutil.rmtree(self.target)
+        with open(self.target, "w") as fh:
+            fh.write("a file")
+        self.assertEqual(self.install()[0], 2)
+        self.assertTrue(os.path.isfile(self.target))
+        self.assertEqual(self.install("--force")[0], 0)
+        self.assertTrue(os.path.isfile(os.path.join(self.target, "SKILL.md")))
+
+    @unittest.skipUnless(hasattr(os, "symlink"), "needs symlinks")
+    def test_target_that_is_a_symlink_is_replaced_not_followed(self):
+        elsewhere = os.path.join(self.d, "elsewhere")
+        os.rename(self.target, elsewhere)
+        try:
+            os.symlink(elsewhere, self.target)
+        except OSError:
+            self.skipTest("symlinks not permitted here")
+        self.assertEqual(self.install()[0], 2)
+        self.assertEqual(self.install("--force")[0], 0)
+        self.assertFalse(os.path.islink(self.target))
+        with open(os.path.join(elsewhere, "SKILL.md"), encoding="utf-8") as fh:
+            self.assertEqual(fh.read(), "OLD COPY\n")  # the link's target was not touched
+
+
 if __name__ == "__main__":
     unittest.main()
