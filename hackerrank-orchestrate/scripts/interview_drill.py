@@ -160,7 +160,8 @@ def walk(root, skip=SKIP_DIRS):
         dirnames[:] = sorted(d for d in dirnames if d not in skip and not d.startswith("."))
         for f in sorted(filenames):
             p = os.path.join(dirpath, f)
-            yield p, os.path.relpath(p, root)
+            if os.path.isfile(p):  # skips dangling symlinks
+                yield p, os.path.relpath(p, root)
 
 
 def scan_paths(paths, include_tests=False):

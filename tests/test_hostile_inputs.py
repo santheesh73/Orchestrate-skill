@@ -14,6 +14,8 @@ ROOT = os.path.join(HERE, "..")
 sys.path.insert(0, os.path.join(ROOT, "hackerrank-orchestrate", "scripts"))
 
 import claim_audit  # noqa: E402
+import preflight  # noqa: E402
+import rerun_diff  # noqa: E402
 import corpus_literals  # noqa: E402
 import interview_drill  # noqa: E402
 import selfcheck  # noqa: E402
@@ -132,6 +134,65 @@ class ParserWarnings(Tmp):
             strings, _ = corpus_literals.python_literals(p)
         self.assertIn("LIMIT", names)
         self.assertTrue(strings)
+
+
+class CsvShapes(Tmp):
+    """Round 2: classic-Mac line endings (CR only) and one field over the csv module's
+    131072-character default limit raised csv.Error tracebacks in every CSV reader."""
+
+    CR = "id,status\r1,ok\r2,ok\r"
+    LONG = "id,status\n1," + "a" * 200000 + "\n2,ok\n"
+
+    def test_cr_only_and_long_fields_parse_in_every_reader(self):
+        for name, text in (("cr.csv", self.CR), ("long.csv", self.LONG)):
+            p = self.path(name, text)
+            rows, _ = preflight.read_csv(p)
+            self.assertEqual(len(rows), 3, name)
+            self.assertEqual(len(rerun_diff.load(p, "id")[1]), 2, name)
+            self.assertEqual(claim_audit.count_csv_rows(p), 2, name)
+            self.assertEqual(len(corpus_literals.read_csv(p)[1]), 2, name)
+
+    def test_cr_only_output_passes_preflight(self):
+        out = self.path("o.csv", self.CR)
+        rc, text = run(preflight, [out, "--columns", "id,status", "--enum", "status=ok"])
+        self.assertEqual(rc, 0, text)
+        self.assertIn("2 rows checked", text)
+
+    def test_nul_byte_is_never_a_traceback(self):
+        """Python 3.9's csv module rejects NUL bytes; later versions accept them."""
+        nul = self.path("nul.csv", "id,status\n1,o\x00k\n")
+        other = self.path("ok.csv", "id,status\n1,ok\n")
+        for mod, args in ((preflight, [nul, "--columns", "id,status"]),
+                          (rerun_diff, ["--id-col", "id", nul, other]),
+                          (claim_audit, [other, "--csv", nul]),
+                          (corpus_literals, ["--data", nul, "--code", other])):
+            rc, text = run(mod, args)
+            self.assertIn(rc, (0, 1, 2), mod.__name__)
+            if sys.version_info < (3, 10):
+                self.assertIn("not parseable as CSV", text, mod.__name__)
+
+
+@unittest.skipUnless(hasattr(os, "symlink"), "needs symlinks")
+class DanglingSymlinks(Tmp):
+    """Round 2: a dangling symlink in a participant's code folder (a moved file, a stale
+    venv link) crashed interview_drill and stopped corpus_literals and claim_audit."""
+
+    def setUp(self):
+        super().setUp()
+        self.code = os.path.dirname(self.path("code/a.py", "LIMIT = 5\n"))
+        try:
+            os.symlink(os.path.join(self.d, "gone.py"), os.path.join(self.code, "dangling.py"))
+            os.symlink(os.path.join(self.d, "gone.py"), os.path.join(self.code, "test_gone.py"))
+        except OSError:
+            self.skipTest("symlinks not permitted here")
+
+    def test_scanners_skip_dangling_links(self):
+        _, names = interview_drill.scan_paths([self.code])
+        self.assertIn("LIMIT", names)
+        data = self.path("d.csv", "id,v\nabc123,1\n")
+        rc, text = run(corpus_literals, ["--data", data, "--code", self.code])
+        self.assertEqual(rc, 0, text)
+        self.assertEqual(claim_audit.count_tests(self.code), 0)
 
 
 if __name__ == "__main__":

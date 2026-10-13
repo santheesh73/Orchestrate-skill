@@ -37,6 +37,9 @@ import re
 import sys
 import warnings
 
+# A justification can exceed the csv module's 131072-character default field limit.
+csv.field_size_limit(min(sys.maxsize, 2**31 - 1))
+
 CLAIM_RE = re.compile(r"\b(\d[\d,]*)\s+(?:unit\s+|passing\s+|labeled\s+|sample\s+|input\s+|output\s+)?"
                       r"(tests?|rows?|constants?|requests?)\b", re.I)
 SKIP_DIRS = {".git", "__pycache__", "node_modules", ".venv", "venv", "env", "dist", "build"}
@@ -61,7 +64,7 @@ def count_tests(repo, exclude=DEFAULT_EXCLUDES):
             p = os.path.join(dirpath, f)
             if excluded(os.path.relpath(p, repo), exclude):
                 continue
-            if f.endswith(".py") and (f.startswith("test_") or f.endswith("_test.py")):
+            if f.endswith(".py") and (f.startswith("test_") or f.endswith("_test.py")) and os.path.isfile(p):
                 with open(p, encoding="utf-8-sig", errors="replace") as fh:
                     try:
                         with warnings.catch_warnings():  # invalid escapes must not hide a test file
@@ -86,7 +89,10 @@ def read_utf8(path, encoding="utf-8"):
 
 
 def count_csv_rows(path):
-    rows = list(csv.reader(io.StringIO(read_utf8(path, "utf-8-sig"))))
+    try:
+        rows = list(csv.reader(io.StringIO(read_utf8(path, "utf-8-sig"), newline=None)))
+    except csv.Error as exc:  # e.g. a NUL byte on Python 3.9
+        raise ValueError(f"{path} is not parseable as CSV: {exc}") from None
     return max(len([r for r in rows if any(c.strip() for c in r)]) - 1, 0)
 
 

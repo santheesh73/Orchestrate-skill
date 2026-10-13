@@ -40,6 +40,9 @@ import re
 import sys
 import warnings
 
+# A justification can exceed the csv module's 131072-character default field limit.
+csv.field_size_limit(min(sys.maxsize, 2**31 - 1))
+
 SKIP_DIRS = {".git", "__pycache__", "node_modules", ".venv", "venv", "env", "dist", "build"}
 REGEX_EXTS = {".js", ".ts", ".tsx", ".jsx", ".go", ".java", ".kt", ".rb"}
 STRING_RE = re.compile(r"""(?:"([^"\\\n]{2,})"|'([^'\\\n]{2,})')""")
@@ -55,7 +58,10 @@ def read_utf8(path, encoding="utf-8"):
 
 
 def read_csv(path):
-    rows = list(csv.reader(io.StringIO(read_utf8(path, "utf-8-sig"))))
+    try:
+        rows = list(csv.reader(io.StringIO(read_utf8(path, "utf-8-sig"), newline=None)))
+    except csv.Error as exc:  # e.g. a NUL byte on Python 3.9
+        raise ValueError(f"{path} is not parseable as CSV: {exc}") from None
     return (rows[0], rows[1:]) if rows else ([], [])
 
 
@@ -148,7 +154,8 @@ def walk(root):
         dirnames[:] = sorted(d for d in dirnames if d not in SKIP_DIRS and not d.startswith("."))
         for f in sorted(filenames):
             p = os.path.join(dirpath, f)
-            yield p, os.path.relpath(p, root)
+            if os.path.isfile(p):  # skips dangling symlinks
+                yield p, os.path.relpath(p, root)
 
 
 def load_lines(path):

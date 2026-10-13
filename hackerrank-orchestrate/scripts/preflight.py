@@ -31,6 +31,9 @@ import io
 import sys
 from collections import Counter
 
+# A justification can exceed the csv module's 131072-character default field limit.
+csv.field_size_limit(min(sys.maxsize, 2**31 - 1))
+
 
 def read_csv(path):
     with open(path, encoding="utf-8", newline="") as fh:
@@ -38,7 +41,10 @@ def read_csv(path):
     bom = raw.startswith("﻿")
     if bom:
         raw = raw[1:]
-    rows = list(csv.reader(io.StringIO(raw)))
+    try:
+        rows = list(csv.reader(io.StringIO(raw, newline=None)))
+    except csv.Error as exc:  # e.g. a NUL byte on Python 3.9
+        raise ValueError(f"{path} is not parseable as CSV: {exc}") from None
     return rows, bom
 
 
@@ -82,7 +88,7 @@ def main(argv=None):
         else:
             expected = [c.strip() for c in args.columns.split(",")]
         rows, bom = read_csv(args.output)
-    except (OSError, UnicodeDecodeError) as exc:
+    except (OSError, ValueError) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 1
 
@@ -127,7 +133,7 @@ def main(argv=None):
             if args.inputs:
                 try:
                     irows, _ = read_csv(args.inputs)
-                except (OSError, UnicodeDecodeError) as exc:
+                except (OSError, ValueError) as exc:
                     print(f"error: {exc}", file=sys.stderr)
                     return 2
                 if not irows or args.id_col not in irows[0]:
