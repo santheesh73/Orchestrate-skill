@@ -27,6 +27,9 @@ PERSONAL_MARKERS = [re.compile(p, re.I) for p in (r"global\s+#\s*\d", r"\b\d{1,3
                                                     r"\bmy (score|rank)\b")]
 MAX_BODY_LINES = 80
 MAX_DESC = 900
+# Context budgets in characters, set at the size measured for v2.2.0 plus about 10%
+# (tools/footprint.py reports the same parts). Raise one only on purpose.
+FOOTPRINT_BUDGETS = {"skill_body": 7600, "always_loaded": 8500, "on_demand": 167000}
 LINE_LIMITS = {"references/behind-schedule.md": 40, "references/edition-update.md": 40, "references/kit-repo.md": 90}
 ARCHETYPE_SECTIONS = ("Architecture that held up", "Guards that fit", "Grounding test", "Where rows are lost")
 PROFILE_KEYS = {"name", "entry_regex", "prompt_header", "section_headers", "session_start_title_match",
@@ -53,6 +56,19 @@ def frontmatter(text):
 def read(path):
     with open(path, encoding="utf-8") as fh:
         return fh.read()
+
+
+def on_demand_chars(skill_dir):
+    total = 0
+    for dirpath, dirnames, filenames in os.walk(skill_dir):
+        dirnames[:] = [d for d in dirnames if d != "__pycache__"]
+        for f in filenames:
+            p = os.path.join(dirpath, f)
+            if f.endswith((".pyc", ".pyo")) or os.path.relpath(p, skill_dir) == "SKILL.md":
+                continue
+            with open(p, encoding="utf-8", errors="replace") as fh:
+                total += len(fh.read())
+    return total
 
 
 def check_skill(skill_dir, errors):
@@ -86,6 +102,11 @@ def check_skill(skill_dir, errors):
     body_lines = len(body.strip("\n").splitlines())
     if body_lines >= MAX_BODY_LINES:
         errors.append(f"SKILL.md body is {body_lines} lines; keep it under {MAX_BODY_LINES}")
+    sizes = {"skill_body": len(body), "always_loaded": len(desc) + len(body), "on_demand": on_demand_chars(skill_dir)}
+    for part, limit in sorted(FOOTPRINT_BUDGETS.items()):
+        if sizes[part] > limit:
+            errors.append(f"footprint: {part} is {sizes[part]} characters, over its budget of {limit} "
+                          "(see tools/footprint.py)")
 
     # Hard rules: one numbered, contiguous list in SKILL.md.
     m = re.search(r"^## Hard rules.*?$(.*?)(?=^## )", body, re.S | re.M)
