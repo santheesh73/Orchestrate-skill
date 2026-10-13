@@ -7,12 +7,12 @@ Every tunable number, threshold, window, cap and ordering in the solution. The j
 | | | `path:line` | MEASURED / SPEC / STANDARD / BOUND / JUDGEMENT | | |
 
 Provenance labels:
-- **MEASURED**: an experiment chose it. Name the losing alternative and the change record.
+- **MEASURED**: picked by an experiment. Point to the change record and the value that lost.
 - **SPEC**: fixed by the problem statement or AGENTS.md. Cite the line.
-- **STANDARD**: a canonical value you did not tune. Say exactly that.
-- **BOUND**: derived from an external standard or a hard limit. Cite it.
-- **JUDGEMENT**: reasoned, not measured. Say so.
+- **STANDARD**: a conventional default left untuned. State that plainly.
+- **BOUND**: comes from an outside standard or a hard limit. Give the source.
+- **JUDGEMENT**: argued from reasoning, with no measurement. Admit it.
 
-Never write "chosen after evaluation" for a value that was not swept. A constant whose only source is a distribution read off the samples is not allowed (references/evaluation.md §1).
+Do not describe a value as "chosen after evaluation" unless several values were actually tried. A constant that exists only because the sample distribution suggested it is not allowed (references/evaluation.md §1).
 
 Check coverage with: `python scripts/interview_drill.py code/ --constants CONSTANTS.md`

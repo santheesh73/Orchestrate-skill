@@ -25,5 +25,5 @@ Skip depth inside a gate, never the gate. Every cut below keeps all four artifac
 
 ## Freeze first, verify last
 - Freeze first: architecture, then prompts, then constants, then code.
-- Verify last: the submitted zip, `output.csv` and `log.txt` tell the same story; the usage report describes the run that produced the submitted output.
+- Verify last: the submitted zip, `output.csv` and `log.txt` agree with each other; the usage report describes the run that produced the submitted output.
 - After submitting, sleep before the interview if the window allows.

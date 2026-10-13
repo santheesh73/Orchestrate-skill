@@ -1,6 +1,6 @@
 # Output CSV: the stage top finishers lose
 
-The CSV is 30 points and is the weakest stage for most of the top 50 in public leaderboards. Strong code with a mediocre CSV is the common top-50 profile; a team that also gets the rows right separates. Reserve explicit build time for it (gate 5), not the last hour.
+The CSV is 30 points and is the weakest stage for most of the top 50 in public leaderboards. Many top-50 entries pair strong code with an average CSV, so getting the rows right as well is where a team pulls ahead. Reserve explicit build time for it (gate 5), not the last hour.
 
 ## 1. Contract first
 

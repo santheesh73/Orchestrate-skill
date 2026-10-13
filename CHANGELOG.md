@@ -29,6 +29,7 @@ Figures below are MEASURED in this repository unless labeled otherwise.
 ### Changed
 - `tools/validate_skill.py` checks policy as well as structure: description length, dates and "do not use for" clause; body under 80 lines; one canonical copy of the hard rules; scripts listed in `SKILL.md` both ways with docstrings naming the failure they prevent; `--help` and Python 3.9 syntax; eval counts and duplicates; personal-result markers; `VERSION` matching this file; `--standalone` for an installed copy.
 - CI runs on Python 3.9, 3.11 and 3.13 with `-W error`, runs every script's `--help`, the offline trigger proxy with floors (precision 0.6, recall 0.5), an install test and `selfcheck` on the fixtures.
+- Passages in v2.0.0 that still followed orchestrate-loop's wording closely (the master pattern, the prompt templates, the loop and evaluation pages, the archetype pages, several hard rules and the toolkit digest) are reworded. A check for shared 8-word runs against orchestrate-loop now finds only factual matches: the leaderboard figures, the toolkit's install commands and a file name.
 - Trigger accuracy against a live model remains UNKNOWN. The offline proxy measures precision 0.72 and recall 0.59 at threshold 0.3 (MEASURED, proxy only). The description was not tuned against it.
 
 ### Not ported from orchestrate-loop (deliberately)
@@ -43,7 +44,7 @@ Figures below are MEASURED in this repository unless labeled otherwise.
 First release in this repository. Rebuilt from the earlier `orchestrate-loop` skill.
 
 ### Fixed
-- Removed the contradiction between "revert a fix that contradicts any sample row" and the noise-floor resolution table. The resolution table in `references/evaluation.md` is now the single rule: one labeled row is noise.
+- Removed the contradiction between an earlier rule to revert any fix that disagrees with a single sample row and the noise-floor resolution table. The resolution table in `references/evaluation.md` is now the single rule: one labeled row is noise.
 - Removed the contradiction between "fitted on samples" and the generalization policy. Samples motivate or falsify; the domain justifies.
 - Corrected the claim that a raw Messages API loop is what scored. Graders look for a findable, readable loop; the May 2026 winner used a framework.
 - Removed advice to put design decisions in the README. The code grader reads only source, so rationale lives in docstrings and comments.

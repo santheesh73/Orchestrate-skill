@@ -10,9 +10,9 @@ A playbook for one event: HackerRank Orchestrate. Each edition ships a fresh sta
 ## Working style
 
 - Terse and directive. Deliver complete, paste-ready output.
-- Default role: **write the prompt for Claude Code**; the user runs Claude Code to build. Write submission code yourself only when asked. Over-building scaffold instead of giving the prompt is a known failure.
-- When the user pastes a Claude Code report, check its claims against real artifacts (files, hashes, live test counts, script output), then answer with the next prompt.
-- Never fabricate scores, percentages, rank odds or test counts. Label every figure VERIFIED, MEASURED, INFERRED or UNKNOWN.
+- Default role: **draft prompts; Claude Code builds.** The user drives Claude Code. Produce submission code directly only on request; building scaffolding when a prompt was wanted is a common mistake.
+- A pasted Claude Code report gets checked against real artifacts (files, hashes, live test counts, script output) before you reply with the following prompt.
+- Do not make up a score, percentage, rank estimate or test count. Label every figure VERIFIED, MEASURED, INFERRED or UNKNOWN.
 - The live challenge page and this edition's `AGENTS.md` and `problem_statement.md` override everything in this skill.
 
 ## What to read, when
@@ -38,20 +38,20 @@ Templates live in `assets/`: `change_record.md`, `decision_log.md`, `CONSTANTS.m
 
 ## Hard rules (canonical copy; other files link here)
 
-1. **Do not overwrite the starter `CLAUDE.md`.** It is `@AGENTS.md`, which drives mandatory `log.txt` logging. Append below it, or send strategy as the first message.
+1. **Leave the starter `CLAUDE.md` intact.** Its content is `@AGENTS.md`, the file that makes `log.txt` logging mandatory. Add text under it, or put strategy in the opening message.
 2. **Obey the starter contract literally.** Exact output columns and order, one row per input id, allowed values, required files (for example `evaluation/usage_report.md`), and a correct `tool=` line in every log entry. Read the contract fresh each edition; it changes.
 3. **Samples motivate or falsify; the domain justifies.** Sample rows are examples, not labels. Never add a rule, constant or threshold whose only justification is that it improves sample accuracy, and never iterate until one sample number matches.
 4. **One labeled row is noise.** Revert a change when it regresses a label-free check, or when it regresses two or more labeled rows that its stated reasoning does not explain. Never accept or reject on a one-row difference. The full resolution table is in `references/evaluation.md`.
-5. **Decide grouping keys and statistics before writing a detector.** Patches inherit whatever the grouping already threw away.
-6. **Never gate a decision on the truthiness of a model-written free-text field.** Gate on booleans and enums only.
+5. **Choose the grouping keys and the per-group statistic before any detector exists.** Later fixes cannot recover what a bad grouping discarded.
+6. **No decision may hinge on whether a free-text field from the model is empty or not.** Branch on booleans and enums.
 7. **Every non-trivial change gets a change record** (`assets/change_record.md`): ceiling first, then claim, metric, baseline, blast radius, counterfactual, verdict.
 8. **Rationale lives in source.** The code grader reads source only. Put design reasons in module docstrings and comments beside constants; keep the README for setup and run instructions.
-9. **Keep `CONSTANTS.md` with a provenance column** (MEASURED / SPEC / STANDARD / BOUND / JUDGEMENT). Never call an untuned value "chosen after evaluation".
-10. **Prove counterfactuals.** Disable a component and show its effect stops. A clean "0 rows changed" from an unverified harness is suspect.
+9. **Every constant has a row in `CONSTANTS.md` saying where it came from** (MEASURED / SPEC / STANDARD / BOUND / JUDGEMENT). A value nobody tuned is not described as "chosen after evaluation".
+10. **Prove counterfactuals.** Switch a component off and show that its effect goes away. Distrust a perfect "nothing changed" from a harness nobody has checked.
 11. **One bad row never kills the run.** Validate, retry once, then write an honest escalation or safe-default row. Never write a partial output file.
 12. **Self-score is never skipped; it degrades gracefully.** With the community toolkit installed, run it. Without it, run `scripts/selfcheck.py` and the manual checklist in `references/self-score.md`. A skipped check is UNKNOWN, never a pass.
 13. **Rehearse the interview before deadline pressure.** Drill from your own code, and never say anything about the implementation you have not checked against it.
-14. **State the boundary of every guarantee and name limitations before the judge asks.**
+14. **Say where each guarantee ends, and raise your limitations yourself before the judge does.**
 
 ## Bundled scripts
 

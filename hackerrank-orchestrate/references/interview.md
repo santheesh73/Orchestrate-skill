@@ -38,7 +38,7 @@ Weak to strong:
 | Is it deterministic? | "Yes." | "Given the cached model record, yes; the live provider call is not, and here is the measured noise floor." |
 | Did you overfit? | "No." | The finding / principle / refused-rule triples. |
 | What's your accuracy? | A bare percentage. | The set, its size, and that one row is 3 to 5 points. |
-| More time? | "Polish." | The specific uncertainty and the experiment that resolves it. |
+| More time? | "Polish." | Name what you are unsure of and the experiment that would settle it. |
 
 ## 4. Ownership and honesty
 
@@ -53,7 +53,7 @@ Claims never to make unless directly supported: "I wrote every line myself"; unq
 - Drill file answered against the code.
 - One row traced end to end.
 - Three rejections memorized with numbers.
-- Boundary sentence for every guarantee.
-- `git log` read.
-- Two limitations chosen to volunteer.
+- For each guarantee, one sentence on where it stops holding.
+- Read through `git log` once.
+- Pick two limitations you will raise unprompted.
 - Sleep protected; do not rehearse for the first time under deadline pressure.

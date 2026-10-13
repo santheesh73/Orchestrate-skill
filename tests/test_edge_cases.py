@@ -265,7 +265,7 @@ class Validator(Tmp):
         dest = self.copy_skill()
         self.edit(os.path.join(dest, "references", "evaluation.md"), "# Evaluation and anti-overfitting",
                   "# Evaluation and anti-overfitting\n\nOne labeled row is noise.")
-        self.edit(os.path.join(dest, "SKILL.md"), "\n5. **Decide grouping", "\n6. **Decide grouping")
+        self.edit(os.path.join(dest, "SKILL.md"), "\n5. **Choose the grouping", "\n6. **Choose the grouping")
         errs = "\n".join(self.errors(dest))
         self.assertIn("hard rule 4 is restated verbatim", errs)
         self.assertIn("numbered 1..N contiguously", errs)

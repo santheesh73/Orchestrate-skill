@@ -2,7 +2,7 @@
 
 `hackerrank-orchestrate-skills` is a community repository (not affiliated with HackerRank or with this skill) with auto-triggering skills and a zero-dependency Python CLI that audits a submission repo. **This skill never depends on it:** `self-score.md` Path A and `scripts/selfcheck.py` are a complete gate without it.
 
-**Secondhand digest.** The toolkit repository could not be located from here on 2026-10-13. This page restates, in its own words, the toolkit as described by [orchestrate-loop](https://github.com/bsrikumar855-dot/orchestrate-loop), which read it at a commit titled "Phase 2: experiment tracker + live score delta loop". Commands may have changed; trust the toolkit's own `--help` over this page.
+**Secondhand digest.** The toolkit repository could not be located from here on 2026-10-13. This page restates, in its own words, the toolkit as described by [orchestrate-loop](https://github.com/bsrikumar855-dot/orchestrate-loop), which read it at one specific commit (its second development phase, which added an experiment tracker). Commands may have changed; trust the toolkit's own `--help` over this page.
 
 ## Install (if the user has it)
 
@@ -22,41 +22,42 @@ python -m orchestrate_kit selftest
 | `evaluate <repo>` | Is it shippable? Blockers print first; exit 2 on any blocker |
 | `certify <repo>` | Stricter: anything above INFO fails (exit 3) |
 | `release <repo>` | Final gate with manual items; the last is the authorship attestation only the participant can make |
-| `selftest` | Plants known defects and checks the audits catch them, plus clean cases that must stay quiet |
+| `selftest` | Seeds deliberate defects to confirm each audit reports them, and clean inputs to confirm it stays silent |
 | `mentor "<proposal>"` | Pre-mortem before building; prints UNKNOWN instead of guessing a gain |
-| `memory why-not / recall / list / search / verify / add` | Rejection log; adding a rejection requires a reconsider-if condition |
-| `interview --persona … --difficulty … [--panel]` | Judge simulator; scores the shape of answers, not their truth |
+| `memory` subcommands (`why-not`, `recall`, `list`, `search`, `verify`, `add`) | A log of rejected ideas; each new entry must say what would make it worth revisiting |
+| `interview --persona … --difficulty … [--panel]` | Practice judge; it grades how an answer is structured and cannot tell whether it is true |
 | `transcript analyze <file>` / `compose "<goal>" --stage …` | Lint a transcript against the published dimensions; fill a prompt blueprint |
 | `score --repo . [--what-if …]` | Estimated four-artifact scoreboard with local history; not a real score |
 | `experiment start / finish / list / compare / frontier / next / plan` | Baseline, change, measure, accept or reject; the tool form of the change-record loop |
 | `viz all --out diagrams/` | Generated architecture diagrams |
 
-Confidence labels on every finding: **measured / observed / inferred / unknown**. A skipped audit is unknown, never a pass.
+Findings are tagged, from strongest to weakest, **measured**, **observed**, **inferred** or **unknown**, and an audit that did not run reports unknown rather than passing.
 
 ## The 20-rule playbook, one line each
 
-Evidence: 1 no improvement until a number moves · 2 measure blast radius, not just the win · 3 prove the counterfactual · 4 compute the ceiling first · 5 a rejection is a deliverable.
-Auditing the audit: 6 run a negative control against the test itself · 7 an audit never changes what it audits · 8 measure at the scale and conditions you will run in.
-Regression: 9 pin the output hash and log every re-pin with its cause · 10 keep tests hermetic (no credentials, each file passes alone) · 11 state where each guarantee stops.
-Unseen data: 12 hunt sample coupling (rename ids, reformat timestamps, shuffle rows, sniff file types by bytes, review terms that fire on one row) · 13 separate specified from observed constants · 14 calibrate to the labeling policy, not an ideal.
-Release: 15 rehearse a fresh clone using only the README · 16 generated files are stale until regenerated · 17 docs are production code.
-Reporting: 18 label VERIFIED / MEASURED / INFERENCE / UNKNOWN · 19 name the limitation before you are asked · 20 stop when everything fixable is fixed or what remains is precisely named.
+Paraphrased by theme, numbered as in the toolkit.
+- Evidence: (1) a change counts only once a measured number improves; (2) report every row it moved, not only the gains; (3) switch it off to show the effect vanishes; (4) size the possible gain before starting; (5) record rejected ideas as output in their own right.
+- Checking the checks: (6) feed each test an input it should fail; (7) audits are read-only; (8) test under the same scale and conditions as the real run.
+- Regression: (9) fix a hash of the output and note why each time it is re-fixed; (10) tests need no credentials and run one file at a time; (11) say where each guarantee ends.
+- Unseen data: (12) look for sample coupling by renaming ids, changing timestamp formats, reordering rows, detecting file types from bytes and reviewing terms that match only one row; (13) keep spec constants apart from observed ones; (14) match how the labels were actually assigned, not an ideal.
+- Release: (15) clone fresh and follow only the README; (16) regenerate generated files before trusting them; (17) treat docs with the same care as code.
+- Reporting: (18) give each figure an evidence label; (19) volunteer the limitations; (20) finish when all fixable items are fixed or the rest are named exactly.
 
 ## Release gate, cheapest checks first
 
-0. Clean working tree; regenerate artifacts to a temp path and compare hashes; fresh clone following only the README; each test file passes alone.
-1. Literal spec conformance: column names and order, separators, allowed values, one output per input. (`scripts/preflight.py`)
-2. Evidence for each change: metric, gain and cost, blast radius, counterfactual, ceiling, logged rejections.
-3. Trust the tests: negative controls; audits never write to ground truth; diff every artifact after the full suite.
-4. Regression: golden hash pinned; every fixed defect has a test that fails without the fix.
+0. Nothing uncommitted; rebuild the artifacts into a scratch directory and compare hashes; clone fresh and use only the README; run every test file by itself.
+1. The spec, read literally: column names and their order, delimiters, permitted values, exactly one output row per input. (`scripts/preflight.py`)
+2. Every change backed by evidence: its metric, what it gained and cost, which rows moved, the switched-off comparison, the ceiling, the logged rejections.
+3. Tests you can believe: each has an input it must fail; no audit modifies the reference data; all artifacts compared before and after the full suite.
+4. Regression: the output hash is pinned, and each bug that was fixed has a test that would fail if the fix were removed.
 5. Unseen-data robustness and `CONSTANTS.md` provenance. (`scripts/corpus_literals.py`, `scripts/interview_drill.py`)
 6. Determinism across repeated runs and processes, with the boundary stated. (`scripts/rerun_diff.py`)
 7. Security: injection, path traversal, failure paths that still produce valid output, no secrets.
 8. Docs: every number re-derived today; limitations first. (`scripts/claim_audit.py`)
-9. Verdict: READY or NOT READY with the named blocker.
+9. Verdict: READY, or NOT READY plus the specific item blocking it.
 
 ## Caveats
 
-- Its scores measure the shape of work, not correctness, and not a real HackerRank score. Never quote them as predictions.
+- What it scores is how the work is structured. It cannot judge correctness and it is not a HackerRank score. Never quote them as predictions.
 - Its case-study numbers come from a different edition and dataset; treat them as method examples.
 - Where its playbook and this skill differ, `evaluation.md` is canonical.

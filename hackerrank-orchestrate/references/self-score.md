@@ -42,4 +42,4 @@ Name the weakest artifact and spend the next block of time there.
 
 ## Path B: community toolkit (optional)
 
-If the user has the community `hackerrank-orchestrate-skills` toolkit installed, also run its gates (`orchestrate evaluate .`, `orchestrate mentor "<proposal>"`, and `orchestrate release .` at freeze). See `kit-repo.md`. Its scores measure the shape of the work, not correctness and not a real HackerRank score; never quote them as predictions. If it is not installed, Path A is the complete gate; do not block on the toolkit.
+If the user has the community `hackerrank-orchestrate-skills` toolkit installed, also run its gates (`orchestrate evaluate .`, `orchestrate mentor "<proposal>"`, and `orchestrate release .` at freeze). See `kit-repo.md`. Its scores reflect how the work is structured; they say nothing about correctness and are not HackerRank scores; never quote them as predictions. If it is not installed, Path A is the complete gate; do not block on the toolkit.

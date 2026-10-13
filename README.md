@@ -74,8 +74,8 @@ Labels: **VERIFIED** means read in the organizer's post-mortem; **INFERRED** mea
 
 - **Balance beats a peak.** Every top-10 finisher in May was in the top quartile on all four artifacts (VERIFIED). Most of each top 50 in May, June and August was too (INFERRED).
 - **The output CSV is where strong teams lose.** It was the weakest stage for 49 of the June top 50 and 34 of the August top 50 (INFERRED). Great code with a mediocre CSV is the typical top-50 profile, so getting the rows right is how you separate.
-- **The transcript and interview are cheap points most people leave behind.** Field medians were around 1.4 to 3.8 out of 10 for transcript and 11 to 15 out of 30 for interview, while top-50 averages were 63% to 89% of the maximum (INFERRED).
-- **Simple, explainable architectures win.** A single agent with tools held 7 of the May top 10 (VERIFIED). One June author's earlier 15-stage pipeline finished mid-pack because they couldn't measure what each stage contributed; their next, smaller design did far better (INFERRED, from that author's write-up as summarized in orchestrate-loop).
+- **The transcript and interview are cheap points most people leave behind.** Across the field, the median transcript score sat roughly between 1.4 and 3.8 of 10, and the median interview score between 11 and 15 of 30, while top-50 averages were 63% to 89% of the maximum (INFERRED).
+- **Simple, explainable architectures win.** A single agent with tools held 7 of the May top 10 (VERIFIED). One June author had earlier entered with a 15-stage pipeline and placed mid-table, unable to show what any one stage added; their next, smaller design did far better (INFERRED, from that author's write-up as summarized in orchestrate-loop).
 - **Behavior beats tooling.** Claude Code was used by 44% of the May top 50 versus 14.4% of all transcripts, but the organizer credits *how* people worked: reasoning about tradeoffs, evidence, and visible ownership of decisions (VERIFIED).
 
 ## How to approach it
@@ -193,7 +193,7 @@ The Orchestrate starter repo just dropped. AGENTS.md and problem_statement.md ar
 ```
 
 ```
-Here is the Claude Code report from the last round. Verify it and give me the next iteration prompt.
+Claude Code just finished this round; its report is below. Check it and write my next iteration prompt.
 ```
 
 ```
@@ -289,6 +289,6 @@ MIT licensed. See [LICENSE](LICENSE).
 
 ## Credits
 
-- Ideas, structure and the first set of lessons came from [orchestrate-loop](https://github.com/bsrikumar855-dot/orchestrate-loop), an earlier Orchestrate skill. That repository has no license, so none of its text is copied here; this repository is an independent rewrite that credits it as a source of ideas.
+- Ideas, structure and the first set of lessons came from [orchestrate-loop](https://github.com/bsrikumar855-dot/orchestrate-loop), an earlier Orchestrate skill. That repository has no license, so its prose is not copied here; this repository is an independent rewrite that credits it as a source of ideas. What it shares with orchestrate-loop is factual: the leaderboard figures in `references/rubric.md` (labeled INFERRED, with this credit), the toolkit's command lines, and file and rule names.
 - The optional toolkit digest summarizes the community `hackerrank-orchestrate-skills` toolkit, as described secondhand in orchestrate-loop. Credit for that method belongs to its authors.
 - Neither project is affiliated with this one, and none of them is affiliated with or endorsed by HackerRank.

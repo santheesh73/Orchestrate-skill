@@ -4,19 +4,19 @@ Shape: route, act on or mute incoming messages and media, where some inputs are 
 
 ## Architecture that held up
 
-- **Two-stage isolation for media.** The extraction call (describe image, transcribe audio) has no routing vocabulary. Its output is then fenced as data before the routing call, so injected text in an image arrives as a quoted description.
-- **Ordered rule tiers:** safety overrides, then payment or action authority, then guards, then caps and floors, then the model's proposal as the default. **Caps beat floors,** with one documented guard that can escape a cap. An overridden floor is recorded as overridden, not lost.
-- **Evidence is selected, never generated.** The model never writes an evidence id; a tiered ranking over the receiver's own history picks them from a shortlist, with ownership and strict-past invariants asserted.
+- **Media goes through two separated calls.** The first call only describes or transcribes (images, audio) and is never told what the routing options are. Its result is wrapped as data before the second, routing call sees it, so an instruction hidden in an image reaches the router as a quoted description of that image.
+- **Rules in priority tiers:** safety overrides first, then authority to pay or act, then guards, then caps and floors, and last the model's suggestion as the fallback. **A cap wins over a floor**; exactly one guard, documented, may exceed a cap. When a floor loses, the trace keeps it and marks it overridden.
+- **Evidence ids are chosen from a list, not written.** Code ranks the receiver's own past items in tiers and picks from that shortlist; assertions check that each item belongs to the receiver and predates the current message. The model never types an id.
 - **Confidence computed in code** from named features. Report calibration; never optimize it.
-- **Reason text from a clause grammar** with a register check (length bounds, one sentence, no identifiers). Violations fail the row instead of being truncated, because a silently trimmed reason is a wrong explanation.
+- **Reasons assembled from a small clause grammar,** then checked for register (within length limits, a single sentence, no identifiers). A reason that breaks the check fails its row; cutting it short instead would quietly turn it into a false explanation.
 
 ## Guards that fit
 
-- **Fence untrusted content** with an unguessable nonce. If attacker text contains the fence token, escape it and log an event with a hash, never the content.
-- **A rule for text that addresses the router.** Perception sets a flag when content tries to direct the system, and a hard override fires whether or not the injected claim is true.
-- **Never trust file extensions.** Detect format from magic bytes. In one corpus more than half the media had a wrong extension.
+- **Wrap untrusted content in a random, per-run nonce fence.** Should the hostile text include the fence marker, escape it and log the event by hash only; the content itself never goes in the log.
+- **Text that tries to command the system triggers its own rule.** The perception step flags any attempt to steer the router, and that flag forces a hard override regardless of whether the embedded claim happens to be accurate.
+- **Ignore file extensions.** Identify the format from the file's leading bytes. One corpus had wrong extensions on over half of its media files.
 - **Explicit failure dispositions** (ABORT / DEGRADE / FAIL ROW) with distinct exit codes. Budget exhaustion is ordered: completed calls are cached, so a rerun pays only for the remainder.
-- **Content-addressed cache shipped with the submission,** with an `assert-identical` gate that diffs two runs.
+- **Cache keyed by content hash, included in the submission,** plus an `assert-identical` check comparing the output of two runs.
 
 ## Grounding tests
 
