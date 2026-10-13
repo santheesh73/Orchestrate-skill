@@ -38,7 +38,7 @@ Weights are from the May 2026 post-mortem (VERIFIED; see `hackerrank-orchestrate
 | Six loops: per-row safety | `hackerrank-orchestrate/references/loop-patterns.md` §6 | Adds ABORT / DEGRADE / FAIL ROW dispositions |
 | Phase gates (outer loop) | `hackerrank-orchestrate/references/loop-patterns.md` §7; `hackerrank-orchestrate/references/behind-schedule.md` | Adds what to cut when late |
 | Rubric context | `hackerrank-orchestrate/references/rubric.md` | Every figure labeled VERIFIED or INFERRED |
-| Compliance trap (overwriting `CLAUDE.md`) | `hackerrank-orchestrate/SKILL.md` hard rule 1; `hackerrank-orchestrate/references/starter-contract.md` | Plus the `tool=` rule, checked by `hackerrank-orchestrate/scripts/check_log.py` |
+| Compliance trap (editing `AGENTS.md` or overwriting `CLAUDE.md`) | `hackerrank-orchestrate/SKILL.md` hard rule 1; `hackerrank-orchestrate/references/starter-contract.md` | Plus the `tool=` rule, checked by `hackerrank-orchestrate/scripts/check_log.py` |
 | Prompt templates | `hackerrank-orchestrate/references/prompt-templates.md` | Adds an output-row pass |
 | Winning approaches | `hackerrank-orchestrate/references/winning-approaches.md`; `hackerrank-orchestrate/references/archetypes/index.md` | Per-edition patterns split into archetype pages |
 | Leaderboard readings | `hackerrank-orchestrate/references/rubric.md` §5 | Labeled INFERRED (secondhand) |
@@ -55,7 +55,7 @@ Weights are from the May 2026 post-mortem (VERIFIED; see `hackerrank-orchestrate
 
 | Addition | Failure it prevents |
 |---|---|
-| `hackerrank-orchestrate/scripts/` (9 checkers) and `tests/` (119 tests) | Rules that nobody can run; regressions in the checkers |
+| `hackerrank-orchestrate/scripts/` (9 checkers) and `tests/` (127 tests) | Rules that nobody can run; regressions in the checkers |
 | `hackerrank-orchestrate/assets/editions/` | A log checker that rejects another edition's format |
 | `tools/validate_skill.py` | Structure and policy drift (dates in the trigger, restated rules, missing scripts) |
 | `tools/package_skill.py` | A rejected upload, or dev files shipped inside the skill |
@@ -70,3 +70,20 @@ Weights are from the May 2026 post-mortem (VERIFIED; see `hackerrank-orchestrate
 - The dated next-edition checklist: stale after one edition; replaced by `hackerrank-orchestrate/references/edition-update.md`.
 - Copying the toolkit's skills into `.claude/skills/`: overlapping triggers would compete with this skill.
 - Its text: the repository has no license, so ideas are restated in new wording and credited in the README.
+
+## 5. Portability
+
+The skill is one folder whose `SKILL.md` frontmatter holds only `name` and `description`, so each agent below reads it unchanged. Where it goes, and how sure we are, is in `docs/INSTALL.md`, which is the only place install folders are written down.
+
+| Agent | Evidence (see `docs/INSTALL.md`) | Check here |
+|---|---|---|
+| Claude Code | VERIFIED: loaded and invoked from `.claude/skills/` in one run, not invoked for one near miss | `tools/package_skill.py --for claude` |
+| Claude.ai | DOCS-READ: zip upload | `tools/package_skill.py` builds the zip; `tests/test_tools.py` checks its layout |
+| OpenAI Codex, OpenCode, Google Antigravity, Cursor | DOCS-READ: `.agents/skills/` in the project; running the skill there is UNKNOWN | `tools/package_skill.py --for agents` |
+
+| Guard | Failure it prevents |
+|---|---|
+| `tools/validate_skill.py`: `docs/INSTALL.md` names all six agents; no agent-specific install folder in the `SKILL.md` body | An agent silently dropped from the install guide; one agent's folder baked into the instructions every agent reads |
+| `tests/test_tools.py` (`ProjectInstall`, `PortabilitySmoke`) | A layout that installs differently from the other, or an installed copy whose scripts need the repository, the network or the caller's working directory |
+| `evals/triggers.json` cases phrased by Codex, Cursor, OpenCode and Antigravity users | A trigger that only fires for people who say "Claude" |
+| Hard rule 1 in `hackerrank-orchestrate/SKILL.md` | Editing the starter's `AGENTS.md`, the contract every agent's log is graded against |

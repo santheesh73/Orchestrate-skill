@@ -147,7 +147,8 @@ class Coverage(unittest.TestCase):
                      "accuracy", "safety score", "technical depth", "judgment", "communication", "honesty",
                      "direction and architecture ownership", "technical specificity", "iteration and verification",
                      "safety, edge case", "agent loop", "rubric context", "compliance trap", "prompt templates",
-                     "winning approaches", "toolkit digest", "hard rules", "lessons", "deliberately not ported"):
+                     "winning approaches", "toolkit digest", "hard rules", "lessons", "deliberately not ported",
+                     "portability", "docs/install.md"):
             self.assertIn(item, text)
         self.assertNotIn("| none |", text)
 
