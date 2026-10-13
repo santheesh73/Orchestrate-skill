@@ -80,4 +80,4 @@ Readings from the same data (INFERRED):
 - **The output CSV is the usual weak stage at the top.** It was the weakest stage for 49 of the June top 50 and 34 of the August top 50.
 - **Transcript and interview are cheap points.** Field medians were roughly 1.4 to 3.8 of 10 for transcript and 11 to 15 of 30 for interview.
 
-Interview patterns (VERIFIED, post-mortem): candidates who gave more substantial explanations, with tradeoffs, examples and implementation details, tended to score higher. Weak candidates often contradicted the code or stayed vague, and the number of candidate turns had a weak negative correlation with interview score.
+Interview patterns (VERIFIED, post-mortem): candidates who gave more substantial explanations tended to score higher, and, as a separate finding, specificity (tradeoffs, examples and implementation details) correlated with interview score at r = 0.583. Weak candidates often contradicted the code or stayed vague, and the number of candidate turns had a weak negative correlation with interview score.

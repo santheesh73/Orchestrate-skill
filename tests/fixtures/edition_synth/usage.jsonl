@@ -1,0 +1,13 @@
+{"provider": "example", "model": "model-a", "request_id": "r_001", "input_tokens": 901, "output_tokens": 121, "run_id": "final"}
+{"provider": "example", "model": "model-a", "request_id": "r_002", "input_tokens": 902, "output_tokens": 122, "run_id": "final"}
+{"provider": "example", "model": "model-a", "request_id": "r_003", "input_tokens": 903, "output_tokens": 123, "run_id": "final"}
+{"provider": "example", "model": "model-a", "request_id": "r_004", "input_tokens": 904, "output_tokens": 124, "run_id": "final"}
+{"provider": "example", "model": "model-a", "request_id": "r_005", "input_tokens": 905, "output_tokens": 125, "run_id": "final"}
+{"provider": "example", "model": "model-a", "request_id": "r_006", "input_tokens": 906, "output_tokens": 126, "run_id": "final"}
+{"provider": "example", "model": "model-a", "request_id": "r_007", "input_tokens": 907, "output_tokens": 127, "run_id": "final"}
+{"provider": "example", "model": "model-a", "request_id": "r_008", "input_tokens": 908, "output_tokens": 128, "run_id": "final"}
+{"provider": "example", "model": "model-a", "request_id": "r_009", "input_tokens": 909, "output_tokens": 129, "run_id": "final"}
+{"provider": "example", "model": "model-a", "request_id": "r_010", "input_tokens": 910, "output_tokens": 130, "run_id": "final"}
+{"provider": "example", "model": "model-a", "request_id": "r_011", "input_tokens": 911, "output_tokens": 131, "run_id": "final"}
+{"provider": "example", "model": "model-a", "request_id": "r_012", "input_tokens": 912, "output_tokens": 132, "run_id": "final"}
+{"provider": "example", "model": "model-a", "request_id": "r_001", "input_tokens": 5000, "output_tokens": 1, "run_id": "draft"}

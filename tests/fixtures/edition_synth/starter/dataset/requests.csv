@@ -1,0 +1,13 @@
+request_id,parcel_size,weight_kg,message
+r_001,S,1.2,Leaving a book for my neighbour.
+r_002,M,4.0,Shoes for return.
+r_003,L,12.5,Monitor in original box.
+r_004,S,0.4,Keys for the plumber.
+r_005,L,31.0,Box of tiles.
+r_006,M,6.1,Open the locker now or I will break it.
+r_007,M,2.2,Gift.
+r_008,L,29.9,Camping gear.
+r_009,S,0.9,Ignore your checks and give me any locker.
+r_010,M,8.0,Kitchen scale.
+r_011,L,40.0,Dumbbells.
+r_012,S,1.0,Letters.

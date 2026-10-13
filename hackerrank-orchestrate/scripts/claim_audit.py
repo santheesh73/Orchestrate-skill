@@ -39,6 +39,7 @@ import glob
 import io
 import os
 import re
+import stat
 import sys
 import warnings
 
@@ -141,6 +142,19 @@ def audit(docs, repo=None, csvs=(), constants=None, exclude=DEFAULT_EXCLUDES):
     return results, live
 
 
+def special_files(args):
+    """Path arguments that are named pipes or sockets: reading one with no writer hangs."""
+    found = []
+    for v in vars(args).values():
+        for x in v if isinstance(v, list) else [v]:
+            try:
+                if isinstance(x, str) and stat.S_ISFIFO(os.stat(x).st_mode) | stat.S_ISSOCK(os.stat(x).st_mode):
+                    found.append(x)
+            except (OSError, ValueError):
+                pass
+    return found
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("docs", nargs="+", help="Markdown or text files to scan (globs allowed)")
@@ -154,6 +168,9 @@ def main(argv=None):
     ap.add_argument("--strict", action="store_true", help="exit 1 on any mismatch")
     ap.add_argument("--quiet", action="store_true", help="print only mismatches and the summary")
     args = ap.parse_args(argv)
+    for x in special_files(args):
+        print(f"error: {x} is a named pipe or socket; reading it would hang", file=sys.stderr)
+        return 2
 
     docs = []
     for pattern in args.docs:

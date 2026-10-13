@@ -1,0 +1,13 @@
+{
+  "starter": {"agents_md": "starter/AGENTS.md", "sha256": "221719fd0b822aba707dbae921b18f9fd589c8f62168d3750ef0bc4347de43ef",
+              "claude_md": "starter/CLAUDE.md"},
+  "log": {"path": "log_good.txt", "expect_tool": "Codex", "profile": "sept-2026"},
+  "output": {"path": "runs/output_v2.csv", "template": "starter/dataset/output.csv",
+             "inputs": "starter/dataset/requests.csv", "id_col": "request_id",
+             "enums": {"action": ["assign", "reject", "escalate"], "locker_size": ["S", "M", "L", "none"]},
+             "nonempty": ["justification"]},
+  "usage_report": {"path": "code/evaluation/usage_report.md"},
+  "constants": {"code": ["code"], "constants": "CONSTANTS.md"},
+  "corpus_literals": {"data": ["starter/dataset/requests.csv"], "code": ["code"],
+                      "spec": ["starter/problem_statement.md", "starter/AGENTS.md"]}
+}

@@ -5,7 +5,7 @@ Every edition ships a new starter repo, and the contract in it changes. Points a
 ## Checklist
 
 1. **Read `AGENTS.md`, `problem_statement.md` and `README.md` in full.** Do not skim from a previous edition's memory.
-2. **Leave `AGENTS.md` unedited, and confirm `CLAUDE.md` (if present) is just `@AGENTS.md`.** Add strategy below that import or as the first message.
+2. **Leave `AGENTS.md` unedited, and confirm `CLAUDE.md` (if present) is just `@AGENTS.md`.** Add strategy below that import or as the first message. Run `scripts/selfcheck.py` once with a `starter` section: it prints the sha256 of `AGENTS.md` to record, and every later run fails if the file changed (hard rule 1).
 3. **Extract every MUST into one list**, with the section it came from. `scripts/contract_extract.py STARTER_DIR` drafts it with file:line; confirm every line against the files:
    - output file name and location (for example root-level `output.csv`, not `dataset/output.csv`)
    - exact columns and order, allowed values per column, formats (dates, separators like `YYYY-MM-DD:amount|...`, `none` sentinels)

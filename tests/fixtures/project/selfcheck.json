@@ -1,4 +1,5 @@
 {
+  "starter": {"agents_md": "AGENTS.md", "sha256": "bc00aba677763eac1be2370fbdcc10053a81c36f7cb26a31cf50059c4004b943", "claude_md": "CLAUDE.md"},
   "log": {"path": "log.txt", "expect_tool": "Claude Code", "profile": "sept-2026"},
   "output": {"path": "output.csv", "template": "dataset/output.csv", "inputs": "dataset/requests.csv",
              "id_col": "request_id", "enums": {"status": ["approved", "wait", "declined"]},

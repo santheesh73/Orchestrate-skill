@@ -202,20 +202,32 @@ class DanglingSymlinks(Tmp):
 
 
 class UnwritableOut(Tmp):
-    """Round 2: --out into a folder that does not exist raised FileNotFoundError tracebacks."""
+    """Round 2: --out into a folder that does not exist raised FileNotFoundError tracebacks.
+    2.4.0: the documented example (usage_report.py --out code/evaluation/usage_report.md on a
+    fresh tree) failed with exit 2, so --out now creates missing parent folders. An --out
+    that cannot be created (a parent that is a file, a target that is a folder) stays exit 2."""
 
-    def test_out_into_missing_folder_is_a_usage_error(self):
-        bad = os.path.join(self.d, "no", "such", "report.md")
+    def cases(self):
         starter = os.path.dirname(self.path("starter/AGENTS.md", "You must write output.csv.\n"))
         code = os.path.dirname(self.path("code/a.py", "LIMIT = 5\n"))
         log = self.path("u.jsonl", '{"provider":"a","model":"m","input_tokens":1,"output_tokens":2}\n')
-        for mod, args in ((contract_extract, [starter]),
-                          (interview_drill, [code]),
-                          (usage_report, [log, "--price", "m=1:2", "--requests", "1"])):
-            rc, text = run(mod, args + ["--out", bad])
+        return ((contract_extract, [starter]),
+                (interview_drill, [code]),
+                (usage_report, [log, "--price", "m=1:2", "--requests", "1"]))
+
+    def test_out_into_missing_folder_creates_it(self):
+        for mod, args in self.cases():
+            target = os.path.join(self.d, "new", mod.__name__, "report.md")
+            rc, text = run(mod, args + ["--out", target])
+            self.assertEqual(rc, 0, text)
+            self.assertTrue(os.path.isfile(target), mod.__name__)
+
+    def test_out_under_a_file_is_a_usage_error(self):
+        blocker = self.path("blocker.txt", "x\n")
+        for mod, args in self.cases():
+            rc, text = run(mod, args + ["--out", os.path.join(blocker, "report.md")])
             self.assertEqual(rc, 2, mod.__name__)
             self.assertIn("cannot write", text)
-
 
 
 class UsageRecordTypes(Tmp):

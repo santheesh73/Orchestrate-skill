@@ -32,6 +32,7 @@ import json
 import math
 import os
 import re
+import stat
 import sys
 import time
 import urllib.error
@@ -211,6 +212,19 @@ def bounded_float(low, high=None):
     return parse
 
 
+def special_files(args):
+    """Path arguments that are named pipes or sockets: reading one with no writer hangs."""
+    found = []
+    for v in vars(args).values():
+        for x in v if isinstance(v, list) else [v]:
+            try:
+                if isinstance(x, str) and stat.S_ISFIFO(os.stat(x).st_mode) | stat.S_ISSOCK(os.stat(x).st_mode):
+                    found.append(x)
+            except (OSError, ValueError):
+                pass
+    return found
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     mode = ap.add_mutually_exclusive_group(required=True)
@@ -227,6 +241,9 @@ def main(argv=None):
     ap.add_argument("--timeout", type=bounded_int(1), default=60, help="live: seconds per request")
     ap.add_argument("--delay", type=bounded_float(0), default=0.2, help="live: seconds between requests")
     args = ap.parse_args(argv)
+    for x in special_files(args):
+        print(f"error: {x} is a named pipe or socket; reading it would hang", file=sys.stderr)
+        return 2
 
     try:
         name, desc = read_skill(args.skill)

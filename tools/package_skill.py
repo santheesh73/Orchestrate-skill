@@ -134,6 +134,13 @@ def main(argv=None):
             return 2
         targets += [os.path.join(project, *sub.split("/"), SKILL_NAME)
                     for sub in PROJECT_LAYOUTS[args.layout or "all"]]
+    src = os.path.realpath(args.skill_dir)
+    for place in targets + [args.out]:
+        real = os.path.realpath(place)
+        if real == src or real.startswith(src + os.sep) or src.startswith(real + os.sep) and place != args.out:
+            print(f"error: {place} overlaps the source skill folder {args.skill_dir}; it would replace or "
+                  "pollute the source; nothing written", file=sys.stderr)
+            return 2
     for target in targets:
         if os.path.lexists(target) and not args.force:
             print(f"error: {target} exists; pass --force to replace it; nothing installed", file=sys.stderr)

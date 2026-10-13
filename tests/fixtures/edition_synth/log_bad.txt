@@ -1,0 +1,11 @@
+## [2026-11-01T09:00:00+05:30] SESSION START
+tool=<exact_harness_name>
+
+## [2026-11-01T09:05:00+05:30] Read the contract
+User Prompt (verbatim, secrets redacted):
+Read AGENTS.md.
+Agent Response Summary:
+Done.
+Actions:
+Context:
+tool=gpt-5

@@ -20,7 +20,8 @@ What it ignores:
   - anything listed in --allowlist (one literal per line, # starts a comment)
 
 Python files are parsed with ast; .js/.ts/.go/.java/.rb files get a regex pass for
-quoted strings. Exit 0 when clean, 1 on findings, 2 on usage errors. Heuristic: a
+quoted strings. Exit 0 when clean, 1 on findings, 2 on usage errors, 3 when no source
+file or no dataset value was examined (clean by default is not clean). Heuristic: a
 finding is a question to answer, not proof of overfitting.
 
 Example:
@@ -37,6 +38,7 @@ import glob
 import io
 import os
 import re
+import stat
 import sys
 import warnings
 
@@ -167,8 +169,10 @@ def load_lines(path):
     return out
 
 
-def scan(data_paths, code_paths, spec_paths=(), allowlist=None, min_length=6):
+def scan(data_paths, code_paths, spec_paths=(), allowlist=None, min_length=6, stats=None):
+    """Return findings; stats, when given, receives "files" and "values" examined."""
     values, headers, row_numbers = load_dataset(data_paths, min_length)
+    files = 0
     spec_text = ""
     for p in spec_paths:
         with open(p, encoding="utf-8", errors="replace") as fh:
@@ -184,6 +188,7 @@ def scan(data_paths, code_paths, spec_paths=(), allowlist=None, min_length=6):
                 strings, tuples = regex_literals(path)
             else:
                 continue
+            files += 1
             for lineno, s in strings:
                 v = s.strip()
                 if v in values and v not in headers and v not in allowed and v not in spec_text:
@@ -199,6 +204,8 @@ def scan(data_paths, code_paths, spec_paths=(), allowlist=None, min_length=6):
                     if need <= row_nums:
                         findings.append((rel, lineno, f"numbers ({key}) all occur in dataset row {where}"))
                         break
+    if stats is not None:
+        stats["files"], stats["values"] = files, len(values) + len(row_numbers)
     return findings
 
 
@@ -215,6 +222,19 @@ def bounded_int(low):
     return parse
 
 
+def special_files(args):
+    """Path arguments that are named pipes or sockets: reading one with no writer hangs."""
+    found = []
+    for v in vars(args).values():
+        for x in v if isinstance(v, list) else [v]:
+            try:
+                if isinstance(x, str) and stat.S_ISFIFO(os.stat(x).st_mode) | stat.S_ISSOCK(os.stat(x).st_mode):
+                    found.append(x)
+            except (OSError, ValueError):
+                pass
+    return found
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--data", nargs="+", required=True, help="dataset CSV files or globs")
@@ -223,6 +243,9 @@ def main(argv=None):
     ap.add_argument("--allowlist", help="file of allowed literals, one per line")
     ap.add_argument("--min-length", type=bounded_int(1), default=6, help="shortest non-id string to compare (default 6)")
     args = ap.parse_args(argv)
+    for x in special_files(args):
+        print(f"error: {x} is a named pipe or socket; reading it would hang", file=sys.stderr)
+        return 2
 
     data = []
     for pattern in args.data:
@@ -235,8 +258,9 @@ def main(argv=None):
         if not os.path.exists(p):
             print(f"error: {p} does not exist", file=sys.stderr)
             return 2
+    stats = {}
     try:
-        findings = scan(data, args.code, args.spec, args.allowlist, args.min_length)
+        findings = scan(data, args.code, args.spec, args.allowlist, args.min_length, stats)
     except (OSError, ValueError) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
@@ -244,7 +268,12 @@ def main(argv=None):
         print(f"FOUND {rel}:{lineno}: {msg}")
     print(f"{len(data)} dataset files, {len(findings)} coupled literals"
           + ("" if not findings else "; justify each from the spec or the domain, or allowlist it"))
-    return 1 if findings else 0
+    if findings:
+        return 1
+    if not stats["files"] or not stats["values"]:
+        print(f"UNKNOWN {stats['files']} source files and {stats['values']} dataset values examined, so nothing was compared")
+        return 3
+    return 0
 
 
 if __name__ == "__main__":

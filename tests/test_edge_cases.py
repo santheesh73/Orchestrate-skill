@@ -220,8 +220,9 @@ class InterviewDrillEdges(Tmp):
     def test_empty_directory(self):
         os.makedirs(os.path.join(self.d, "code"))
         rc, out = run(interview_drill, [os.path.join(self.d, "code")])
-        self.assertEqual(rc, 0)
+        self.assertEqual(rc, 3)  # 2.4.0: nothing scanned is UNKNOWN, not a clean drill
         self.assertIn("Always asked", out)
+        self.assertIn("UNKNOWN no supported source file", out)
 
 
 class Validator(Tmp):

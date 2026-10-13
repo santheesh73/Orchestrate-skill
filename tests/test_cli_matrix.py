@@ -49,6 +49,15 @@ def _loop(d):
     return a
 
 
+def _fifo(d):
+    """A named pipe: reading it blocks until a writer appears, so a script that opens one hangs."""
+    if not hasattr(os, "mkfifo"):
+        return None
+    p = os.path.join(d, "pipe.csv")
+    os.mkfifo(p)
+    return p
+
+
 def _unreadable(d):
     if IS_ROOT or os.name == "nt":
         return None  # root reads anything; chmod 000 proves nothing there
@@ -82,6 +91,13 @@ INPUTS = {
     "symlink_to_dir": lambda d: _symlink(d, "dirlink", d),
     "dev_null": lambda d: os.devnull if os.name != "nt" else None,
     "many_lines": lambda d: _write(os.path.join(d, "many.csv"), "id,status\n" + "".join(f"{i},ok\n" for i in range(400000))),
+    "fifo": lambda d: _fifo(d),
+    "utf16": lambda d: _write(os.path.join(d, "u16.csv"), "id,status\n1,ok\n".encode("utf-16")),
+    "dup_header": lambda d: _write(os.path.join(d, "dup.csv"), "id,id,status\n1,1,ok\n"),
+    "blank_header_cell": lambda d: _write(os.path.join(d, "blank.csv"), "id,,status\n1,x,ok\n"),
+    "wide": lambda d: _write(os.path.join(d, "wide.csv"), ",".join(["id"] + [f"c{i}" for i in range(20000)]) + "\n"
+                             + ",".join(["1"] * 20001) + "\n"),
+    "open_quote": lambda d: _write(os.path.join(d, "quote.csv"), 'id,status\n1,"ok\n2,ok\n'),
     "wrong_json_types": lambda d: _write(os.path.join(d, "types.json"),
                                          json.dumps({"log": [1, 2], "output": {"path": 5, "columns": "id"}})),
 }
@@ -116,19 +132,21 @@ CASES = [
     (S("claim_audit.py"), ["{doc}", "--csv", "{X}"], {0, 1, 2, 3}),
     (S("claim_audit.py"), ["{doc}", "--constants", "{X}"], {0, 1, 2, 3}),
     (S("claim_audit.py"), ["{doc}", "--repo", "{X}"], {0, 1, 2, 3}),
-    (S("contract_extract.py"), ["{X}"], {0, 2}),
-    (S("contract_extract.py"), ["--diff", "{X}", "{starter}"], {0, 2}),
-    (S("corpus_literals.py"), ["--data", "{X}", "--code", "{code}"], {0, 1, 2}),
-    (S("corpus_literals.py"), ["--data", "{ok_csv}", "--code", "{X}"], {0, 1, 2}),
-    (S("corpus_literals.py"), ["--data", "{ok_csv}", "--code", "{code}", "--spec", "{X}"], {0, 1, 2}),
-    (S("corpus_literals.py"), ["--data", "{ok_csv}", "--code", "{code}", "--allowlist", "{X}"], {0, 1, 2}),
-    (S("interview_drill.py"), ["{X}"], {0, 2}),
+    (S("contract_extract.py"), ["{X}"], {0, 2, 3}),
+    (S("contract_extract.py"), ["--diff", "{X}", "{starter}"], {0, 2, 3}),
+    (S("corpus_literals.py"), ["--data", "{X}", "--code", "{code}"], {0, 1, 2, 3}),
+    (S("corpus_literals.py"), ["--data", "{ok_csv}", "--code", "{X}"], {0, 1, 2, 3}),
+    (S("corpus_literals.py"), ["--data", "{ok_csv}", "--code", "{code}", "--spec", "{X}"], {0, 1, 2, 3}),
+    (S("corpus_literals.py"), ["--data", "{ok_csv}", "--code", "{code}", "--allowlist", "{X}"], {0, 1, 2, 3}),
+    (S("interview_drill.py"), ["{X}"], {0, 2, 3}),
     (S("interview_drill.py"), ["{code}", "--constants", "{X}"], {0, 2}),
-    (S("preflight.py"), ["{X}", "--columns", "id,status"], {0, 1, 2}),
+    (S("preflight.py"), ["{X}", "--columns", "id,status"], {0, 1, 2, 3}),
     (S("preflight.py"), ["{ok_csv}", "--template", "{X}"], {0, 1, 2}),
-    (S("preflight.py"), ["{X}", "--columns", "id,status", "--enum", "status=ok"], {0, 1, 2}),
+    (S("preflight.py"), ["{X}", "--columns", "id,status", "--enum", "status=ok"], {0, 1, 2, 3}),
     (S("preflight.py"), ["{ok_csv}", "--columns", "id,status", "--inputs", "{X}", "--id-col", "id"], {0, 1, 2}),
-    (S("rerun_diff.py"), ["--id-col", "id", "{X}", "{ok_csv}"], {0, 1, 2}),
+    (S("rerun_diff.py"), ["--id-col", "id", "{X}", "{ok_csv}"], {0, 1, 2, 3}),
+    (S("experiment.py"), ["--dir", "{tmp}/exp", "start", "m", "--output", "{X}", "--id-col", "id"], {0, 2}),
+    (S("experiment.py"), ["--dir", "{tmp}/exp2", "start", "m", "--output", "{ok_csv}", "--id-col", "id", "--labels", "{X}"], {0, 2}),
     (S("selfcheck.py"), ["{X}"], {0, 1, 2, 3, 4}),
     (S("usage_report.py"), ["{X}", "--price", "m=1:2", "--requests", "1"], {0, 2}),
     (T("footprint.py"), ["--skill-dir", "{X}"], {0, 1, 2}),
@@ -167,6 +185,8 @@ BAD_ARGS = [
     (S("preflight.py"), ["{ok_csv}", "--columns", "id,status", "--max-show", "-1"]),
     (S("rerun_diff.py"), ["--id-col", "id", "{ok_csv}", "{ok_csv}", "--show", "-1"]),
     (S("rerun_diff.py"), ["--id-col", "id", "--cmd", "true", "--output", "{ok_csv}", "--timeout", "0"]),
+    (S("experiment.py"), ["--dir", "{tmp}/exp", "start", "z", "--output", "{ok_csv}", "--id-col", "id", "--timeout", "0"]),
+    (S("experiment.py"), ["--dir", "{tmp}/exp", "start", "z", "--output", "{ok_csv}", "--id-col", "id", "--noise-floor", "-1"]),
     (T("run_trigger_evals.py"), ["--offline", "--threshold", "nan"]),
     (T("run_trigger_evals.py"), ["--offline", "--threshold", "-1"]),
     (T("run_trigger_evals.py"), ["--offline", "--min-precision", "1.5"]),

@@ -26,6 +26,7 @@ import argparse
 import json
 import os
 import re
+import stat
 import sys
 from datetime import datetime
 
@@ -290,6 +291,19 @@ def check(path, expect_tool, profile):
     return errors, warnings, len(entries)
 
 
+def special_files(args):
+    """Path arguments that are named pipes or sockets: reading one with no writer hangs."""
+    found = []
+    for v in vars(args).values():
+        for x in v if isinstance(v, list) else [v]:
+            try:
+                if isinstance(x, str) and stat.S_ISFIFO(os.stat(x).st_mode) | stat.S_ISSOCK(os.stat(x).st_mode):
+                    found.append(x)
+            except (OSError, ValueError):
+                pass
+    return found
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("log", nargs="?", help="path to log.txt")
@@ -299,6 +313,9 @@ def main(argv=None):
     ap.add_argument("--entry-regex", help="override: regex for an entry header line, with named groups ts and title")
     ap.add_argument("--prompt-header", help="override: label that starts the verbatim prompt block in per-turn entries")
     args = ap.parse_args(argv)
+    for x in special_files(args):
+        print(f"error: {x} is a named pipe or socket; reading it would hang", file=sys.stderr)
+        return 2
 
     if args.list_profiles:
         for name in shipped_profiles():

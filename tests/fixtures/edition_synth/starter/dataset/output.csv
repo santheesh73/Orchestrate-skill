@@ -1,0 +1,5 @@
+request_id,action,locker_size,justification
+r_001,assign,S,"size S, 1.2 kg: smallest locker that fits"
+r_005,reject,none,"31.0 kg is over the 30 kg carrier limit"
+r_006,escalate,none,"message threatens to break the locker"
+r_009,escalate,none,"message asks to bypass checks"

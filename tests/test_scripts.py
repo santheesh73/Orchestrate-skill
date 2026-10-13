@@ -244,7 +244,7 @@ class SelfCheck(unittest.TestCase):
     def test_clean_project_passes_every_check(self):
         rc, out = run(selfcheck, [os.path.join(PROJECT, "selfcheck.json")])
         self.assertEqual(rc, 0, out)
-        self.assertEqual(out.count("PASS"), 7)  # six rows plus the summary line
+        self.assertEqual(out.count("PASS"), 8)  # seven rows plus the summary line
 
     def test_unconfigured_section_is_unknown_not_pass(self):
         with tempfile.TemporaryDirectory() as d:

@@ -5,6 +5,8 @@ Failure it prevents: skipping part of the self-score under deadline pressure bec
 it needs six separate commands, or reading a skipped check as a pass.
 
 Checks (each section of the config is optional):
+  starter         hard rule 1: AGENTS.md matches the sha256 recorded at kickoff, and
+                  CLAUDE.md (if configured) still holds the line @AGENTS.md
   log             check_log.py on log.txt
   output          preflight.py on output.csv
   usage_report    the usage report exists and names calls, tokens and cost
@@ -12,8 +14,10 @@ Checks (each section of the config is optional):
   corpus_literals corpus_literals.py: code literals copied from the dataset
   claims          claim_audit.py: numbers in docs versus the live repo (hints only)
 
-A section missing from the config prints UNKNOWN, never PASS, and so does a claims
-section whose docs make no claim that could be checked (claim_audit exit 3). A
+A section missing from the config prints UNKNOWN, never PASS, and so does any section
+that examined nothing: an output with no data rows, a constants scan that found no
+source file or no named constant, a corpus_literals scan with no source file or no
+dataset value, and claims whose docs make nothing checkable (each script's exit 3). A
 configured file that does not exist is FAIL. Results: PASS, WARN, UNKNOWN, FAIL. The exit code is the worst
 result: 0 PASS, 1 WARN, 2 UNKNOWN, 3 FAIL; 4 means the config itself is unusable.
 Paths in the config are relative to the config file's directory, except claims.exclude,
@@ -21,6 +25,8 @@ which is relative to claims.repo and adds to claim_audit's default (tests/fixtur
 
 Example config (selfcheck.json):
   {
+    "starter": {"agents_md": "AGENTS.md", "sha256": "<printed by the first run>",
+                "claude_md": "CLAUDE.md"},
     "log": {"path": "log.txt", "expect_tool": "Claude Code", "profile": "sept-2026"},
     "output": {"path": "output.csv", "template": "dataset/output.csv",
                "inputs": "dataset/requests.csv", "id_col": "request_id",
@@ -41,9 +47,11 @@ Standard library only.
 import argparse
 import contextlib
 import glob
+import hashlib
 import io
 import json
 import os
+import stat
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -83,7 +91,26 @@ class Runner:
         return path if os.path.isabs(path) else os.path.join(self.base, path)
 
     def missing(self, *paths):
-        return [x for x in paths if x and not glob.glob(self.p(x))]
+        """Configured paths that match nothing, or only named pipes (reading one hangs)."""
+        return [x for x in paths if x and not [m for m in glob.glob(self.p(x)) if not stat.S_ISFIFO(os.stat(m).st_mode)]]
+
+    def starter(self, c):
+        agents, claude = c.get("agents_md"), c.get("claude_md")
+        miss = self.missing(agents, claude)
+        if miss or not agents:
+            return "FAIL", f"missing: {miss or 'agents_md'}", ""
+        if claude:
+            with open(self.p(claude), encoding="utf-8", errors="replace") as fh:
+                if "@AGENTS.md" not in [l.strip() for l in fh.read().splitlines()]:
+                    return "FAIL", f"{os.path.basename(claude)} no longer holds the line @AGENTS.md", ""
+        with open(self.p(agents), "rb") as fh:
+            actual = hashlib.sha256(fh.read()).hexdigest()
+        want = (c.get("sha256") or "").strip().lower()
+        if not want:
+            return "UNKNOWN", f"no sha256 recorded; AGENTS.md is {actual} now: record that at kickoff", ""
+        if actual != want:
+            return "FAIL", f"AGENTS.md changed since kickoff (sha256 {actual[:12]}, recorded {want[:12]})", ""
+        return "PASS", "AGENTS.md unchanged since kickoff" + ("; CLAUDE.md imports @AGENTS.md" if claude else ""), ""
 
     def log(self, c):
         if self.missing(c.get("path")) or "path" not in c:
@@ -113,6 +140,8 @@ class Runner:
         for col in c.get("nonempty") or []:
             argv += ["--nonempty", col]
         rc, out = capture(preflight.main, argv)
+        if rc == 3:  # no data rows, so nothing passed
+            return "UNKNOWN", last_line(out), out
         return ("PASS" if rc == 0 else "FAIL"), last_line(out), out
 
     def usage_report(self, c):
@@ -131,11 +160,14 @@ class Runner:
         miss = self.missing(*code, doc)
         if miss or not code or not doc:
             return "FAIL", f"missing: {miss or 'code and constants'}", ""
-        _, names = interview_drill.scan_paths([self.p(x) for x in code])
+        stats = {}
+        _, names = interview_drill.scan_paths([self.p(x) for x in code], stats=stats)
         with open(self.p(doc), encoding="utf-8") as fh:
             gone = interview_drill.missing_constants(names, fh.read())
         if gone:
             return "FAIL", f"{len(gone)} constants missing from {os.path.basename(doc)}: {', '.join(gone[:5])}", ""
+        if not stats["files"] or not names:
+            return "UNKNOWN", f"{stats['files']} source files, {len(set(names))} named constants: nothing to compare", ""
         return "PASS", f"{len(set(names))} named constants all documented", ""
 
     def corpus_literals(self, c):
@@ -151,6 +183,8 @@ class Runner:
         if c.get("min_length"):
             argv += ["--min-length", str(c["min_length"])]
         rc, out = capture(corpus_literals.main, argv)
+        if rc == 3:  # no source file or no dataset value was examined
+            return "UNKNOWN", last_line(out), out
         return ("PASS" if rc == 0 else "FAIL"), last_line(out), out
 
     def claims(self, c):
@@ -175,7 +209,7 @@ class Runner:
         return ("WARN" if "MISMATCH" in out else "PASS"), last_line(out), out
 
 
-CHECKS = ["log", "output", "usage_report", "constants", "corpus_literals", "claims"]
+CHECKS = ["starter", "log", "output", "usage_report", "constants", "corpus_literals", "claims"]
 
 
 def run(cfg, base):
@@ -220,11 +254,27 @@ def shape_errors(cfg):
     return errs
 
 
+def special_files(args):
+    """Path arguments that are named pipes or sockets: reading one with no writer hangs."""
+    found = []
+    for v in vars(args).values():
+        for x in v if isinstance(v, list) else [v]:
+            try:
+                if isinstance(x, str) and stat.S_ISFIFO(os.stat(x).st_mode) | stat.S_ISSOCK(os.stat(x).st_mode):
+                    found.append(x)
+            except (OSError, ValueError):
+                pass
+    return found
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("config", help="selfcheck JSON config")
     ap.add_argument("--verbose", action="store_true", help="print each check's full output")
     args = ap.parse_args(argv)
+    for x in special_files(args):
+        print(f"error: {x} is a named pipe or socket; reading it would hang", file=sys.stderr)
+        return 2
     try:
         with open(args.config, encoding="utf-8") as fh:
             cfg = json.load(fh)

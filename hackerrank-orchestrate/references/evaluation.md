@@ -29,13 +29,15 @@ A labeled sample of 20 to 30 rows is an estimate with a wide interval. One row i
 
 ## 4. Resolution table (canonical)
 
-| Label-free checks | Labeled sample | Verdict |
-|---|---|---|
-| Clean | Down at most 1 row | Noise. Keep if the reasoning holds. |
-| Clean | Down 2 or more rows | Look at each of those rows. Keep the change only when its written reason accounts for them; otherwise revert. |
-| Regressed | Up | Revert. |
-| Regressed | Down | Revert. |
-| Clean | Up | Keep, but check the blast radius on the full input set. |
+Count labeled rows, not net movement: B = labeled rows the change made right, W = labeled rows it made wrong, N = the noise floor in rows (§5; 1 when not measured). Apply the first row that matches. `scripts/experiment.py` applies this table for you.
+
+| Row | Label-free checks | Labeled sample | Verdict |
+|---|---|---|---|
+| A | Any check fails after the change (it regressed, or it was red before too: a hard gate, §6) | Any | REJECT. Revert, or fix the check first. |
+| B | None run | Or no labeled row compared | UNKNOWN. Run the missing half before deciding. |
+| C | Clean | 2 or more of the W rows are not explained by the change's written reason | REJECT. Revert. |
+| D | Clean | B − W is at most the larger of 1 and N | NOISE. Keep only if the written reason holds; never call it an improvement. |
+| E | Clean | B − W is 2 or more and above N | SHIP. Then check the blast radius on the full input set. |
 
 Never accept or reject on a one-row difference. A gain smaller than two rows is not an improvement, in the README or in the interview.
 

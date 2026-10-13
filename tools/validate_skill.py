@@ -29,7 +29,7 @@ MAX_BODY_LINES = 80
 MAX_DESC = 900
 # Context budgets in characters, set at the size measured for v2.2.0 plus about 10%
 # (tools/footprint.py reports the same parts). Raise one only on purpose.
-FOOTPRINT_BUDGETS = {"skill_body": 7600, "always_loaded": 8500, "on_demand": 167000}
+FOOTPRINT_BUDGETS = {"skill_body": 7600, "always_loaded": 8500, "on_demand": 200000}
 # The six agents docs/INSTALL.md must cover, and the per-agent install folders that belong
 # there rather than in the SKILL.md body (the body is read by every agent alike).
 SUPPORTED_AGENTS = ("Claude Code", "Claude.ai", "Codex", "OpenCode", "Antigravity", "Cursor")

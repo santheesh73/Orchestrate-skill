@@ -20,12 +20,14 @@ Example:
 Standard library only.
 
 Exit 0 when the report is written, 2 on usage errors (unreadable or malformed log,
-bad --price, an --out path that cannot be written).
+bad --price, an --out path that cannot be written). --out creates missing parent folders.
 """
 
 import argparse
 import json
 import math
+import os
+import stat
 import sys
 from collections import OrderedDict, defaultdict
 from datetime import datetime, timezone
@@ -88,6 +90,26 @@ def fmt_cost(c):
     return "not estimated" if c is None else f"${c:,.4f}"
 
 
+def overwrites_input(out, inputs):
+    """True when --out names a file this run reads (AGENTS.md, a source file, the log)."""
+    if not os.path.isfile(out):
+        return False
+    return any(os.path.isfile(i) and os.path.samefile(out, i) for i in inputs)
+
+
+def special_files(args):
+    """Path arguments that are named pipes or sockets: reading one with no writer hangs."""
+    found = []
+    for v in vars(args).values():
+        for x in v if isinstance(v, list) else [v]:
+            try:
+                if isinstance(x, str) and stat.S_ISFIFO(os.stat(x).st_mode) | stat.S_ISSOCK(os.stat(x).st_mode):
+                    found.append(x)
+            except (OSError, ValueError):
+                pass
+    return found
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("log", help="JSONL file, one object per model call")
@@ -97,6 +119,9 @@ def main(argv=None):
     ap.add_argument("--title", default="Token usage and cost report")
     ap.add_argument("--out", help="write the report here (default: stdout)")
     args = ap.parse_args(argv)
+    for x in special_files(args):
+        print(f"error: {x} is a named pipe or socket; reading it would hang", file=sys.stderr)
+        return 2
     prices = dict(args.price)
 
     stats = OrderedDict()
@@ -230,7 +255,12 @@ def main(argv=None):
     report = "\n".join(out) + "\n"
 
     if args.out:
+        if overwrites_input(args.out, [args.log]):
+            print(f"error: --out {args.out} is the usage log itself; refusing to overwrite it", file=sys.stderr)
+            return 2
         try:
+            if os.path.dirname(args.out):
+                os.makedirs(os.path.dirname(args.out), exist_ok=True)
             with open(args.out, "w", encoding="utf-8") as fh:
                 fh.write(report)
         except OSError as exc:

@@ -26,13 +26,16 @@ Example:
 Standard library only.
 
 Exit 0 when the drill is written, 2 on usage errors (missing paths, unreadable
---constants, an --out path that cannot be written).
+--constants, an --out path that cannot be written), 3 when no supported source file
+was found (the drill would hold only the generic questions). --out creates missing
+parent folders.
 """
 
 import argparse
 import ast
 import os
 import re
+import stat
 import sys
 import warnings
 
@@ -169,10 +172,12 @@ def walk(root, skip=SKIP_DIRS):
                 yield p, os.path.relpath(p, root)
 
 
-def scan_paths(paths, include_tests=False):
-    """Return (findings, constant names) for every supported source file under paths."""
+def scan_paths(paths, include_tests=False, stats=None):
+    """Return (findings, constant names) for every supported source file under paths.
+
+    stats, when given, is a dict that receives "files": the number of files scanned."""
     skip = SKIP_DIRS - {"tests", "test"} if include_tests else SKIP_DIRS
-    findings, constants = [], []
+    findings, constants, files = [], [], 0
     for root in paths:
         for path, rel in walk(root, skip):
             ext = os.path.splitext(path)[1]
@@ -182,14 +187,37 @@ def scan_paths(paths, include_tests=False):
                 f, c = scan_regex(path, rel)
             else:
                 continue
+            files += 1
             findings += f
             constants += c
+    if stats is not None:
+        stats["files"] = files
     return findings, constants
 
 
 def missing_constants(constants, doc_text):
     """Named constants that the CONSTANTS.md text never mentions."""
     return sorted({c for c in constants if not re.search(r"\b" + re.escape(c) + r"\b", doc_text)})
+
+
+def overwrites_input(out, inputs):
+    """True when --out names a file this run reads (AGENTS.md, a source file, the log)."""
+    if not os.path.isfile(out):
+        return False
+    return any(os.path.isfile(i) and os.path.samefile(out, i) for i in inputs)
+
+
+def special_files(args):
+    """Path arguments that are named pipes or sockets: reading one with no writer hangs."""
+    found = []
+    for v in vars(args).values():
+        for x in v if isinstance(v, list) else [v]:
+            try:
+                if isinstance(x, str) and stat.S_ISFIFO(os.stat(x).st_mode) | stat.S_ISSOCK(os.stat(x).st_mode):
+                    found.append(x)
+            except (OSError, ValueError):
+                pass
+    return found
 
 
 def main(argv=None):
@@ -199,11 +227,15 @@ def main(argv=None):
     ap.add_argument("--include-tests", action="store_true", help="also scan tests/ directories")
     ap.add_argument("--out", help="write markdown here (default: stdout)")
     args = ap.parse_args(argv)
+    for x in special_files(args):
+        print(f"error: {x} is a named pipe or socket; reading it would hang", file=sys.stderr)
+        return 2
     for root in args.paths:
         if not os.path.exists(root):
             print(f"error: {root} does not exist", file=sys.stderr)
             return 2
-    findings, constants = scan_paths(args.paths, args.include_tests)
+    stats = {}
+    findings, constants = scan_paths(args.paths, args.include_tests, stats)
 
     out = ["# Interview drill", "",
            "Answer each question out loud, then open the line and check your answer against the code.",
@@ -246,7 +278,18 @@ def main(argv=None):
             "- What are the two biggest limitations, and what experiment would resolve each?", ""]
     report = "\n".join(out)
     if args.out:
+        skip = SKIP_DIRS - {"tests", "test"} if args.include_tests else SKIP_DIRS
+        read = [p for root in args.paths for p, _ in walk(root, skip)] + ([args.constants] if args.constants else [])
+        ext = os.path.splitext(args.out)[1]
+        if ext == ".py" or ext in REGEX_EXTS:
+            print(f"error: --out {args.out} is a source file; the drill is markdown", file=sys.stderr)
+            return 2
+        if overwrites_input(args.out, read):
+            print(f"error: --out {args.out} is a file this drill reads; refusing to overwrite it", file=sys.stderr)
+            return 2
         try:
+            if os.path.dirname(args.out):
+                os.makedirs(os.path.dirname(args.out), exist_ok=True)
             with open(args.out, "w", encoding="utf-8") as fh:
                 fh.write(report)
         except OSError as exc:
@@ -255,6 +298,9 @@ def main(argv=None):
         print(f"wrote {args.out}: {len(seen)} questions")
     else:
         sys.stdout.write(report)
+    if not stats["files"]:
+        print("UNKNOWN no supported source file found; nothing in the code was examined", file=sys.stderr)
+        return 3
     return 0
 
 
