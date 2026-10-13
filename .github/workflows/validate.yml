@@ -36,3 +36,8 @@ jobs:
         run: |
           python hackerrank-orchestrate/scripts/selfcheck.py selfcheck.json | tee "$RUNNER_TEMP/self.txt"
           grep -E "^claims +PASS" "$RUNNER_TEMP/self.txt"
+      - name: Package the skill (zip validated with --standalone) and check the footprint budget
+        run: |
+          python tools/package_skill.py --out "$RUNNER_TEMP/dist" --install "$RUNNER_TEMP/pkg"
+          python tools/validate_skill.py --skill-dir "$RUNNER_TEMP/pkg/hackerrank-orchestrate" --standalone
+          python tools/footprint.py --summary

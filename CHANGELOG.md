@@ -23,7 +23,7 @@ Figures below are MEASURED in this repository unless labeled otherwise.
 - `rubric.md`: every organizer figure labeled VERIFIED (read in the post-mortem on 2026-10-13); per-stage top 1/10/50 table labeled INFERRED (secondhand; the leaderboard API was not reachable).
 - `kit-repo.md`: fuller toolkit digest, labeled secondhand (the toolkit repository could not be located).
 - `tools/run_trigger_evals.py`: offline lexical proxy, and an opt-in live mode that needs an API key and never runs in CI. `evals/triggers.json` grows to 44 cases (22 should trigger, 22 should not, including near misses).
-- Edge-case tests and validator tests; 74 tests in total.
+- Edge-case tests and validator tests (test count at the 2.1.0 release: 74).
 - `VERSION` file, credits section.
 
 ### Changed
