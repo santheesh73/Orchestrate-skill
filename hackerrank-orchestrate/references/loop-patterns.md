@@ -21,7 +21,7 @@ The model chooses which tool to call, with what arguments, how many times, and w
 - a **fallback** when the cap is hit or no valid final answer arrives (an honest escalation or safe-default row)
 - a **final-answer contract** (a typed, validated structure, never free text that code then parses loosely)
 
-What graders look for is a loop **a reviewer can find and read in ten seconds**: one named function or graph, explicit termination, prompts and tool descriptions in named files or constants. A framework is fine. The May 2026 winner built on `langchain.agents.create_agent`; a raw Messages API loop works equally well. What fails is a "loop" that is really a hardcoded decision tree.
+What graders look for is a loop **a reviewer can find and read in ten seconds**: one named function or graph, explicit termination, prompts and tool descriptions in named files or constants. A framework is fine. The May 2026 winner built on `langchain.agents.create_agent` (VERIFIED in its code); a raw API loop is just as acceptable when it is as easy to find. What fails is a "loop" that is really a hardcoded decision tree.
 
 Tool design is prompt engineering:
 - Fewer, well-chosen tools. One tool with modes (search, read, grep) beat many narrow tools in the May winner.

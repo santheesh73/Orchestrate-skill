@@ -46,7 +46,7 @@ HackerRank Orchestrate is a recurring, global, solo hackathon for building an **
 
 You build the agent, run it over every input row, and submit three things: a **code zip**, the generated **output CSV**, and your **AI chat transcript**. After submitting you take a **live interview with an AI judge** about your solution.
 
-Problems so far have taken different shapes: support-ticket triage over a document corpus (May 2026), claim verification against images (June 2026), adversarial message routing (August 2026), and a financial "buy or wait" planner over dated records (September 2026). Expect something new each time. The reliable skills are the approach, not the domain.
+Problems so far have taken different shapes: support-ticket triage over a document corpus (May 2026), claim verification against images (June 2026), adversarial message routing (August 2026, as described in orchestrate-loop), and a financial "buy or wait" planner over dated records (September 2026). Expect something new each time. The reliable skills are the approach, not the domain.
 
 ## How it is scored
 
@@ -55,7 +55,7 @@ Four artifacts, 100 points:
 | Artifact | Points | What is judged |
 |---|---|---|
 | **Code zip** | 30 | Agent architecture 30% · prompt and tool craft 30% · robustness 25% · engineering rigor 15% |
-| **Output CSV** | 30 | Per-row accuracy against a hidden golden set, plus a separate adversarial safety score |
+| **Output CSV** | 30 | Per-row correctness against a hidden golden set, plus one 0–100 safety score for the submission as a whole |
 | **AI judge interview** | 30 | Technical depth and ownership 40% · problem understanding and judgment 25% · communication 20% · honesty 15% |
 | **Chat transcript** | 10 | Direction and architecture ownership 35% · technical specificity 25% · iteration and verification 25% · safety and edge cases 15% |
 
@@ -63,20 +63,20 @@ Sub-weights are from the organizer's post-mortem of the May 2026 edition. Rules 
 
 - **The code grader reads source only.** README claims earn nothing in the code score; design reasons belong in code comments and docstrings.
 - **A generic justification caps a row at about 70%,** even when the label is right.
-- **Escalating or refusing everything is invalid.**
+- **Escalating everything is invalid, and so is replying to everything.**
 - **Short interview answers score low.** The organizer measured a correlation of about −0.57.
 - **Ties break on interview, then code, then output, then transcript.**
 - Since September 2026, `code.zip` must include **`evaluation/usage_report.md`** (model calls, tokens and estimated cost for the final run), and every log entry needs a valid **`tool=` line** naming your coding harness.
 
 ## What separates the top 50
 
-From public leaderboards for the May, June and August 2026 editions:
+Labels: **VERIFIED** means read in the organizer's post-mortem; **INFERRED** means computed by [orchestrate-loop](https://github.com/bsrikumar855-dot/orchestrate-loop) from public leaderboard data that could not be re-checked here. The full table is in [`rubric.md`](hackerrank-orchestrate/references/rubric.md#5-what-the-leaderboards-show).
 
-- **Balance beats a peak.** Most of each top 50 was in the top quartile on **all four** artifacts. Every top-10 finisher was, per the organizer.
-- **The output CSV is where strong teams lose.** It was the weakest stage for 49 of the June top 50 and 34 of the August top 50. Great code with a mediocre CSV is the typical top-50 profile, so getting the rows right is how you separate.
-- **The transcript and interview are cheap points most people leave behind.** Field medians are around 1.4 to 3.8 out of 10 for transcript and 11 to 15 out of 30 for interview. Top-50 averages are 63% to 89% of the maximum.
-- **Simple, explainable architectures win.** A single agent with tools held 7 of the May top 10. One June author's earlier 15-stage pipeline finished mid-pack because they couldn't measure what each stage contributed. Their next, smaller design did far better.
-- **Behavior beats tooling.** Claude Code users were overrepresented at the top, but the organizer credits *how* people worked: reasoning about tradeoffs, evidence, and visible ownership of decisions.
+- **Balance beats a peak.** Every top-10 finisher in May was in the top quartile on all four artifacts (VERIFIED). Most of each top 50 in May, June and August was too (INFERRED).
+- **The output CSV is where strong teams lose.** It was the weakest stage for 49 of the June top 50 and 34 of the August top 50 (INFERRED). Great code with a mediocre CSV is the typical top-50 profile, so getting the rows right is how you separate.
+- **The transcript and interview are cheap points most people leave behind.** Field medians were around 1.4 to 3.8 out of 10 for transcript and 11 to 15 out of 30 for interview, while top-50 averages were 63% to 89% of the maximum (INFERRED).
+- **Simple, explainable architectures win.** A single agent with tools held 7 of the May top 10 (VERIFIED). One June author's earlier 15-stage pipeline finished mid-pack because they couldn't measure what each stage contributed; their next, smaller design did far better (INFERRED, from that author's write-up as summarized in orchestrate-loop).
+- **Behavior beats tooling.** Claude Code was used by 44% of the May top 50 versus 14.4% of all transcripts, but the organizer credits *how* people worked: reasoning about tradeoffs, evidence, and visible ownership of decisions (VERIFIED).
 
 ## How to approach it
 
@@ -130,7 +130,7 @@ BASELINE / RESULT / BLAST RADIUS / COUNTERFACTUAL / VERDICT
 
 - **Attack the boundary calls.** Top finishers mostly lose rows where the model's default guess sits near the line between two classes. Write resolved definitions with contrastive examples into the prompt, rather than tuning thresholds against a handful of samples.
 - **Make justifications specific:** the decision, the rule that fired, the evidence ids actually read, and the alternative that lost. If a justification would read the same on another row, it's generic.
-- **Check the adversarial rows separately,** since they carry their own safety score. Check that the output hasn't collapsed onto one value.
+- **Check the adversarial rows separately,** since safety is scored on its own. Check that the output hasn't collapsed onto one value.
 - **Self-score every artifact honestly** against the rubric. Name the weakest one and spend the next block there.
 
 ### Hours 18 to 24: interview prep, freeze, submit
@@ -142,7 +142,7 @@ BASELINE / RESULT / BLAST RADIUS / COUNTERFACTUAL / VERDICT
 
 ### The interview
 
-The judge asks about **your** code, not about agents in general. In one first-hand September 2026 account, the questions were things like "which statistic estimates variable spend?" and "on the same date, which is applied first, the debit or the credit?". A candidate answered "debits first" while their code applied credits first, and lost points for contradicting the implementation.
+The judge asks about **your** code, not about agents in general. In one [first-hand September 2026 account](https://dev.to/earlgreyhot1701d/my-first-ai-judge-interview-what-could-possibly-go-wrong-22el), the questions included what value estimated variable expenses and what happened first when salary and bills landed on the same day. The author's own earlier report said debits came first, but the submitted code applied credits first. Their lesson: the real questions were more specific than anything they had prepared for.
 
 - **Build your question bank from your code:** every constant, threshold, sort order and gate, each answered against the line it lives on.
 - **Answer in this shape:** decision, the alternative you rejected, the evidence, the limitation. Four sentences or more, never one line.
@@ -152,19 +152,7 @@ The judge asks about **your** code, not about agents in general. In one first-ha
 
 ## Rules that hold up across editions
 
-1. Don't overwrite `CLAUDE.md`. Obey the starter contract literally.
-2. Samples motivate or falsify; the domain justifies.
-3. One labeled row is noise.
-4. Decide grouping keys and statistics before writing detectors.
-5. Never gate a decision on the truthiness of a model-written free-text field. Use booleans and enums.
-6. Every non-trivial change gets a change record.
-7. Rationale lives in source, not the README.
-8. Every constant has a provenance.
-9. Prove counterfactuals.
-10. One bad row never kills the run.
-11. Self-score is never skipped.
-12. Rehearse the interview early, from your own code.
-13. State the boundary of every guarantee, and name your limitations first.
+The skill keeps one canonical list of 14 hard rules in [`SKILL.md`](hackerrank-orchestrate/SKILL.md#hard-rules-canonical-copy-other-files-link-here), and the evaluation rules behind them in [`evaluation.md`](hackerrank-orchestrate/references/evaluation.md). They are not repeated here so the two can't drift apart. The three that cost the most points when broken: don't overwrite `CLAUDE.md`; samples motivate or falsify, but only the domain justifies a rule; one labeled row is noise.
 
 ## Common mistakes
 
@@ -270,6 +258,8 @@ python -m unittest discover -s tests -v
 - [A practitioner's guide across three editions](https://medium.com/@shreesh.exe22/hackerrank-orchestrate-3268f0d710a5)
 - Public leaderboards for the May, June and August 2026 editions (percentages computed from that data)
 - [October 2026 challenge page](https://www.hackerrank.com/hackerrank-orchestrate-october26)
+
+Every link above was fetched on 2026-10-13 and loaded. The community `hackerrank-orchestrate-skills` toolkit could not be located, so it is not linked.
 
 ## Caveats and license
 

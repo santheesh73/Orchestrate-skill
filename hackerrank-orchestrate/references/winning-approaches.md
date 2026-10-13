@@ -20,11 +20,8 @@ Cross-cutting patterns from public top-finisher material. Problem-specific patte
 ## 2. Patterns that recur across winners
 
 - **Single agent with tools** led the May top 10 (7 of 10). Default to it for cross-evidence reasoning unless you measured otherwise. One first-hand case found a single agent holding all evidence beat multi-agent summary hand-offs.
-- **Pre-model short-circuit rules** in a fixed order (empty, pleasantry, out of scope, injection, too vague) answer with a canned correct response and save a model call.
+- **Guards with their own archetype pages:** pre-model short-circuit rules and the citation guard (`archetypes/retrieval-triage.md`), nonce-fenced untrusted content and a content-addressed cache shipped with the submission (`archetypes/adversarial-routing.md`), blank-drop and swap grounding tests (`archetypes/multimodal-verify.md`).
 - **Typed seam.** One schema module defines the enums; the tool schema and output validator are generated from it; a unit test asserts those literals equal the problem statement's lists.
-- **Citation guard.** Compare cited evidence with evidence actually read this turn. Drop unread citations; if nothing verified was cited and nothing was read, downgrade to an escalation and say so.
-- **Fence untrusted content** with an unguessable nonce; escape the fence token if it appears in the content.
-- **Content-addressed cache** keyed by file-bytes hash plus prompt version, shipped with the submission so a reviewer can reproduce the output with no key.
 - **Cheap model for tagging, stronger model where it matters.** Prompt-cache the stable prefix and verify the cache-read token count is non-zero.
 - **Cost is a first-class number,** tracked per row. Since September 2026 it is also a required deliverable (`usage_report.md`).
 - **Fewer components you can explain.** A June author's earlier 15-stage pipeline finished mid-pack because they could not measure why each piece helped; the smaller, measured design did far better. Cut any component you cannot tie to a failure it prevents.

@@ -2,6 +2,13 @@
 
 Write these as complete, paste-ready blocks. Fill every bracket from the real `problem_statement.md` and `AGENTS.md`. Never invent a schema, column list, allowed value or deadline. If a bracket cannot be filled from the files, ask the user instead of guessing.
 
+## Contents
+1. Kickoff
+2. Iteration protocol
+3. Targeted audit
+4. Output-row pass
+5. Final freeze
+
 ## 1. Kickoff (first message in the session)
 
 ```
