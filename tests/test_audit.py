@@ -356,6 +356,21 @@ class OutputNeverOverwritesInput(Tmp):
         self.assertFalse(os.path.exists(os.path.join(src, "scripts", "hackerrank-orchestrate.zip")))
 
 
+class SelfcheckConfigPipe(Tmp):
+    """Mutation round 3: dropping selfcheck's named-pipe check on config paths passed every
+    test, because the matrix only passes a pipe as the config itself."""
+
+    @unittest.skipUnless(hasattr(os, "mkfifo"), "needs named pipes")
+    def test_a_pipe_in_the_config_fails_instead_of_hanging(self):
+        pipe = os.path.join(self.d, "report.md")
+        os.mkfifo(pipe)
+        cfg = self.path("c.json", json.dumps({"usage_report": {"path": "report.md"}}))
+        proc = subprocess.run([sys.executable, "-I", "-B", os.path.join(SKILL, "scripts", "selfcheck.py"), cfg],
+                              capture_output=True, text=True, timeout=30)
+        self.assertEqual(proc.returncode, 3, proc.stdout + proc.stderr)
+        self.assertRegex(proc.stdout, r"usage_report\s+FAIL")
+
+
 class DryRun(Tmp):
     """The whole loop on the synthetic edition: each step's output is the next step's
     input, exit codes compose, nothing needs the network or an install."""

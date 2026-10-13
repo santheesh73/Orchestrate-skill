@@ -4,7 +4,7 @@ Failure it prevents: a capability that reads as working but has never been made 
 
 Labels: **MEASURED** means run on 2026-10-13 and the output recorded; **VERIFIED** means read in the primary source that day; **INFERRED** means reasoned, not run. Verdicts: **OK** (a mutation of the enforcement makes a test fail), **WEAK** (no test failed when it was mutated, or no checkable artifact), **BROKEN** (a reproduced defect).
 
-How the verdicts were measured: a mutation harness (kept outside the repository) copied the tree, applied one source edit that breaks one claim, and ran the validator plus the full suite under `-W error`. A mutation that no test caught is a WEAK row. Round 1 ran 39 mutations on the 2.3.0 tree: 24 killed, 15 survived (MEASURED). Round 2 ran 27 on the fixed tree (the 15 survivors where the target still existed, plus 13 for the new code): 25 killed, 2 survived, and both got a test (MEASURED). Round 3 is in the last section.
+How the verdicts were measured: a mutation harness (kept outside the repository) copied the tree, applied one source edit that breaks one claim, and ran the validator plus the full suite under `-W error`. A mutation that no test caught is a WEAK row. Round 1 ran 39 mutations on the 2.3.0 tree: 24 killed, 15 survived (MEASURED). Round 2 ran 27 on the fixed tree (the 15 survivors where the target still existed, plus 13 for the new code): 25 killed, 2 survived, and both got a test (MEASURED). Round 3 ran 13 on the hostile-input fixes (the 2 round-2 survivors plus 11 new): 12 killed; the survivor, selfcheck's named-pipe check on config paths, got `SelfcheckConfigPipe`, which kills it (MEASURED).
 
 ## 1. Hard rules (`hackerrank-orchestrate/SKILL.md` lines 41 to 54)
 
