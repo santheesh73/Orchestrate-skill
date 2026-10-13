@@ -19,6 +19,10 @@ Modes:
 Splits: each query is assigned to "train" or "test" by a stable hash, so a description
 can be tuned on train and reported on test (--split train|test|all).
 
+Exit codes: 0 when done (or live mode without a key, which prints UNKNOWN); 1 when the
+offline proxy falls below --min-precision or --min-recall; 2 on usage errors, including
+an unreadable, malformed or empty eval file or SKILL.md.
+
 Standard library only. The only network access is --live.
 """
 
@@ -58,11 +62,11 @@ def stems(words):
 
 
 def read_skill(path):
-    with open(path, encoding="utf-8") as fh:
+    with open(path, encoding="utf-8-sig") as fh:
         text = fh.read()
     m = re.match(r"^---\n(.*?)\n---\n", text, re.S)
     if not m:
-        raise SystemExit(f"error: {path} has no frontmatter")
+        raise ValueError(f"{path} has no frontmatter")
     fields = {}
     for line in m.group(1).splitlines():
         if ":" in line and not line.startswith(" "):
@@ -76,8 +80,12 @@ def split_of(query):
 
 
 def load_evals(path, split):
-    with open(path, encoding="utf-8") as fh:
+    with open(path, encoding="utf-8-sig") as fh:
         evals = json.load(fh)
+    if not (isinstance(evals, list) and evals and all(
+            isinstance(e, dict) and isinstance(e.get("query"), str) and isinstance(e.get("should_trigger"), bool)
+            for e in evals)):
+        raise ValueError(f"{path} must be a non-empty JSON list of {{\"query\": str, \"should_trigger\": bool}}")
     for e in evals:
         e["split"] = split_of(e["query"])
     return [e for e in evals if split == "all" or e["split"] == split]
@@ -192,8 +200,12 @@ def main(argv=None):
     ap.add_argument("--delay", type=float, default=0.2, help="live: seconds between requests")
     args = ap.parse_args(argv)
 
-    name, desc = read_skill(args.skill)
-    evals = load_evals(args.evals, args.split)
+    try:
+        name, desc = read_skill(args.skill)
+        evals = load_evals(args.evals, args.split)
+    except (OSError, ValueError) as exc:  # ValueError covers bad JSON and non-UTF-8 bytes
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
     if args.offline:
         return offline(args, name, desc, evals)
     return live(args, name, desc, evals)
