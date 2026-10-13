@@ -217,5 +217,36 @@ class UnwritableOut(Tmp):
             self.assertIn("cannot write", text)
 
 
+
+class UsageRecordTypes(Tmp):
+    """v2.2.1 round 2: a JSON null record, a list as the model name, or a NaN or infinite
+    token count crashed usage_report.py; negative or boolean token counts and negative
+    prices were summed into the report as if real."""
+
+    GOOD = '{"provider":"a","model":"m","input_tokens":1,"output_tokens":2}'
+
+    def report(self, line, *extra):
+        log = self.path("u.jsonl", line + "\n")
+        return run(usage_report, [log, "--price", "m=1:2", "--requests", "1"] + list(extra))
+
+    def test_bad_records_are_usage_errors(self):
+        for line in ("null", "[1]", '{"provider":"a","model":["m"],"input_tokens":1,"output_tokens":2}',
+                     '{"provider":"a","model":"m","input_tokens":NaN,"output_tokens":2}',
+                     '{"provider":"a","model":"m","input_tokens":1e309,"output_tokens":2}',
+                     '{"provider":"a","model":"m","input_tokens":-1,"output_tokens":2}',
+                     '{"provider":"a","model":"m","input_tokens":true,"output_tokens":2}',
+                     '{"provider":"a","model":"m","input_tokens":"5","output_tokens":2}',
+                     '{"provider":"a","model":"m","input_tokens":1,"output_tokens":2,"cache_read_input_tokens":-4}'):
+            rc, out = self.report(line)
+            self.assertEqual(rc, 2, line)
+            self.assertIn("error: line 1", out, line)
+
+    def test_negative_or_non_finite_prices_and_requests_are_rejected(self):
+        for extra in (["--price", "m=-1:2"], ["--price", "m=nan:2"], ["--price", "m=inf:2"], ["--requests", "-3"]):
+            rc, out = self.report(self.GOOD, *extra)
+            self.assertEqual(rc, 2, extra)
+        self.assertEqual(self.report(self.GOOD)[0], 0)
+
+
 if __name__ == "__main__":
     unittest.main()
