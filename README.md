@@ -80,7 +80,7 @@ Labels: **VERIFIED** means read in the organizer's post-mortem; **INFERRED** mea
 
 ## How to approach it
 
-The core idea: **the model describes, code decides.** The model reads messages, documents and images and returns a typed record of what it observed. Plain, unit-tested code turns that record into every number, label and plan. That makes the run repeatable from a cache, auditable row by row, and resistant to prompt injection by structure. It also gives you strong answers for the interview.
+The core idea: **the model describes, code decides** (the skill's core principle in [`SKILL.md`](hackerrank-orchestrate/SKILL.md), detailed in [`winning-approaches.md`](hackerrank-orchestrate/references/winning-approaches.md) §1). The model only reports what it observed; tested code produces every final value. You get a run you can repeat from a cache, audit row by row, and defend against injected text, plus strong interview answers.
 
 ### Before the event
 
@@ -105,7 +105,7 @@ Contract misses cost points that no model quality can recover. Before any design
 - **Identify the problem's shape** (retrieval, multimodal verification, adversarial routing, simulation and planning, or something new) and start from what worked for that shape.
 - **Design one findable agent loop:** a named function or graph with an explicit step cap, a fallback, and a validated final-answer schema. A framework or the raw API both work. A hidden decision tree passed off as a "loop" does not.
 - **Draw the seam.** Decide what the model observes, what code decides, and which inputs are attacker-controlled. Fence untrusted content.
-- **Decide grouping keys and statistics before writing detectors.** Patches inherit whatever the grouping already threw away.
+- **Choose how rows are grouped before writing any detector** (hard rule 5).
 - **Cache every model record** by content hash and prompt version, so you can iterate on rules offline for free.
 - **Log every model call** (provider, model, tokens, row id) from the first paid call. You need this for the usage report.
 
@@ -119,12 +119,8 @@ BASELINE / RESULT / BLAST RADIUS / COUNTERFACTUAL / VERDICT
 ```
 
 - **Compute the ceiling first.** If a gap touches two rows, it isn't worth an hour.
-- **Justify with the domain, not the samples.** Sample rows can show that a case exists or that a rule is wrong. They are never a rule's only reason. Never tune until one sample number matches.
-- **One labeled row is noise.** With 20 to 30 samples, one row is 3 to 5 points. Revert when a label-free check regresses, or when two or more labeled rows regress for reasons you can't explain.
-- **Diff the whole output** after every core change, not just the field you targeted. Measure the model's run-to-run noise once, so you know what size of change actually means something.
-- **Prove counterfactuals.** Turn a component off and show its effect stops.
-- **One bad row never kills the run.** Validate, retry once, then write an honest escalation or safe-default row. Never write a partial output file.
-- **Keep `CONSTANTS.md`** with a provenance column for every tunable number (measured, spec, standard, bound or judgement), and put the same reason in a comment beside the constant.
+- **Diff the whole output** after every core change, not just the field you targeted. Measure the model's run-to-run noise once, so you know what size of change actually means something. With 20 to 30 labeled samples, one row is 3 to 5 points.
+- **Iterate under the hard rules** on samples, noise, counterfactuals, row safety and constants: rules 3, 4, 9, 10 and 11 in [`SKILL.md`](hackerrank-orchestrate/SKILL.md#hard-rules-canonical-copy-other-files-link-here). The decision table behind them is in [`evaluation.md`](hackerrank-orchestrate/references/evaluation.md) §4.
 
 ### Hours 13 to 18: output rows and self-score
 

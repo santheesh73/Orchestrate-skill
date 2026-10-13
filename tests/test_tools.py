@@ -110,6 +110,24 @@ class Footprint(unittest.TestCase):
         self.assertEqual([footprint.est_tokens(n) for n in (0, 1, 4, 5)], [0, 1, 1, 2])
 
 
+class RulesHaveOneCopy(unittest.TestCase):
+    def test_readme_restating_a_hard_rule_is_an_error(self):
+        d = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, d)
+        os.makedirs(os.path.join(d, "hackerrank-orchestrate"))
+        shutil.copy(os.path.join(SKILL, "SKILL.md"), os.path.join(d, "hackerrank-orchestrate", "SKILL.md"))
+        titles = validate_skill.hard_rule_titles(os.path.join(SKILL, "SKILL.md"))
+        self.assertEqual(len(titles), 14)
+        with open(os.path.join(d, "README.md"), "w", encoding="utf-8") as fh:
+            fh.write("Guide\n\n- **%s.** Restated.\n" % titles[10])
+        errs = []
+        validate_skill.check_docs_restate_no_rules(d, errs)
+        self.assertEqual(errs, ["hard rule 11 is restated verbatim in README.md; link instead"])
+        errs = []
+        validate_skill.check_docs_restate_no_rules(ROOT, errs)
+        self.assertEqual(errs, [])
+
+
 class Coverage(unittest.TestCase):
     PATH = os.path.join(ROOT, "docs", "COVERAGE.md")
 

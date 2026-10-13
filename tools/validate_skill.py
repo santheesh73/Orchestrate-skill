@@ -209,7 +209,28 @@ def check_python(path, label, errors, require_failure_line=False):
         errors.append(f"{label} docstring must name the failure it prevents ('Failure it prevents: ...')")
 
 
+def hard_rule_titles(skill_md):
+    _, body = frontmatter(read(skill_md))
+    m = re.search(r"^## Hard rules.*?$(.*?)(?=^## )", body, re.S | re.M)
+    return [r.strip().rstrip(".") for r in re.findall(r"^\d+\.\s+\*\*(.+?)\*\*", m.group(1), re.M)] if m else []
+
+
+def check_docs_restate_no_rules(root, errors):
+    """Hard rules have one copy: the README and docs/ link to SKILL.md instead of restating them."""
+    docs = [os.path.join(root, "README.md")]
+    docs_dir = os.path.join(root, "docs")
+    docs += sorted(os.path.join(docs_dir, f) for f in os.listdir(docs_dir) if f.endswith(".md")) if os.path.isdir(docs_dir) else []
+    titles = hard_rule_titles(os.path.join(root, "hackerrank-orchestrate", "SKILL.md"))
+    for path in docs:
+        if os.path.exists(path):
+            text = read(path)
+            for i, phrase in enumerate(titles, 1):
+                if phrase in text:
+                    errors.append(f"hard rule {i} is restated verbatim in {os.path.relpath(path, root)}; link instead")
+
+
 def check_repo(errors):
+    check_docs_restate_no_rules(ROOT, errors)
     evals_path = os.path.join(ROOT, "evals", "triggers.json")
     try:
         evals = json.loads(read(evals_path))
