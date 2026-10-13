@@ -113,7 +113,7 @@ def python_literals(path):
         with warnings.catch_warnings():  # invalid escapes in participant code must not hide the file
             warnings.simplefilter("ignore")
             tree = ast.parse(src)
-    except SyntaxError:
+    except (SyntaxError, ValueError, RecursionError):  # ValueError: NUL byte on 3.9-3.11
         return [], []
     skip = docstring_nodes(tree)
     strings, tuples = [], []

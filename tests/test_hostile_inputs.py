@@ -262,5 +262,23 @@ class ClaimRepoIsAFile(Tmp):
         self.assertRegex(out, r"claims\s+FAIL")
 
 
+
+class NulInPythonSource(Tmp):
+    """v2.2.1 round 4: on Python 3.9 to 3.11, ast.parse raises ValueError (not SyntaxError)
+    for a NUL byte, so one such file crashed interview_drill and aborted corpus_literals
+    and claim_audit; later Pythons skipped it. Every Python must skip it the same way."""
+
+    def test_nul_source_is_skipped_like_a_syntax_error(self):
+        self.path("code/bad.py", b"X = 1\x00\n")
+        self.path("code/good.py", "LIMIT = 5\n")
+        self.path("code/test_bad.py", b"def test_a():\n    pass\x00\n")
+        self.path("code/test_good.py", "def test_a():\n    pass\n")
+        code = os.path.join(self.d, "code")
+        _, names = interview_drill.scan_paths([code])
+        self.assertIn("LIMIT", names)
+        self.assertEqual(claim_audit.count_tests(code), 1)
+        self.assertEqual(corpus_literals.python_literals(os.path.join(code, "bad.py")), ([], []))
+
+
 if __name__ == "__main__":
     unittest.main()

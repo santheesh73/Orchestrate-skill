@@ -91,6 +91,8 @@ def scan_python(path, rel):
         tree = parse_quietly(src)
     except SyntaxError as exc:
         return [("parse", rel, exc.lineno or 0, f"could not parse: {exc.msg}")], []
+    except (ValueError, RecursionError) as exc:  # ValueError: a NUL byte on Python 3.9-3.11
+        return [("parse", rel, 0, f"could not parse: {exc}")], []
     findings, constants = [], []
     for node in ast.walk(tree):
         if isinstance(node, (ast.Assign, ast.AnnAssign)):

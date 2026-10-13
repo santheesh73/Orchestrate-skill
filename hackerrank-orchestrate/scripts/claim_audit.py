@@ -75,7 +75,7 @@ def count_tests(repo, exclude=DEFAULT_EXCLUDES):
                         with warnings.catch_warnings():  # invalid escapes must not hide a test file
                             warnings.simplefilter("ignore")
                             tree = ast.parse(fh.read())
-                    except SyntaxError:
+                    except (SyntaxError, ValueError, RecursionError):  # ValueError: NUL byte on 3.9-3.11
                         continue
                 n += sum(1 for node in ast.walk(tree)
                          if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name.startswith("test"))
