@@ -177,7 +177,7 @@ def matching_profiles(lines, skip):
 
 def check(path, expect_tool, profile):
     try:
-        with open(path, encoding="utf-8") as fh:
+        with open(path, encoding="utf-8", newline="") as fh:
             text = fh.read()
     except UnicodeDecodeError:
         return [f"{path}: not valid UTF-8"], [], 0

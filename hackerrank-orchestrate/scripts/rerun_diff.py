@@ -36,10 +36,16 @@ def load(path, id_col):
     digest = hashlib.sha256(raw).hexdigest()
     text = raw.decode("utf-8-sig")
     reader = csv.DictReader(io.StringIO(text))
-    if id_col not in (reader.fieldnames or []):
-        raise SystemExit(f"error: {path} has no column {id_col!r}")
+    fields = reader.fieldnames or []
+    if id_col not in fields:
+        raise ValueError(f"{path} has no column {id_col!r}")
+    dupes = sorted({c for c in fields if fields.count(c) > 1})
+    if dupes:
+        raise ValueError(f"{path} has duplicate columns {dupes}; values would be silently overwritten")
     rows = {}
     for r in reader:
+        if r[id_col] in rows:
+            raise ValueError(f"{path} has duplicate id {r[id_col]!r}")
         rows[r[id_col]] = r
     return reader.fieldnames, rows, digest
 
@@ -51,9 +57,9 @@ def run_twice(cmd, output, timeout):
         print(f"run {i}: {cmd}", file=sys.stderr)
         proc = subprocess.run(shlex.split(cmd), timeout=timeout)
         if proc.returncode != 0:
-            raise SystemExit(f"error: run {i} exited with {proc.returncode}")
+            raise ValueError(f"run {i} exited with {proc.returncode}")
         if not os.path.exists(output):
-            raise SystemExit(f"error: run {i} did not produce {output}")
+            raise ValueError(f"run {i} did not produce {output}")
         dest = os.path.join(tmp, f"run{i}.csv")
         shutil.copyfile(output, dest)
         snaps.append(dest)
@@ -72,17 +78,17 @@ def main(argv=None):
     ap.add_argument("--show", type=int, default=5, help="example ids to print per column")
     args = ap.parse_args(argv)
 
-    if args.cmd:
-        if not args.output:
-            ap.error("--cmd needs --output")
-        a_path, b_path = run_twice(args.cmd, args.output, args.timeout)
-    elif len(args.files) == 2:
-        a_path, b_path = args.files
-    else:
+    if args.cmd and not args.output:
+        ap.error("--cmd needs --output")
+    if not args.cmd and len(args.files) != 2:
         ap.error("give two CSV files, or --cmd with --output")
-
-    a_cols, a, a_hash = load(a_path, args.id_col)
-    b_cols, b, b_hash = load(b_path, args.id_col)
+    try:
+        a_path, b_path = run_twice(args.cmd, args.output, args.timeout) if args.cmd else args.files
+        a_cols, a, a_hash = load(a_path, args.id_col)
+        b_cols, b, b_hash = load(b_path, args.id_col)
+    except (ValueError, OSError, UnicodeDecodeError, subprocess.TimeoutExpired) as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
     print(f"A sha256 {a_hash[:16]}  rows {len(a)}")
     print(f"B sha256 {b_hash[:16]}  rows {len(b)}")
     if a_hash == b_hash:

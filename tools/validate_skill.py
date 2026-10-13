@@ -1,22 +1,39 @@
 #!/usr/bin/env python3
-"""Validate the skill folder: frontmatter, referenced files, script syntax, trigger evals.
+"""Validate the skill: structure, content drift, scripts, evals and release metadata.
 
-Run from the repo root: python tools/validate_skill.py
-Exit code 0 when valid, 1 otherwise. Standard library only.
+Failure it prevents: a skill that breaks or drifts silently, for example a reference
+to a file that was renamed, a script missing from the SKILL.md table, a description
+that grew a date, a second copy of the hard rules, or personal results creeping in.
+
+Run from the repo root:  python tools/validate_skill.py
+Check a copied skill folder on its own (as installed under .claude/skills/):
+  python tools/validate_skill.py --skill-dir /path/to/.claude/skills/hackerrank-orchestrate --standalone
+
+Exit code 0 when valid, 1 otherwise. Standard library only; no network.
 """
 
+import argparse
+import ast
 import json
 import os
-import py_compile
 import re
+import subprocess
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-SKILL_DIR = os.path.join(ROOT, "hackerrank-orchestrate")
-SKILL_MD = os.path.join(SKILL_DIR, "SKILL.md")
-TRIGGERS = os.path.join(ROOT, "evals", "triggers.json")
 NAME_RE = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
 DATE_RE = re.compile(r"\b(19|20)\d{2}\b|\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec)[a-z]*\b")
+PERSONAL_MARKERS = [re.compile(p, re.I) for p in (r"global\s+#\s*\d", r"\b\d{1,3}(\.\d)?/100\b", r"\brank(ed)?\s+#\s*\d",
+                                                    r"\bmy (score|rank)\b")]
+MAX_BODY_LINES = 80
+MAX_DESC = 900
+LINE_LIMITS = {"references/behind-schedule.md": 40, "references/edition-update.md": 40, "references/kit-repo.md": 90}
+ARCHETYPE_SECTIONS = ("Architecture that held up", "Guards that fit", "Grounding test", "Where rows are lost")
+PROFILE_KEYS = {"name", "entry_regex", "prompt_header", "section_headers", "session_start_title_match",
+                "tool_rule", "required_turn_sections", "title_max_length", "secret_scan"}
+# Files that live in a participant's starter repo or submission, not in this skill.
+EXTERNAL_FILES = {"problem_statement.md", "usage_report.md", "evalutation_criteria.md", "decisions.md", "changes.md"}
+TEXT_EXTS = (".md", ".py", ".json", ".yml", ".yaml", ".txt", ".csv")
 
 
 def frontmatter(text):
@@ -31,10 +48,17 @@ def frontmatter(text):
     return fields, text[m.end():]
 
 
-def main():
-    errors = []
-    with open(SKILL_MD, encoding="utf-8") as fh:
-        text = fh.read()
+def read(path):
+    with open(path, encoding="utf-8") as fh:
+        return fh.read()
+
+
+def check_skill(skill_dir, errors):
+    skill_md = os.path.join(skill_dir, "SKILL.md")
+    if not os.path.exists(skill_md):
+        errors.append(f"{skill_md} not found")
+        return None
+    text = read(skill_md)
     fm, body = frontmatter(text)
     if fm is None:
         errors.append("SKILL.md has no YAML frontmatter")
@@ -42,73 +66,187 @@ def main():
     name, desc = fm.get("name", ""), fm.get("description", "")
     if not NAME_RE.match(name) or len(name) > 64:
         errors.append(f"name {name!r} must be kebab-case, at most 64 characters")
-    if name != os.path.basename(SKILL_DIR):
-        errors.append(f"name {name!r} must match the folder name {os.path.basename(SKILL_DIR)!r}")
+    if name != os.path.basename(os.path.normpath(skill_dir)):
+        errors.append(f"name {name!r} must match the folder name {os.path.basename(os.path.normpath(skill_dir))!r}")
     if not desc:
         errors.append("description is empty")
-    if len(desc) > 1024:
-        errors.append(f"description is {len(desc)} characters; the limit is 1024")
+    if len(desc) > MAX_DESC:
+        errors.append(f"description is {len(desc)} characters; the limit here is {MAX_DESC}")
     if "<" in desc or ">" in desc:
         errors.append("description must not contain angle brackets")
     if DATE_RE.search(desc):
         errors.append(f"description contains a date ({DATE_RE.search(desc).group(0)!r}); keep the trigger evergreen")
+    if not re.search(r"\bdo not use for\b", desc, re.I):
+        errors.append("description needs an explicit 'Do not use for ...' clause")
     extra = set(fm) - {"name", "description", "license", "allowed-tools", "metadata"}
     if extra:
         errors.append(f"unexpected frontmatter keys: {sorted(extra)}")
-    if len(body.splitlines()) > 500:
-        errors.append("SKILL.md body is over 500 lines; move detail into references/")
+    body_lines = len(body.strip("\n").splitlines())
+    if body_lines >= MAX_BODY_LINES:
+        errors.append(f"SKILL.md body is {body_lines} lines; keep it under {MAX_BODY_LINES}")
 
-    # Every references/, scripts/ or assets/ path named anywhere in the skill must exist.
-    for dirpath, _, files in os.walk(SKILL_DIR):
+    # Hard rules: one numbered, contiguous list in SKILL.md.
+    m = re.search(r"^## Hard rules.*?$(.*?)(?=^## )", body, re.S | re.M)
+    if not m:
+        errors.append("SKILL.md has no '## Hard rules' section")
+    else:
+        nums = [int(n) for n in re.findall(r"^(\d+)\.\s", m.group(1), re.M)]
+        if not nums or nums != list(range(1, len(nums) + 1)):
+            errors.append(f"hard rules must be numbered 1..N contiguously, found {nums}")
+        for i, rule in enumerate(re.findall(r"^\d+\.\s+\*\*(.+?)\*\*", m.group(1), re.M), 1):
+            phrase = rule.strip().rstrip(".")
+            for dirpath, _, files in os.walk(skill_dir):
+                for fn in files:
+                    p = os.path.join(dirpath, fn)
+                    if fn.endswith(".md") and p != skill_md and phrase in read(p):
+                        errors.append(f"hard rule {i} is restated verbatim in {os.path.relpath(p, skill_dir)}; link instead")
+
+    # Every referenced path exists inside the skill folder.
+    for dirpath, _, files in os.walk(skill_dir):
         for fn in files:
             if not fn.endswith(".md"):
                 continue
             path = os.path.join(dirpath, fn)
-            rel = os.path.relpath(path, ROOT)
-            with open(path, encoding="utf-8") as fh:
-                content = fh.read()
+            rel = os.path.relpath(path, skill_dir)
+            content = read(path)
             for ref in sorted(set(re.findall(r"`?((?:references|scripts|assets)/[A-Za-z0-9_./\-]+)`?", content))):
                 ref = ref.rstrip(".")
-                if not os.path.exists(os.path.join(SKILL_DIR, ref)):
+                if not os.path.exists(os.path.join(skill_dir, ref)):
                     errors.append(f"{rel}: references missing path {ref}")
-            # Bare sibling links inside references/ (e.g. `evaluation.md`).
             if os.path.basename(dirpath) in ("references", "archetypes"):
-                for ref in sorted(set(re.findall(r"`([a-z0-9\-]+\.md)`", content))):
-                    candidates = [os.path.join(dirpath, ref), os.path.join(SKILL_DIR, "references", ref),
-                                  os.path.join(SKILL_DIR, "references", "archetypes", ref),
-                                  os.path.join(SKILL_DIR, "assets", ref), os.path.join(SKILL_DIR, ref)]
+                for ref in sorted(set(re.findall(r"`([a-z0-9_\-]+\.md)`", content)) - EXTERNAL_FILES):
+                    candidates = [os.path.join(dirpath, ref), os.path.join(skill_dir, "references", ref),
+                                  os.path.join(skill_dir, "references", "archetypes", ref),
+                                  os.path.join(skill_dir, "assets", ref), os.path.join(skill_dir, ref)]
                     if not any(os.path.exists(c) for c in candidates):
                         errors.append(f"{rel}: references missing file {ref}")
+            n = len(content.splitlines())
+            if rel.startswith("references") and n > 100 and "## Contents" not in content:
+                errors.append(f"{rel} is {n} lines; files over 100 lines need a '## Contents' list")
+            limit = LINE_LIMITS.get(rel.replace(os.sep, "/"))
+            if limit and n > limit:
+                errors.append(f"{rel} is {n} lines; the limit is {limit}")
 
-    if os.path.exists(os.path.join(SKILL_DIR, "README.md")):
+    if os.path.exists(os.path.join(skill_dir, "README.md")):
         errors.append("the skill folder must not contain README.md; keep it at the repo root")
 
-    scripts = os.path.join(SKILL_DIR, "scripts")
-    for fn in sorted(os.listdir(scripts)):
-        if fn.endswith(".py"):
-            try:
-                py_compile.compile(os.path.join(scripts, fn), doraise=True)
-            except py_compile.PyCompileError as exc:
-                errors.append(f"scripts/{fn} does not compile: {exc.msg}")
+    arch = os.path.join(skill_dir, "references", "archetypes")
+    for fn in sorted(os.listdir(arch)) if os.path.isdir(arch) else []:
+        if fn.endswith(".md") and fn != "index.md":
+            content = read(os.path.join(arch, fn))
+            for sec in ARCHETYPE_SECTIONS:
+                if not re.search(r"^## " + re.escape(sec), content, re.M):
+                    errors.append(f"archetypes/{fn} lacks a '## {sec}' section")
 
+    editions = os.path.join(skill_dir, "assets", "editions")
+    for fn in sorted(os.listdir(editions)) if os.path.isdir(editions) else []:
+        if fn.endswith(".json"):
+            try:
+                prof = json.loads(read(os.path.join(editions, fn)))
+                missing = PROFILE_KEYS - set(prof)
+                if missing:
+                    errors.append(f"assets/editions/{fn} lacks keys {sorted(missing)}")
+                re.compile(prof.get("entry_regex", ""))
+            except (ValueError, re.error) as exc:
+                errors.append(f"assets/editions/{fn}: {exc}")
+
+    # Scripts: listed in SKILL.md and vice versa; docstring naming the failure; --help works.
+    scripts_dir = os.path.join(skill_dir, "scripts")
+    on_disk = sorted(f for f in os.listdir(scripts_dir) if f.endswith(".py")) if os.path.isdir(scripts_dir) else []
+    listed = sorted(set(re.findall(r"`scripts/([a-z_]+\.py)", body)))
+    for f in sorted(set(on_disk) - set(listed)):
+        errors.append(f"scripts/{f} is not listed in the SKILL.md scripts table")
+    for f in sorted(set(listed) - set(on_disk)):
+        errors.append(f"SKILL.md lists scripts/{f}, which does not exist")
+    for f in on_disk:
+        p = os.path.join(scripts_dir, f)
+        check_python(p, f"scripts/{f}", errors, require_failure_line=True)
+        proc = subprocess.run([sys.executable, p, "--help"], stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                              timeout=60)
+        if proc.returncode != 0 or b"usage" not in proc.stdout.lower():
+            errors.append(f"scripts/{f} --help failed (exit {proc.returncode})")
+    return desc
+
+
+def check_python(path, label, errors, require_failure_line=False):
+    src = read(path)
     try:
-        with open(TRIGGERS, encoding="utf-8") as fh:
-            evals = json.load(fh)
+        tree = ast.parse(src, feature_version=(3, 9))
+    except SyntaxError as exc:
+        errors.append(f"{label} does not parse as Python 3.9: {exc.msg} (line {exc.lineno})")
+        return
+    doc = ast.get_docstring(tree) or ""
+    if not doc:
+        errors.append(f"{label} has no module docstring")
+    elif require_failure_line and "Failure it prevents" not in doc:
+        errors.append(f"{label} docstring must name the failure it prevents ('Failure it prevents: ...')")
+
+
+def check_repo(errors):
+    evals_path = os.path.join(ROOT, "evals", "triggers.json")
+    try:
+        evals = json.loads(read(evals_path))
         if not isinstance(evals, list):
             raise ValueError("top level must be a list")
-        pos = sum(1 for e in evals if e.get("should_trigger") is True)
-        neg = sum(1 for e in evals if e.get("should_trigger") is False)
-        bad = [i for i, e in enumerate(evals) if not isinstance(e.get("query"), str) or not isinstance(e.get("should_trigger"), bool)]
+        bad = [i for i, e in enumerate(evals)
+               if not isinstance(e.get("query"), str) or not isinstance(e.get("should_trigger"), bool)]
         if bad:
             errors.append(f"evals/triggers.json entries need query (str) and should_trigger (bool): {bad}")
-        if pos < 10 or neg < 8:
-            errors.append(f"evals/triggers.json needs at least 10 positive and 8 negative cases, has {pos}/{neg}")
+        pos = sum(1 for e in evals if e.get("should_trigger") is True)
+        neg = sum(1 for e in evals if e.get("should_trigger") is False)
+        if pos < 20 or neg < 20:
+            errors.append(f"evals/triggers.json needs at least 20 positive and 20 negative cases, has {pos}/{neg}")
+        queries = [e.get("query", "").strip().lower() for e in evals]
+        dupes = sorted({q for q in queries if queries.count(q) > 1})
+        if dupes:
+            errors.append(f"evals/triggers.json has duplicate queries: {dupes[:3]}")
     except (OSError, ValueError) as exc:
         errors.append(f"evals/triggers.json: {exc}")
 
+    for sub in ("tools", "tests"):
+        d = os.path.join(ROOT, sub)
+        for dirpath, _, files in os.walk(d):
+            for fn in files:
+                if fn.endswith(".py") and "fixtures" not in dirpath:
+                    check_python(os.path.join(dirpath, fn), os.path.relpath(os.path.join(dirpath, fn), ROOT), errors)
+
+    version_file = os.path.join(ROOT, "VERSION")
+    if not os.path.exists(version_file):
+        errors.append("VERSION file missing")
+    else:
+        version = read(version_file).strip()
+        if not re.search(r"^## " + re.escape(version) + r"\b", read(os.path.join(ROOT, "CHANGELOG.md")), re.M):
+            errors.append(f"CHANGELOG.md has no '## {version}' entry for the VERSION file")
+
+    me = os.path.abspath(__file__)
+    for dirpath, dirnames, files in os.walk(ROOT):
+        dirnames[:] = [d for d in dirnames if d not in (".git", "__pycache__")]
+        for fn in files:
+            p = os.path.join(dirpath, fn)
+            if not fn.endswith(TEXT_EXTS) or os.path.abspath(p) == me:
+                continue
+            try:
+                content = read(p)
+            except UnicodeDecodeError:
+                continue
+            for rx in PERSONAL_MARKERS:
+                m = rx.search(content)
+                if m:
+                    errors.append(f"{os.path.relpath(p, ROOT)}: possible personal-result marker {m.group(0)!r}")
+
+
+def main(argv=None):
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("--skill-dir", default=os.path.join(ROOT, "hackerrank-orchestrate"))
+    ap.add_argument("--standalone", action="store_true", help="check only the skill folder (no repo-level checks)")
+    args = ap.parse_args(argv)
+    errors = []
+    desc = check_skill(args.skill_dir, errors)
+    if not args.standalone:
+        check_repo(errors)
     for e in errors:
         print(f"ERROR {e}")
-    print(f"description: {len(desc)} characters; {len(errors)} errors")
+    print(f"description: {len(desc or '')} characters; {len(errors)} errors")
     return 1 if errors else 0
 
 

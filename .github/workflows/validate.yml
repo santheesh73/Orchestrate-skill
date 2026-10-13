@@ -8,16 +8,27 @@ jobs:
   validate:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
-        python: ["3.9", "3.12"]
+        python: ["3.9", "3.11", "3.13"]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
-      - name: Validate skill structure
+      - name: Validate skill structure and content
         run: python tools/validate_skill.py
-      - name: Test bundled scripts
-        run: python -m unittest discover -s tests -v
-      - name: Scripts show help
-        run: for s in hackerrank-orchestrate/scripts/*.py; do python "$s" --help > /dev/null; done
+      - name: Tests (warnings are errors)
+        run: python -W error -m unittest discover -s tests -v
+      - name: Every script shows help
+        run: for s in hackerrank-orchestrate/scripts/*.py tools/*.py; do python "$s" --help > /dev/null; done
+      - name: Trigger evals, offline proxy only (never --live in CI)
+        run: python tools/run_trigger_evals.py --offline --min-precision 0.6 --min-recall 0.5
+      - name: Install test (skill loads from its own folder)
+        run: |
+          dest="$RUNNER_TEMP/proj/.claude/skills"
+          mkdir -p "$dest"
+          cp -r hackerrank-orchestrate "$dest/"
+          python tools/validate_skill.py --skill-dir "$dest/hackerrank-orchestrate" --standalone
+      - name: Selfcheck against fixtures
+        run: python hackerrank-orchestrate/scripts/selfcheck.py tests/fixtures/project/selfcheck.json

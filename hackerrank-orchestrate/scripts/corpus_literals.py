@@ -93,7 +93,7 @@ def docstring_nodes(tree):
 
 
 def python_literals(path):
-    with open(path, encoding="utf-8", errors="replace") as fh:
+    with open(path, encoding="utf-8-sig", errors="replace") as fh:
         src = fh.read()
     try:
         tree = ast.parse(src)

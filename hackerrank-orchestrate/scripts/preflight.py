@@ -93,6 +93,9 @@ def main(argv=None):
         return 1
 
     header, data = rows[0], rows[1:]
+    dup_cols = sorted({c for c in header if header.count(c) > 1})
+    if dup_cols:
+        errors.append(f"duplicate header columns: {dup_cols}")
     if header != expected:
         if [h.strip() for h in header] == expected:
             errors.append("header has stray whitespace around column names")

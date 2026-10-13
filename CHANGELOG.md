@@ -1,6 +1,6 @@
 # Changelog
 
-## 2.1.0 (unreleased)
+## 2.1.0
 
 ### Not ported from orchestrate-loop (deliberately)
 - Its personal results, ranks and per-stage scores: personal data, not guidance.

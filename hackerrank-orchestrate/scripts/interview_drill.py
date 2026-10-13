@@ -73,12 +73,12 @@ def func_name(call):
 
 
 def scan_python(path, rel):
-    with open(path, encoding="utf-8", errors="replace") as fh:
+    with open(path, encoding="utf-8-sig", errors="replace") as fh:
         src = fh.read()
     try:
         tree = ast.parse(src)
     except SyntaxError as exc:
-        return [], [("parse", rel, exc.lineno or 0, f"could not parse: {exc.msg}")]
+        return [("parse", rel, exc.lineno or 0, f"could not parse: {exc.msg}")], []
     findings, constants = [], []
     for node in ast.walk(tree):
         if isinstance(node, (ast.Assign, ast.AnnAssign)):

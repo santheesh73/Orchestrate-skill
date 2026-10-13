@@ -44,7 +44,7 @@ def count_tests(repo):
         for f in filenames:
             p = os.path.join(dirpath, f)
             if f.endswith(".py") and (f.startswith("test_") or f.endswith("_test.py")):
-                with open(p, encoding="utf-8", errors="replace") as fh:
+                with open(p, encoding="utf-8-sig", errors="replace") as fh:
                     try:
                         tree = ast.parse(fh.read())
                     except SyntaxError:
