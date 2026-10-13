@@ -206,17 +206,21 @@ The interview opens in two hours. Build my drill from code/ and quiz me.
 
 ### Checker scripts
 
-Standard-library Python 3.9+, nothing to install. Each takes paths and schemas as arguments and embeds no dataset.
+Standard-library Python 3.9+, nothing to install, no network. Each takes paths and schemas as arguments and embeds no dataset.
 
 | Script | What it catches |
 |---|---|
-| `check_log.py log.txt --expect-tool "Claude Code"` | Missing, placeholder, generic or model-name `tool=` lines; empty prompt blocks; secrets; non-append-only timestamps |
-| `preflight.py output.csv --template dataset/output.csv --inputs dataset/<inputs>.csv --id-col <id> --enum "col=a\|b"` | Wrong header or column order, missing or duplicate ids, off-enum values, blanks, a collapsed distribution |
+| `selfcheck.py selfcheck.json` | Runs the checks below from one config and prints PASS, WARN, FAIL or UNKNOWN per section; a skipped check is UNKNOWN, never a pass. Exit 0 PASS, 1 WARN, 2 UNKNOWN, 3 FAIL, 4 bad config |
+| `contract_extract.py starter/` and `--diff old/ new/` | The MUST, MUST NOT, required files, columns and allowed values in `AGENTS.md` and `problem_statement.md`, and what changed since the last edition (a heuristic; read the files too) |
+| `check_log.py log.txt --expect-tool "Claude Code" --profile sept-2026` | Missing, placeholder, generic or model-name `tool=` lines; empty prompt blocks; secrets; non-append-only timestamps. `--list-profiles` shows the edition formats; copy `assets/editions/template.json` for a new one |
+| `preflight.py output.csv --template dataset/output.csv --inputs dataset/<inputs>.csv --id-col <id> --enum "col=a\|b"` | Wrong or duplicate header columns, wrong order, missing or duplicate ids, off-enum values, blanks, a collapsed distribution |
 | `rerun_diff.py run1.csv run2.csv --id-col <id>` | Row and column churn between runs; your noise floor |
 | `usage_report.py usage.jsonl --run-id final --price "<model>=<in>:<out>"` | Builds `evaluation/usage_report.md` with per-model and overall totals |
 | `interview_drill.py code/ --constants CONSTANTS.md` | Interview questions from your constants, thresholds, orderings and statistics, each with `file:line`, plus constants missing from `CONSTANTS.md` |
+| `corpus_literals.py --data dataset/*.csv --code code/ --spec problem_statement.md` | Ids, strings and number combinations copied from the dataset into code (sample coupling) |
+| `claim_audit.py README.md CONSTANTS.md --repo . --csv output.csv --constants CONSTANTS.md` | Test, row and constant counts in your docs that no longer match the repo |
 
-All scripts live in `hackerrank-orchestrate/scripts/`. **They check your work and are not part of your submission.** The rules require the participant to be the author.
+An example `selfcheck.json` is in `tests/fixtures/project/`. All scripts live in `hackerrank-orchestrate/scripts/`. **They check your work and are not part of your submission.** The rules require the participant to be the author.
 
 ## Repository layout
 
@@ -234,19 +238,29 @@ hackerrank-orchestrate/           the skill
 │   ├── self-score.md             gate 7, with or without the community toolkit
 │   ├── winning-approaches.md     cross-cutting patterns from top finishers
 │   ├── prompt-templates.md       kickoff, iteration, audit, output-row pass, freeze
+│   ├── behind-schedule.md        which depth to cut, gate by gate, when time runs short
+│   ├── edition-update.md         how to update the skill after each edition closes
 │   └── kit-repo.md               optional community toolkit digest
-├── scripts/                      the five checkers above
+├── scripts/                      the nine checkers above
 └── assets/                       change record, decision log, CONSTANTS.md, usage-log schema
-evals/triggers.json               prompts that should and should not trigger the skill
-tests/                            script tests on small fixtures
-tools/validate_skill.py           structure check, run in CI
+    └── editions/                 log-format profiles per edition, plus a template
+evals/triggers.json               44 prompts that should (22) and should not (22) trigger the skill
+tests/                            script tests, edge cases and golden outputs on small fixtures
+tools/validate_skill.py           structure and policy check, run in CI
+tools/run_trigger_evals.py        trigger evals: offline proxy, or opt-in live run
+VERSION, CHANGELOG.md             release version and history
 ```
 
 Development:
 
 ```bash
 python tools/validate_skill.py
-python -m unittest discover -s tests -v
+python -W error -m unittest discover -s tests -v
+python tools/run_trigger_evals.py --offline
+python hackerrank-orchestrate/scripts/selfcheck.py tests/fixtures/project/selfcheck.json
+
+# Opt-in, needs ANTHROPIC_API_KEY, makes network calls, never run in CI:
+python tools/run_trigger_evals.py --live --model <model-id>
 ```
 
 ## Sources
@@ -256,7 +270,7 @@ python -m unittest discover -s tests -v
 - Official starter repos: [june26](https://github.com/interviewstreet/hackerrank-orchestrate-june26), [september26](https://github.com/interviewstreet/hackerrank-orchestrate-september26)
 - [A first-hand September 2026 AI-judge interview](https://dev.to/earlgreyhot1701d/my-first-ai-judge-interview-what-could-possibly-go-wrong-22el)
 - [A practitioner's guide across three editions](https://medium.com/@shreesh.exe22/hackerrank-orchestrate-3268f0d710a5)
-- Public leaderboards for the May, June and August 2026 editions (percentages computed from that data)
+- Public leaderboards for the May, June and August 2026 editions (per-stage percentages computed secondhand from that data; INFERRED)
 - [October 2026 challenge page](https://www.hackerrank.com/hackerrank-orchestrate-october26)
 
 Every link above was fetched on 2026-10-13 and loaded. The community `hackerrank-orchestrate-skills` toolkit could not be located, so it is not linked.
@@ -266,6 +280,9 @@ Every link above was fetched on 2026-10-13 and loaded. The community `hackerrank
 - Scoring sub-weights come from the May 2026 post-mortem, and later editions may reweight. Check the live page.
 - Patterns come from the few public top-finisher repos and write-ups that were reachable. They describe what top finishers did, not proof of what caused their rank.
 - **Trigger accuracy against a live model: UNKNOWN.** `tools/run_trigger_evals.py --live` exists but has not been run, because no API key was available where this was built. What *was* measured is an offline lexical-overlap proxy over the 44 cases in `evals/triggers.json` (22 should trigger, 22 should not): precision 0.72, recall 0.59 at threshold 0.3 (MEASURED, proxy only; it is not model behavior).
+- **Leaderboard per-stage figures in `references/rubric.md` are INFERRED.** They were computed by orchestrate-loop from public leaderboard data; the leaderboard API was not reachable here to re-derive them.
+- **The toolkit digest in `references/kit-repo.md` is secondhand.** The toolkit repository could not be located, so its commands are unverified.
+- **Script behavior is MEASURED** by the test suite in `tests/` on Python 3.9, 3.11 and 3.13 (CI matrix). The fixtures are small and synthetic; real starter repos may differ, and the log-format profiles cover only the editions whose starters were public.
 - Not affiliated with or endorsed by HackerRank.
 
 MIT licensed. See [LICENSE](LICENSE).

@@ -2,6 +2,35 @@
 
 ## 2.1.0
 
+Figures below are MEASURED in this repository unless labeled otherwise.
+
+### Fixed
+- `check_log.py` never detected CRLF line endings; a UTF-8 BOM hid the first log entry.
+- `interview_drill.py` mixed parse errors into its constants list, failed on BOM source files, and mutated its skip list between calls.
+- `rerun_diff.py` silently merged duplicate columns or duplicate ids, and exited 1 instead of 2 on bad input.
+- `preflight.py` did not flag duplicate header columns.
+- The usage-report test leaked a file handle (visible under `-W error`).
+- Claims corrected against their sources: the September interview account (the debit/credit mismatch was in the author's earlier report, and no point loss is reported), the interview format (30-minute voice; "camera on" removed as unverified), the output CSV safety score (one 0 to 100 score per submission), and the organizer's wording on escalating or replying to everything.
+- The README carried a second copy of the hard rules; it now points to `SKILL.md`. `winning-approaches.md` repeated the archetype pages' guards; it now links to them.
+
+### Added
+- `scripts/selfcheck.py`: runs gate 7 from one JSON config; an unconfigured check is UNKNOWN, never PASS.
+- `scripts/contract_extract.py`: drafts the MUST list from `AGENTS.md` and `problem_statement.md`, and diffs two editions.
+- `scripts/corpus_literals.py`: flags ids, strings and number combinations copied from the dataset into code.
+- `scripts/claim_audit.py`: flags test, row and constant counts in docs that no longer match the repo.
+- `assets/editions/` log-format profiles (`sept-2026`, `june-2026`, `template`) and `check_log.py --profile` / `--list-profiles`; output on the v2.0.0 fixtures is byte-identical (golden-file test).
+- `references/behind-schedule.md` and `references/edition-update.md`.
+- `rubric.md`: every organizer figure labeled VERIFIED (read in the post-mortem on 2026-10-13); per-stage top 1/10/50 table labeled INFERRED (secondhand; the leaderboard API was not reachable).
+- `kit-repo.md`: fuller toolkit digest, labeled secondhand (the toolkit repository could not be located).
+- `tools/run_trigger_evals.py`: offline lexical proxy, and an opt-in live mode that needs an API key and never runs in CI. `evals/triggers.json` grows to 44 cases (22 should trigger, 22 should not, including near misses).
+- Edge-case tests and validator tests; 69 tests in total.
+- `VERSION` file, credits section.
+
+### Changed
+- `tools/validate_skill.py` checks policy as well as structure: description length, dates and "do not use for" clause; body under 80 lines; one canonical copy of the hard rules; scripts listed in `SKILL.md` both ways with docstrings naming the failure they prevent; `--help` and Python 3.9 syntax; eval counts and duplicates; personal-result markers; `VERSION` matching this file; `--standalone` for an installed copy.
+- CI runs on Python 3.9, 3.11 and 3.13 with `-W error`, runs every script's `--help`, the offline trigger proxy with floors (precision 0.6, recall 0.5), an install test and `selfcheck` on the fixtures.
+- Trigger accuracy against a live model remains UNKNOWN. The offline proxy measures precision 0.72 and recall 0.59 at threshold 0.3 (MEASURED, proxy only). The description was not tuned against it.
+
 ### Not ported from orchestrate-loop (deliberately)
 - Its personal results, ranks and per-stage scores: personal data, not guidance.
 - Its full-stack build checklist: a different HackerRank product, out of scope.
