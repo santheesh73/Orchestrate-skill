@@ -61,6 +61,7 @@ Weights are from the May 2026 post-mortem (VERIFIED; see `hackerrank-orchestrate
 | `tools/package_skill.py` | A rejected upload, or dev files shipped inside the skill |
 | `tools/footprint.py` | Silent growth of the always-loaded context |
 | `tools/run_trigger_evals.py` and `evals/triggers.json` | Trigger regressions going unnoticed |
+| `tests/test_cli_matrix.py` | The next crash on input nobody tried: every CLI against every hostile input class |
 
 ## 4. Deliberately not ported
 
