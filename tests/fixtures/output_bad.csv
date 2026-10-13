@@ -1,0 +1,4 @@
+request_id,amount,status,explanation
+r1,10,approved,ok
+r1,10,maybe,
+r4,3,approved,x

@@ -1,0 +1,4 @@
+request_id,status,amount,explanation
+r1,approved,10,"Approved because balance stays above the floor, see e1"
+r2,approved,7,"different text"
+r3,approved,5,Approved on e3

@@ -1,0 +1,4 @@
+{"provider": "anthropic", "model": "model-a", "request_id": "r1", "input_tokens": 1000, "output_tokens": 200, "run_id": "final"}
+{"provider": "anthropic", "model": "model-a", "request_id": "r2", "input_tokens": 3000, "output_tokens": 400, "cache_read_input_tokens": 500, "run_id": "final"}
+{"provider": "anthropic", "model": "model-b", "request_id": "r2", "input_tokens": 100, "output_tokens": 10, "run_id": "final"}
+{"provider": "anthropic", "model": "model-a", "request_id": "r1", "input_tokens": 9999, "output_tokens": 9999, "run_id": "dev"}

@@ -1,0 +1,23 @@
+## [2026-10-24T18:05:00+05:30] SESSION START
+
+tool=<exact_harness_or_coding_agent_name>
+Repo Root: /work/repo
+
+## [2026-10-24T18:10:00+05:30] Build the loop
+
+User Prompt (verbatim, secrets redacted):
+
+Agent Response Summary:
+Built it. Key was sk-ant-api03-abcdefghijklmnopqrstuvwxyz0123
+
+Context:
+tool=claude-opus-4
+
+## [2026-10-24T18:01:00+05:30] Second turn
+
+Agent Response Summary:
+No prompt block here.
+
+Context:
+tool=AI
+tool=Claude Code
