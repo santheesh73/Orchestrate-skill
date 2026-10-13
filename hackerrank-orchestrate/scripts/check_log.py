@@ -136,6 +136,38 @@ def shipped_profiles():
     return names
 
 
+def profile_type_errors(prof):
+    """Wrong JSON types in a profile would crash later or silently disable a check."""
+    if not isinstance(prof, dict):
+        return ["must be a JSON object"]
+    errs = []
+    unknown = sorted(set(prof) - set(BUILTIN_PROFILE) - {"description", "provenance", "provenance_source", "provenance_notes"})
+    if unknown:  # a misspelled key would silently fall back to the default
+        errs.append(f"unknown keys {unknown}")
+    for key, default in BUILTIN_PROFILE.items():
+        if key not in prof or key == "tool_rule":
+            continue
+        val = prof[key]
+        if isinstance(default, list):
+            ok = isinstance(val, list) and all(isinstance(x, str) for x in val)
+        elif isinstance(default, bool):
+            ok = isinstance(val, bool)
+        elif isinstance(default, int):
+            ok = isinstance(val, int) and not isinstance(val, bool)
+        else:
+            ok = isinstance(val, type(default))
+        if not ok:
+            errs.append(f"{key} must be {type(default).__name__}" + (" of strings" if isinstance(default, list) else ""))
+    rule = prof.get("tool_rule", {})
+    if not isinstance(rule, dict):
+        errs.append("tool_rule must be an object")
+    else:
+        for key, default in BUILTIN_PROFILE["tool_rule"].items():
+            if key in rule and not isinstance(rule[key], type(default)):
+                errs.append(f"tool_rule.{key} must be {type(default).__name__}")
+    return errs
+
+
 def load_profile(name_or_path):
     """Load a profile by shipped name or by path. None means the default profile."""
     if name_or_path is None:
@@ -149,8 +181,11 @@ def load_profile(name_or_path):
         path = os.path.join(PROFILE_DIR, name_or_path + ".json")
         if not os.path.exists(path):
             raise ValueError(f"unknown profile {name_or_path!r}; shipped: {', '.join(shipped_profiles()) or 'none'}")
-    with open(path, encoding="utf-8") as fh:
+    with open(path, encoding="utf-8-sig") as fh:
         prof = json.load(fh)
+    problems = profile_type_errors(prof)
+    if problems:
+        raise ValueError(f"profile {path}: " + "; ".join(problems))
     merged = dict(BUILTIN_PROFILE)
     merged.update(prof)
     merged["tool_rule"] = dict(BUILTIN_PROFILE["tool_rule"], **prof.get("tool_rule", {}))
