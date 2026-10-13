@@ -10,7 +10,7 @@ One command runs the automated part. Write a `selfcheck.json` once (the format i
 python scripts/selfcheck.py selfcheck.json
 ```
 
-It runs, and prints one row each for: the log (`check_log.py`), the output contract (`preflight.py`), the usage report's existence and content, constants missing from `CONSTANTS.md` (`interview_drill.py`), code literals copied from the dataset (`corpus_literals.py`), and numbers in docs versus the live repo (`claim_audit.py`). A section you did not configure prints UNKNOWN, never PASS. Fix every FAIL before moving on; read every WARN.
+It runs, and prints one row each for: the starter files (`AGENTS.md` unchanged since kickoff, hard rule 1), the log (`check_log.py`), the output contract (`preflight.py`), the usage report's existence and content, constants missing from `CONSTANTS.md` (`interview_drill.py`), code literals copied from the dataset (`corpus_literals.py`), and numbers in docs versus the live repo (`claim_audit.py`). A section you did not configure, or one that examined nothing, prints UNKNOWN, never PASS. Fix every FAIL before moving on; read every WARN.
 
 Two checks are not in selfcheck because they need two runs. Do them by hand:
 - `scripts/rerun_diff.py` on two offline runs from the cache: zero changed rows.
