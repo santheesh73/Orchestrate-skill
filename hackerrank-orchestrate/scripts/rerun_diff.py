@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 """Diff two runs of an Orchestrate output CSV: churn per column and the noise floor.
 
+Failure it prevents: shipping a change whose blast radius nobody measured, and calling
+a change an improvement when it is inside the model's run-to-run noise.
+
 Use it:
   - after any core or extraction change (blast radius on the full input set)
   - on two offline runs from the cache (should be 0 changed rows)

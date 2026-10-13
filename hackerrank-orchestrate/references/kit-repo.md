@@ -1,6 +1,6 @@
 # Optional: the community toolkit
 
-`hackerrank-orchestrate-skills` is a community repository (not affiliated with HackerRank or with this skill) with auto-triggering skills and a zero-dependency Python CLI that audits a submission repo. **This skill never depends on it:** `self-score.md` Path A is a complete gate without it.
+`hackerrank-orchestrate-skills` is a community repository (not affiliated with HackerRank or with this skill) with auto-triggering skills and a zero-dependency Python CLI that audits a submission repo. **This skill never depends on it:** `self-score.md` Path A and `scripts/selfcheck.py` are a complete gate without it.
 
 **Secondhand digest.** The toolkit repository could not be located from here on 2026-10-13. This page restates, in its own words, the toolkit as described by [orchestrate-loop](https://github.com/bsrikumar855-dot/orchestrate-loop), which read it at a commit titled "Phase 2: experiment tracker + live score delta loop". Commands may have changed; trust the toolkit's own `--help` over this page.
 
@@ -49,10 +49,10 @@ Reporting: 18 label VERIFIED / MEASURED / INFERENCE / UNKNOWN · 19 name the lim
 2. Evidence for each change: metric, gain and cost, blast radius, counterfactual, ceiling, logged rejections.
 3. Trust the tests: negative controls; audits never write to ground truth; diff every artifact after the full suite.
 4. Regression: golden hash pinned; every fixed defect has a test that fails without the fix.
-5. Unseen-data robustness and `CONSTANTS.md` provenance. (`scripts/interview_drill.py`)
+5. Unseen-data robustness and `CONSTANTS.md` provenance. (`scripts/corpus_literals.py`, `scripts/interview_drill.py`)
 6. Determinism across repeated runs and processes, with the boundary stated. (`scripts/rerun_diff.py`)
 7. Security: injection, path traversal, failure paths that still produce valid output, no secrets.
-8. Docs: every number re-derived today; limitations first.
+8. Docs: every number re-derived today; limitations first. (`scripts/claim_audit.py`)
 9. Verdict: READY or NOT READY with the named blocker.
 
 ## Caveats

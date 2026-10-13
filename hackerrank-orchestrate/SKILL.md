@@ -20,13 +20,15 @@ A playbook for one event: HackerRank Orchestrate. Each edition ships a fresh sta
 | Moment | Read |
 |---|---|
 | Before the event, or the user asks how it is scored | `references/rubric.md` |
-| The starter repo drops (first 15 minutes) | `references/starter-contract.md`, then run `scripts/check_log.py` once logging starts |
+| The starter repo drops (first 15 minutes) | `references/starter-contract.md` and `scripts/contract_extract.py`; run `scripts/check_log.py` once logging starts |
 | Choosing an architecture once the problem is known | `references/archetypes/index.md` (pick the closest page; say so when none fits) and `references/winning-approaches.md` |
 | Building and iterating | `references/loop-patterns.md` and `references/evaluation.md` |
 | Writing a Claude Code prompt | `references/prompt-templates.md` |
 | Improving output rows and justifications | `references/output-csv.md` |
 | Preparing for the AI judge interview | `references/interview.md`, then run `scripts/interview_drill.py` |
-| Self-scoring, with or without the community toolkit | `references/self-score.md` |
+| Self-scoring, with or without the community toolkit | `references/self-score.md` and `scripts/selfcheck.py` |
+| Behind schedule | `references/behind-schedule.md` |
+| An edition has ended; updating this skill | `references/edition-update.md` |
 
 Templates live in `assets/`: `change_record.md`, `decision_log.md`, `CONSTANTS.md`, `usage_log_schema.md`.
 
@@ -47,7 +49,7 @@ Templates live in `assets/`: `change_record.md`, `decision_log.md`, `CONSTANTS.m
 9. **Keep `CONSTANTS.md` with a provenance column** (MEASURED / SPEC / STANDARD / BOUND / JUDGEMENT). Never call an untuned value "chosen after evaluation".
 10. **Prove counterfactuals.** Disable a component and show its effect stops. A clean "0 rows changed" from an unverified harness is suspect.
 11. **One bad row never kills the run.** Validate, retry once, then write an honest escalation or safe-default row. Never write a partial output file.
-12. **Self-score is never skipped; it degrades gracefully.** With the community toolkit installed, run it. Without it, run the bundled scripts and the manual checklist in `references/self-score.md`.
+12. **Self-score is never skipped; it degrades gracefully.** With the community toolkit installed, run it. Without it, run `scripts/selfcheck.py` and the manual checklist in `references/self-score.md`. A skipped check is UNKNOWN, never a pass.
 13. **Rehearse the interview before deadline pressure.** Drill from your own code, and never say anything about the implementation you have not checked against it.
 14. **State the boundary of every guarantee and name limitations before the judge asks.**
 
@@ -57,12 +59,14 @@ Standard-library Python 3.9+, no installs. Each takes paths and schemas as argum
 
 | Script | Checks |
 |---|---|
-| `scripts/check_log.py log.txt --expect-tool "Claude Code"` | Every entry has one valid `tool=` line, verbatim prompt block present, no secrets, append-only timestamps |
-| `scripts/preflight.py output.csv --template dataset/output.csv --inputs dataset/requests.csv --id-col request_id` | Exact header and order, one row per input id, no duplicates, enums, blanks |
-| `scripts/rerun_diff.py run_a.csv run_b.csv --id-col request_id` | Row and column churn between two runs; the noise floor |
+| `scripts/selfcheck.py selfcheck.json` | Gate 7 in one command: runs the checks below from one config; skipped means UNKNOWN |
+| `scripts/contract_extract.py STARTER_DIR [--diff OLD NEW]` | MUST / MUST NOT / files / columns / allowed values / order lines with file:line (heuristic) |
+| `scripts/check_log.py log.txt --expect-tool "Claude Code" [--profile NAME]` | One valid `tool=` line per entry, prompt block present, no secrets, append-only; formats in `assets/editions/` |
+| `scripts/preflight.py output.csv --template … --inputs … --id-col …` | Exact header and order, one row per input id, no duplicates, enums, blanks |
+| `scripts/rerun_diff.py run_a.csv run_b.csv --id-col …` | Row and column churn between two runs; the noise floor |
 | `scripts/usage_report.py usage.jsonl --price MODEL=IN:OUT` | Builds `evaluation/usage_report.md` from a per-call token log |
-| `scripts/interview_drill.py code/ --constants CONSTANTS.md` | Question bank from your own constants, thresholds and orderings, each with file:line |
+| `scripts/interview_drill.py code/ --constants CONSTANTS.md` | Questions from your own constants, thresholds and orderings, with file:line |
+| `scripts/corpus_literals.py --data … --code code/ --spec …` | Code literals copied from the dataset (sample coupling) |
+| `scripts/claim_audit.py README.md CONSTANTS.md --repo .` | Numbers in docs versus the live repo (hints, not proof) |
 
-## After each edition
-
-Update `references/archetypes/` with the new problem shape and `references/rubric.md` if the weights changed. Keep personal results and dataset-specific notes out of this skill; put them in project memory.
+Keep personal results and dataset-specific notes out of this skill; put them in project memory.

@@ -1,0 +1,10 @@
+{
+  "log": {"path": "log.txt", "expect_tool": "Claude Code", "profile": "sept-2026"},
+  "output": {"path": "output.csv", "template": "dataset/output.csv", "inputs": "dataset/requests.csv",
+             "id_col": "request_id", "enums": {"status": ["approved", "wait", "declined"]},
+             "nonempty": ["explanation"]},
+  "usage_report": {"path": "code/evaluation/usage_report.md"},
+  "constants": {"code": ["code"], "constants": "CONSTANTS.md"},
+  "corpus_literals": {"data": ["dataset/*.csv"], "code": ["code"], "spec": ["problem_statement.md"]},
+  "claims": {"docs": ["README.md"], "repo": ".", "csv": ["output.csv"], "constants": "CONSTANTS.md"}
+}

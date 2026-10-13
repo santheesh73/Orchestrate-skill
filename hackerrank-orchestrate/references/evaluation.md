@@ -8,7 +8,7 @@ The dataset is evidence about the domain, not the specification.
 
 - Every rule must be justifiable from the problem statement or from how the domain generally works.
 - Samples may **motivate** a rule (they show a case exists) or **falsify** one (they show it is wrong). They are never its sole justification.
-- No rule keyed on an id, a string copied from the data, or a combination whose cardinality comes from sample size. Add a test that greps the code for corpus literals.
+- No rule keyed on an id, a string copied from the data, or a combination whose cardinality comes from sample size. Check with `scripts/corpus_literals.py`, which flags code literals that equal dataset values.
 - A constant whose only source is a distribution read off the sample is rejected. A constant chosen from domain reasoning and then checked against the sample is fine; record it as JUDGEMENT or MEASURED in `CONSTANTS.md` and name the alternative you rejected.
 
 For each striking pattern in the data, write three lines: the finding, the general principle taken, and the artifact-fitted rule you refused. This is one of the strongest interview answers available.
@@ -45,7 +45,7 @@ Measure the model's own run-to-run variance once: re-derive the model records fr
 
 ## 6. Merge gates
 
-- **Hard gates** (no acceptable nonzero value): output contract valid (`preflight.py`), ungrounded citations 0, hard parse failures 0, unexplained changes on an offline rerun 0, architecture tests pass (no corpus literals, no network in the decision layer), log entries valid (`check_log.py`).
+- **Hard gates** (no acceptable nonzero value): output contract valid (`preflight.py`), ungrounded citations 0, hard parse failures 0, unexplained changes on an offline rerun 0, architecture tests pass (no corpus literals per `corpus_literals.py`, no network in the decision layer), log entries valid (`check_log.py`).
 - **Review gates** (need a written justification): labeled regression of two or more rows, high churn for a tiny net gain, a safety rule that stops firing, the output distribution collapsing onto one value (all-escalate is invalid).
 - **Diagnostic only, never gating:** token counts, per-class scores with support under 5, calibration, confidence histograms.
 

@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 """Generate an interview question bank from your own code.
 
+Failure it prevents: an interview answer that contradicts your own code, and
+constants you cannot explain because CONSTANTS.md never mentions them.
+
 The AI judge asks about YOUR constants, thresholds, orderings and statistics, and
 an answer that contradicts the code costs points. This script finds those places
 and writes one question per finding, each with file:line, so every answer can be
@@ -140,33 +143,23 @@ def scan_regex(path, rel):
     return findings, constants
 
 
-def walk(root):
+def walk(root, skip=SKIP_DIRS):
     if os.path.isfile(root):
         yield root, os.path.basename(root)
         return
     for dirpath, dirnames, filenames in os.walk(root):
-        dirnames[:] = sorted(d for d in dirnames if d not in SKIP_DIRS and not d.startswith("."))
+        dirnames[:] = sorted(d for d in dirnames if d not in skip and not d.startswith("."))
         for f in sorted(filenames):
             p = os.path.join(dirpath, f)
             yield p, os.path.relpath(p, root)
 
 
-def main(argv=None):
-    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("paths", nargs="+", help="source directories or files")
-    ap.add_argument("--constants", help="CONSTANTS.md to cross-check named constants against")
-    ap.add_argument("--include-tests", action="store_true", help="also scan tests/ directories")
-    ap.add_argument("--out", help="write markdown here (default: stdout)")
-    args = ap.parse_args(argv)
-    if args.include_tests:
-        SKIP_DIRS.difference_update({"tests", "test"})
-
+def scan_paths(paths, include_tests=False):
+    """Return (findings, constant names) for every supported source file under paths."""
+    skip = SKIP_DIRS - {"tests", "test"} if include_tests else SKIP_DIRS
     findings, constants = [], []
-    for root in args.paths:
-        if not os.path.exists(root):
-            print(f"error: {root} does not exist", file=sys.stderr)
-            return 2
-        for path, rel in walk(root):
+    for root in paths:
+        for path, rel in walk(root, skip):
             ext = os.path.splitext(path)[1]
             if ext == ".py":
                 f, c = scan_python(path, rel)
@@ -176,6 +169,26 @@ def main(argv=None):
                 continue
             findings += f
             constants += c
+    return findings, constants
+
+
+def missing_constants(constants, doc_text):
+    """Named constants that the CONSTANTS.md text never mentions."""
+    return sorted({c for c in constants if not re.search(r"\b" + re.escape(c) + r"\b", doc_text)})
+
+
+def main(argv=None):
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("paths", nargs="+", help="source directories or files")
+    ap.add_argument("--constants", help="CONSTANTS.md to cross-check named constants against")
+    ap.add_argument("--include-tests", action="store_true", help="also scan tests/ directories")
+    ap.add_argument("--out", help="write markdown here (default: stdout)")
+    args = ap.parse_args(argv)
+    for root in args.paths:
+        if not os.path.exists(root):
+            print(f"error: {root} does not exist", file=sys.stderr)
+            return 2
+    findings, constants = scan_paths(args.paths, args.include_tests)
 
     out = ["# Interview drill", "",
            "Answer each question out loud, then open the line and check your answer against the code.",
@@ -188,7 +201,7 @@ def main(argv=None):
         except OSError as exc:
             print(f"error: {exc}", file=sys.stderr)
             return 2
-        missing = sorted({c for c in constants if not re.search(r"\b" + re.escape(c) + r"\b", doc)})
+        missing = missing_constants(constants, doc)
         out += [f"## Constants missing from {os.path.basename(args.constants)} ({len(missing)})", ""]
         out += [f"- `{c}`" for c in missing] or ["- none"]
         out.append("")

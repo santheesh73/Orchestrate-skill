@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 """Check an Orchestrate output CSV against the contract before submitting.
 
+Failure it prevents: whole rows lost to a wrong header, a missing or duplicate id,
+or an off-enum value, regardless of how good the reasoning was.
+
 Checks:
   - the file is UTF-8 and parses as CSV
   - the header equals the expected columns, in order (from --template or --columns)

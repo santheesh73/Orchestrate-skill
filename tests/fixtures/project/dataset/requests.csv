@@ -1,0 +1,4 @@
+request_id,user_id,text,amount,limit
+r1,u_7Q2,buy laptop,1200.50,90
+r2,u_8K1,pay rent,800,45
+r3,u_7Q2,"buy phone, refurbished",350,90
