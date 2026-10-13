@@ -75,6 +75,7 @@ INPUTS = {
     "unreadable": _unreadable,
     "spaces_unicode": lambda d: _write(os.path.join(d, "sp ace", "ünï cødé.csv"), "id,status\n1,ok\n"),
     "very_long_path": lambda d: os.path.join(d, *(["x" * 200] * 25), "f.csv"),
+    "unicode_content": lambda d: _write(os.path.join(d, "uni.csv"), "id,status\n1,\u2212\u65e5\u672c\U0001f600\n2,ok\n"),
     "deep_json": lambda d: _write(os.path.join(d, "deep.json"), "[" * 100000 + "]" * 100000),
     "newline_in_name": lambda d: _write(os.path.join(d, "new\nline.csv"), "id,status\n1,ok\n"),
     "dash_name": lambda d: _write(os.path.join(d, "-dash.csv"), "id,status\n1,ok\n"),
@@ -125,6 +126,7 @@ CASES = [
     (S("interview_drill.py"), ["{code}", "--constants", "{X}"], {0, 2}),
     (S("preflight.py"), ["{X}", "--columns", "id,status"], {0, 1, 2}),
     (S("preflight.py"), ["{ok_csv}", "--template", "{X}"], {0, 1, 2}),
+    (S("preflight.py"), ["{X}", "--columns", "id,status", "--enum", "status=ok"], {0, 1, 2}),
     (S("preflight.py"), ["{ok_csv}", "--columns", "id,status", "--inputs", "{X}", "--id-col", "id"], {0, 1, 2}),
     (S("rerun_diff.py"), ["--id-col", "id", "{X}", "{ok_csv}"], {0, 1, 2}),
     (S("selfcheck.py"), ["{X}"], {0, 1, 2, 3, 4}),
@@ -175,10 +177,10 @@ BAD_ARGS = [
 ]
 
 
-def _run(argv):
+def _run(argv, env=None):
     try:
         proc = subprocess.run([sys.executable, "-W", "error"] + argv, capture_output=True, text=True,
-                              errors="replace", timeout=60, cwd=ROOT)
+                              errors="replace", timeout=60, cwd=ROOT, env=env)
     except subprocess.TimeoutExpired:
         return None, "TIMEOUT"
     return proc.returncode, proc.stdout + proc.stderr
@@ -210,9 +212,9 @@ class CliMatrix(unittest.TestCase):
             os.chmod(unreadable, 0o644)
         shutil.rmtree(cls.d, ignore_errors=True)
 
-    def check_all(self, jobs):
+    def check_all(self, jobs, env=None):
         with concurrent.futures.ThreadPoolExecutor(max_workers=8) as pool:
-            results = list(pool.map(lambda j: (j, _run(j[1])), jobs))
+            results = list(pool.map(lambda j: (j, _run(j[1], env)), jobs))
         for (label, argv, codes), (rc, out) in results:
             with self.subTest(case=label):
                 self.assertNotIn("Traceback", out, f"{label}\n{out[-1500:]}")
@@ -229,6 +231,18 @@ class CliMatrix(unittest.TestCase):
                              [script] + _fill(template, values), codes))
         self.assertGreater(len(jobs), 300)
         self.check_all(jobs)
+
+    def test_non_utf8_console(self):
+        # A console or redirected stdout that cannot encode the data (ASCII here; cp1252 or
+        # cp437 on Windows) must not turn a printed example into a UnicodeEncodeError.
+        env = dict(os.environ, PYTHONIOENCODING="ascii")
+        jobs = []
+        for name in ("unicode_content", "spaces_unicode"):
+            values = dict(self.fx, X=self.inputs[name])
+            for script, template, codes in CASES:
+                jobs.append((f"{os.path.basename(script)} {' '.join(template)} [{name}, ascii console]",
+                             [script] + _fill(template, values), codes))
+        self.check_all(jobs, env)
 
     def test_unwritable_output_paths(self):
         jobs = []
