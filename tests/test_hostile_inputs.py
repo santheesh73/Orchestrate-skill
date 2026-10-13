@@ -248,5 +248,19 @@ class UsageRecordTypes(Tmp):
         self.assertEqual(self.report(self.GOOD)[0], 0)
 
 
+
+class ClaimRepoIsAFile(Tmp):
+    """v2.2.1 round 3: --repo naming a file was walked as an empty tree, so every test-count
+    claim was reported as a mismatch against "tests=0" instead of as a usage error."""
+
+    def test_repo_that_is_a_file_is_a_usage_error(self):
+        doc = self.path("x.md", "3 tests\n")
+        rc, out = run(claim_audit, [doc, "--repo", doc])
+        self.assertEqual(rc, 2)
+        self.assertIn("is not a directory", out)
+        rc, out = run(selfcheck, [self.path("c.json", json.dumps({"claims": {"docs": ["x.md"], "repo": "x.md"}}))])
+        self.assertRegex(out, r"claims\s+FAIL")
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -162,6 +162,9 @@ def main(argv=None):
     if not docs or missing:
         print(f"error: missing {missing or 'docs'}", file=sys.stderr)
         return 2
+    if args.repo and not os.path.isdir(args.repo):
+        print(f"error: --repo {args.repo} is not a directory", file=sys.stderr)
+        return 2
     exclude = ([] if args.no_default_exclude else list(DEFAULT_EXCLUDES)) + args.exclude
     try:
         results, live = audit(docs, args.repo, args.csv, args.constants, exclude)
