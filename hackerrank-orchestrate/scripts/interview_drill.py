@@ -241,8 +241,12 @@ def main(argv=None):
             "- What are the two biggest limitations, and what experiment would resolve each?", ""]
     report = "\n".join(out)
     if args.out:
-        with open(args.out, "w", encoding="utf-8") as fh:
-            fh.write(report)
+        try:
+            with open(args.out, "w", encoding="utf-8") as fh:
+                fh.write(report)
+        except OSError as exc:
+            print(f"error: cannot write {args.out}: {exc.strerror}", file=sys.stderr)
+            return 2
         print(f"wrote {args.out}: {len(seen)} questions")
     else:
         sys.stdout.write(report)

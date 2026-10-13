@@ -193,8 +193,12 @@ def main(argv=None):
     report = "\n".join(out) + "\n"
 
     if args.out:
-        with open(args.out, "w", encoding="utf-8") as fh:
-            fh.write(report)
+        try:
+            with open(args.out, "w", encoding="utf-8") as fh:
+                fh.write(report)
+        except OSError as exc:
+            print(f"error: cannot write {args.out}: {exc.strerror}", file=sys.stderr)
+            return 2
         print(f"wrote {args.out} ({total['calls']} calls, {n_requests} requests"
               + (f", {skipped} calls from other runs skipped" if skipped else "") + ")")
     else:

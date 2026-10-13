@@ -14,6 +14,7 @@ ROOT = os.path.join(HERE, "..")
 sys.path.insert(0, os.path.join(ROOT, "hackerrank-orchestrate", "scripts"))
 
 import claim_audit  # noqa: E402
+import contract_extract  # noqa: E402
 import preflight  # noqa: E402
 import rerun_diff  # noqa: E402
 import corpus_literals  # noqa: E402
@@ -100,6 +101,11 @@ class SelfcheckConfigShapes(Tmp):
         rc, out = run(selfcheck, [self.cfg({"claims": {"docs": "README.md"}})])
         self.assertEqual(rc, 4)
         self.assertIn("claims.docs must be a list of strings", out)
+
+    def test_min_length_must_be_an_integer(self):
+        rc, out = run(selfcheck, [self.cfg({"corpus_literals": {"data": ["d.csv"], "code": ["c"], "min_length": "a"}})])
+        self.assertEqual(rc, 4)
+        self.assertIn("corpus_literals.min_length must be an integer", out)
 
     def test_windows_style_relative_paths_resolve(self):
         self.path("sub/output.csv", "id,status\n1,ok\n")
@@ -193,6 +199,22 @@ class DanglingSymlinks(Tmp):
         rc, text = run(corpus_literals, ["--data", data, "--code", self.code])
         self.assertEqual(rc, 0, text)
         self.assertEqual(claim_audit.count_tests(self.code), 0)
+
+
+class UnwritableOut(Tmp):
+    """Round 2: --out into a folder that does not exist raised FileNotFoundError tracebacks."""
+
+    def test_out_into_missing_folder_is_a_usage_error(self):
+        bad = os.path.join(self.d, "no", "such", "report.md")
+        starter = os.path.dirname(self.path("starter/AGENTS.md", "You must write output.csv.\n"))
+        code = os.path.dirname(self.path("code/a.py", "LIMIT = 5\n"))
+        log = self.path("u.jsonl", '{"provider":"a","model":"m","input_tokens":1,"output_tokens":2}\n')
+        for mod, args in ((contract_extract, [starter]),
+                          (interview_drill, [code]),
+                          (usage_report, [log, "--price", "m=1:2", "--requests", "1"])):
+            rc, text = run(mod, args + ["--out", bad])
+            self.assertEqual(rc, 2, mod.__name__)
+            self.assertIn("cannot write", text)
 
 
 if __name__ == "__main__":

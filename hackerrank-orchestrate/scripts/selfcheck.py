@@ -209,7 +209,10 @@ def shape_errors(cfg):
                 if not (isinstance(val, dict) and all(isinstance(v, list) and all(isinstance(x, str) for x in v)
                                                       for v in val.values())):
                     errs.append(f"{name}.enums must map column names to lists of strings")
-            elif key != "min_length" and not isinstance(val, str):
+            elif key == "min_length":
+                if not isinstance(val, int) or isinstance(val, bool):
+                    errs.append(f"{name}.min_length must be an integer")
+            elif not isinstance(val, str):
                 errs.append(f"{name}.{key} must be a string")
     return errs
 
