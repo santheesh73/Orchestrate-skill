@@ -75,7 +75,7 @@ class NonUtf8Inputs(Tmp):
             self.assertEqual(rc, 2, flag)
             self.assertIn("not valid UTF-8", out)
         rc, out = run(claim_audit, [self.path("bin.md", BINARY), "--repo", self.d])
-        self.assertEqual(rc, 0)  # docs are read leniently: a stray byte must not stop the audit
+        self.assertEqual(rc, 3)  # read leniently, not a crash; exit 3 because the doc makes no claim
 
     def test_corpus_literals_binary_allowlist_is_a_usage_error(self):
         data = self.path("d.csv", "id,v\nabc123,1\n")
@@ -130,7 +130,7 @@ class ParserWarnings(Tmp):
         cfg = self.path("selfcheck.json", json.dumps({"claims": {"docs": ["README.md"], "repo": "."}}))
         rc, out = run(selfcheck, [cfg])
         self.assertNotIn("SyntaxWarning", out)
-        self.assertRegex(out, r"claims\s+PASS\s+1 claims, 0 mismatches")
+        self.assertRegex(out, r"claims\s+PASS\s+1 claims, 1 checked, 0 mismatches")
 
     def test_drill_and_literals_parse_files_that_warn(self):
         p = self.path("code/m.py", WARNY_TEST + "LIMIT = 7\n")
@@ -173,7 +173,7 @@ class CsvShapes(Tmp):
                           (claim_audit, [other, "--csv", nul]),
                           (corpus_literals, ["--data", nul, "--code", other])):
             rc, text = run(mod, args)
-            self.assertIn(rc, (0, 1, 2), mod.__name__)
+            self.assertIn(rc, (0, 1, 2, 3), mod.__name__)
             if sys.version_info < (3, 10):
                 self.assertIn("not parseable as CSV", text, mod.__name__)
 

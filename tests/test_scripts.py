@@ -4,6 +4,7 @@ import contextlib
 import io
 import shutil
 import json
+import re
 import os
 import sys
 import tempfile
@@ -367,11 +368,47 @@ class ClaimAudit(unittest.TestCase):
         suite = unittest.defaultTestLoader.discover(HERE, pattern="test_*.py", top_level_dir=HERE)
         self.assertEqual(claim_audit.count_tests(os.path.join(HERE, "..")), suite.countTestCases())
 
-    def test_selfcheck_on_this_repo_reports_the_suite_count(self):
+    def test_selfcheck_on_this_repo_checks_real_claims(self):
+        # Regression: v2.2.0 reported "claims PASS" after checking 0 claims.
         suite = unittest.defaultTestLoader.discover(HERE, pattern="test_*.py", top_level_dir=HERE)
         rc, out = run(selfcheck, [os.path.join(HERE, "..", "selfcheck.json")])
-        self.assertRegex(out, r"claims\s+PASS")
+        m = re.search(r"claims\s+PASS\s+(\d+) claims, (\d+) checked, 0 mismatches", out)
+        self.assertTrue(m, out)
+        self.assertGreaterEqual(int(m.group(2)), 1)
         self.assertIn(f"tests={suite.countTestCases()}", out)
+
+    def test_stale_count_in_a_repo_doc_is_a_mismatch(self):
+        with tempfile.TemporaryDirectory() as d:
+            doc = os.path.join(d, "README.md")
+            write(doc, "The suite has 99 tests.\n")
+            cfg = os.path.join(d, "selfcheck.json")
+            write(cfg, json.dumps({"claims": {"docs": [doc], "repo": os.path.join(HERE, "..")}}))
+            rc, out = run(selfcheck, [cfg, "--verbose"])
+            self.assertRegex(out, r"claims\s+WARN")
+            self.assertIn("MISMATCH", out)
+            self.assertIn("'99 tests'", out)
+
+    def test_nothing_checked_is_unknown_not_pass(self):
+        with tempfile.TemporaryDirectory() as d:
+            doc = os.path.join(d, "README.md")
+            write(doc, "No numbers here. We have 3 rows.\n")  # rows unchecked: no --csv given
+            rc, out = run(claim_audit, [doc, "--repo", PROJECT])
+            self.assertEqual(rc, 3)
+            self.assertIn("1 claims, 0 checked", out)
+            cfg = os.path.join(d, "selfcheck.json")
+            write(cfg, json.dumps({"claims": {"docs": [doc], "repo": PROJECT}}))
+            rc, out = run(selfcheck, [cfg])
+            self.assertRegex(out, r"claims\s+UNKNOWN")
+            self.assertEqual(rc, 2)
+
+    def test_only_the_latest_changelog_section_states_live_counts(self):
+        # Policy: older release sections keep historic counts in a form claim_audit does not
+        # match ("test count at the 2.1.0 release: 74"), so they never become false mismatches.
+        with open(os.path.join(HERE, "..", "CHANGELOG.md"), encoding="utf-8") as fh:
+            sections = re.split(r"^## ", fh.read(), flags=re.M)[1:]
+        self.assertTrue(claim_audit.CLAIM_RE.search(sections[0]), "latest section states no live count")
+        for sec in sections[1:]:
+            self.assertIsNone(claim_audit.CLAIM_RE.search(sec), sec.splitlines()[0])
 
 
 class ContractExtract(unittest.TestCase):

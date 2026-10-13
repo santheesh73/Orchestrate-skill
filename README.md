@@ -207,7 +207,7 @@ Standard-library Python 3.9+, nothing to install, no network. Each takes paths a
 
 | Script | What it catches |
 |---|---|
-| `selfcheck.py selfcheck.json` | Runs the checks below from one config and prints PASS, WARN, FAIL or UNKNOWN per section; a skipped check is UNKNOWN, never a pass. Exit 0 PASS, 1 WARN, 2 UNKNOWN, 3 FAIL, 4 bad config |
+| `selfcheck.py selfcheck.json` | Runs the checks below from one config and prints PASS, WARN, FAIL or UNKNOWN per section; a skipped check, or a claims check that examined nothing, is UNKNOWN, never a pass. Exit 0 PASS, 1 WARN, 2 UNKNOWN, 3 FAIL, 4 bad config |
 | `contract_extract.py starter/` and `--diff old/ new/` | The MUST, MUST NOT, required files, columns and allowed values in `AGENTS.md` and `problem_statement.md`, and what changed since the last edition (a heuristic; read the files too) |
 | `check_log.py log.txt --expect-tool "Claude Code" --profile sept-2026` | Missing, placeholder, generic or model-name `tool=` lines; empty prompt blocks; secrets; non-append-only timestamps. `--list-profiles` shows the edition formats; copy `assets/editions/template.json` for a new one |
 | `preflight.py output.csv --template dataset/output.csv --inputs dataset/<inputs>.csv --id-col <id> --enum "col=a\|b"` | Wrong or duplicate header columns, wrong order, missing or duplicate ids, off-enum values, blanks, a collapsed distribution |
@@ -215,7 +215,7 @@ Standard-library Python 3.9+, nothing to install, no network. Each takes paths a
 | `usage_report.py usage.jsonl --run-id final --price "<model>=<in>:<out>"` | Builds `evaluation/usage_report.md` with per-model and overall totals |
 | `interview_drill.py code/ --constants CONSTANTS.md` | Interview questions from your constants, thresholds, orderings and statistics, each with `file:line`, plus constants missing from `CONSTANTS.md` |
 | `corpus_literals.py --data dataset/*.csv --code code/ --spec problem_statement.md` | Ids, strings and number combinations copied from the dataset into code (sample coupling) |
-| `claim_audit.py README.md CONSTANTS.md --repo . --csv output.csv --constants CONSTANTS.md` | Test, row and constant counts in your docs that no longer match the repo |
+| `claim_audit.py README.md CONSTANTS.md --repo . --csv output.csv --constants CONSTANTS.md` | Test, row and constant counts in your docs that no longer match the repo. Exit 3 when no claim could be checked, which `selfcheck.py` reports as UNKNOWN, not PASS |
 
 An example `selfcheck.json` is in `tests/fixtures/project/`. All scripts live in `hackerrank-orchestrate/scripts/`. **They check your work and are not part of your submission.** The rules require the participant to be the author.
 
@@ -286,7 +286,7 @@ Every link above was fetched on 2026-10-13 and loaded. The community `hackerrank
 - **Trigger accuracy against a live model: UNKNOWN.** `tools/run_trigger_evals.py --live` exists but has not been run, because no API key was available where this was built. What *was* measured is an offline lexical-overlap proxy over the 44 cases in `evals/triggers.json` (22 should trigger, 22 should not): precision 0.72, recall 0.59 at threshold 0.3 (MEASURED, proxy only; it is not model behavior).
 - **Leaderboard per-stage figures in `references/rubric.md` are INFERRED.** They were computed by orchestrate-loop from public leaderboard data; the leaderboard API was not reachable here to re-derive them.
 - **The toolkit digest in `references/kit-repo.md` is secondhand.** The toolkit repository could not be located, so its commands are unverified.
-- **Script behavior is MEASURED** by the test suite in `tests/` on Python 3.9, 3.11 and 3.13 (CI matrix). The fixtures are small and synthetic; real starter repos may differ, and the log-format profiles cover only the editions whose starters were public. Each profile states its provenance: `sept-2026` and `june-2026` are VERIFIED against the official starters' `AGENTS.md`, except that `june-2026`'s strict tool-name checks are INFERRED from September; `template` is UNKNOWN until filled.
+- **Script behavior is MEASURED** by the 105 tests in `tests/`, run on Python 3.9, 3.11 and 3.13 (CI matrix). The fixtures are small and synthetic; real starter repos may differ, and the log-format profiles cover only the editions whose starters were public. Each profile states its provenance: `sept-2026` and `june-2026` are VERIFIED against the official starters' `AGENTS.md`, except that `june-2026`'s strict tool-name checks are INFERRED from September; `template` is UNKNOWN until filled.
 - **Context footprint is ESTIMATED** by `tools/footprint.py` as characters / 4, not by a tokenizer. The budgets in `tools/validate_skill.py` are the measured sizes plus about 10%.
 - Not affiliated with or endorsed by HackerRank.
 
