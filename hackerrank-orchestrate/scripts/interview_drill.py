@@ -31,6 +31,7 @@ import ast
 import os
 import re
 import sys
+import warnings
 
 TRIVIAL_NUMBERS = {0, 1, -1, 2, 100}
 STAT_FUNCS = {"mean", "median", "mode", "quantile", "quantiles", "percentile", "stdev", "pstdev",
@@ -72,11 +73,19 @@ def func_name(call):
     return ""
 
 
+def parse_quietly(src):
+    """ast.parse without SyntaxWarnings (invalid escapes in the participant's code), which
+    would otherwise print to stderr, or raise under -W error and hide the whole file."""
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        return ast.parse(src)
+
+
 def scan_python(path, rel):
     with open(path, encoding="utf-8-sig", errors="replace") as fh:
         src = fh.read()
     try:
-        tree = ast.parse(src)
+        tree = parse_quietly(src)
     except SyntaxError as exc:
         return [("parse", rel, exc.lineno or 0, f"could not parse: {exc.msg}")], []
     findings, constants = [], []
@@ -151,7 +160,8 @@ def walk(root, skip=SKIP_DIRS):
         dirnames[:] = sorted(d for d in dirnames if d not in skip and not d.startswith("."))
         for f in sorted(filenames):
             p = os.path.join(dirpath, f)
-            yield p, os.path.relpath(p, root)
+            if os.path.isfile(p):  # skips dangling symlinks
+                yield p, os.path.relpath(p, root)
 
 
 def scan_paths(paths, include_tests=False):
@@ -201,6 +211,9 @@ def main(argv=None):
         except OSError as exc:
             print(f"error: {exc}", file=sys.stderr)
             return 2
+        except UnicodeDecodeError:
+            print(f"error: {args.constants} is not valid UTF-8", file=sys.stderr)
+            return 2
         missing = missing_constants(constants, doc)
         out += [f"## Constants missing from {os.path.basename(args.constants)} ({len(missing)})", ""]
         out += [f"- `{c}`" for c in missing] or ["- none"]
@@ -228,8 +241,12 @@ def main(argv=None):
             "- What are the two biggest limitations, and what experiment would resolve each?", ""]
     report = "\n".join(out)
     if args.out:
-        with open(args.out, "w", encoding="utf-8") as fh:
-            fh.write(report)
+        try:
+            with open(args.out, "w", encoding="utf-8") as fh:
+                fh.write(report)
+        except OSError as exc:
+            print(f"error: cannot write {args.out}: {exc.strerror}", file=sys.stderr)
+            return 2
         print(f"wrote {args.out}: {len(seen)} questions")
     else:
         sys.stdout.write(report)

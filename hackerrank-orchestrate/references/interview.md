@@ -1,6 +1,6 @@
 # The AI judge interview
 
-30 points and the first tie-breaker. Sub-criteria (May 2026): technical depth and ownership 40%, problem understanding and judgment 25%, communication 20%, honesty 15%. Short answers correlate with low scores. Check the live rules for what is allowed during the interview.
+30 points and the first tie-breaker. Sub-criteria (May 2026): technical depth and ownership 40%, problem understanding and judgment 25%, communication 20%, honesty 15%. Very short answers correlated with a low interview score (r = −0.568, May 2026 post-mortem); total words spoken correlated positively (r = 0.615). Check the live rules for what is allowed during the interview.
 
 ## 1. What the judge asks
 

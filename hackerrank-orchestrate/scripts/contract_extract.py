@@ -158,8 +158,12 @@ def main(argv=None):
         print(f"error: {exc}", file=sys.stderr)
         return 2
     if args.out:
-        with open(args.out, "w", encoding="utf-8") as fh:
-            fh.write(report + "\n")
+        try:
+            with open(args.out, "w", encoding="utf-8") as fh:
+                fh.write(report + "\n")
+        except OSError as exc:
+            print(f"error: cannot write {args.out}: {exc.strerror}", file=sys.stderr)
+            return 2
         print(f"wrote {args.out}")
     else:
         print(report)

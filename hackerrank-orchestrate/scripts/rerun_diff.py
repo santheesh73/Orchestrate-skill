@@ -29,21 +29,28 @@ import subprocess
 import sys
 import tempfile
 
+# A justification can exceed the csv module's 131072-character default field limit.
+csv.field_size_limit(min(sys.maxsize, 2**31 - 1))
+
 
 def load(path, id_col):
     with open(path, "rb") as fh:
         raw = fh.read()
     digest = hashlib.sha256(raw).hexdigest()
     text = raw.decode("utf-8-sig")
-    reader = csv.DictReader(io.StringIO(text))
-    fields = reader.fieldnames or []
+    reader = csv.DictReader(io.StringIO(text, newline=None))
+    try:
+        fields = reader.fieldnames or []
+        records = list(reader)
+    except csv.Error as exc:  # e.g. a NUL byte on Python 3.9
+        raise ValueError(f"{path} is not parseable as CSV: {exc}") from None
     if id_col not in fields:
         raise ValueError(f"{path} has no column {id_col!r}")
     dupes = sorted({c for c in fields if fields.count(c) > 1})
     if dupes:
         raise ValueError(f"{path} has duplicate columns {dupes}; values would be silently overwritten")
     rows = {}
-    for r in reader:
+    for r in records:
         if r[id_col] in rows:
             raise ValueError(f"{path} has duplicate id {r[id_col]!r}")
         rows[r[id_col]] = r

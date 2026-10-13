@@ -62,9 +62,9 @@ Four artifacts, 100 points:
 Sub-weights are from the organizer's post-mortem of the May 2026 edition. Rules worth knowing:
 
 - **The code grader reads source only.** README claims earn nothing in the code score; design reasons belong in code comments and docstrings.
-- **A generic justification caps a row at about 70%,** even when the label is right.
+- **A generic justification caps a row at about 70 out of 100,** even when the label is right.
 - **Escalating everything is invalid, and so is replying to everything.**
-- **Short interview answers score low.** The organizer measured a correlation of about −0.57.
+- **Very short interview answers score low.** In the organizer's interview transcripts, its "very short answers" measure correlated with interview score at r = −0.568; total words spoken correlated positively (r = 0.615), and the number of turns only weakly negatively (no value published).
 - **Ties break on interview, then code, then output, then transcript.**
 - Since September 2026, `code.zip` must include **`evaluation/usage_report.md`** (model calls, tokens and estimated cost for the final run), and every log entry needs a valid **`tool=` line** naming your coding harness.
 
@@ -72,7 +72,7 @@ Sub-weights are from the organizer's post-mortem of the May 2026 edition. Rules 
 
 Labels: **VERIFIED** means read in the organizer's post-mortem; **INFERRED** means computed by [orchestrate-loop](https://github.com/bsrikumar855-dot/orchestrate-loop) from public leaderboard data that could not be re-checked here. The full table is in [`rubric.md`](hackerrank-orchestrate/references/rubric.md#5-what-the-leaderboards-show).
 
-- **Balance beats a peak.** Every top-10 finisher in May was in the top quartile on all four artifacts (VERIFIED). Most of each top 50 in May, June and August was too (INFERRED).
+- **Balance beats a peak.** Every top-10 finisher in May was in the top quartile on all four artifacts, and so were 37 of the May top 50, with 11 more on three of the four (VERIFIED). Most of the June and August top 50 were too (INFERRED).
 - **The output CSV is where strong teams lose.** It was the weakest stage for 49 of the June top 50 and 34 of the August top 50 (INFERRED). Great code with a mediocre CSV is the typical top-50 profile, so getting the rows right is how you separate.
 - **The transcript and interview are cheap points most people leave behind.** Across the field, the median transcript score sat roughly between 1.4 and 3.8 of 10, and the median interview score between 11 and 15 of 30, while top-50 averages were 63% to 89% of the maximum (INFERRED).
 - **Simple, explainable architectures win.** A single agent with tools held 7 of the May top 10 (VERIFIED). One June author had earlier entered with a 15-stage pipeline and placed mid-table, unable to show what any one stage added; their next, smaller design did far better (INFERRED, from that author's write-up as summarized in orchestrate-loop).
@@ -80,7 +80,7 @@ Labels: **VERIFIED** means read in the organizer's post-mortem; **INFERRED** mea
 
 ## How to approach it
 
-The core idea: **the model describes, code decides.** The model reads messages, documents and images and returns a typed record of what it observed. Plain, unit-tested code turns that record into every number, label and plan. That makes the run repeatable from a cache, auditable row by row, and resistant to prompt injection by structure. It also gives you strong answers for the interview.
+The core idea: **the model describes, code decides** (the skill's core principle in [`SKILL.md`](hackerrank-orchestrate/SKILL.md), detailed in [`winning-approaches.md`](hackerrank-orchestrate/references/winning-approaches.md) §1). The model only reports what it observed; tested code produces every final value. You get a run you can repeat from a cache, audit row by row, and defend against injected text, plus strong interview answers.
 
 ### Before the event
 
@@ -105,7 +105,7 @@ Contract misses cost points that no model quality can recover. Before any design
 - **Identify the problem's shape** (retrieval, multimodal verification, adversarial routing, simulation and planning, or something new) and start from what worked for that shape.
 - **Design one findable agent loop:** a named function or graph with an explicit step cap, a fallback, and a validated final-answer schema. A framework or the raw API both work. A hidden decision tree passed off as a "loop" does not.
 - **Draw the seam.** Decide what the model observes, what code decides, and which inputs are attacker-controlled. Fence untrusted content.
-- **Decide grouping keys and statistics before writing detectors.** Patches inherit whatever the grouping already threw away.
+- **Choose how rows are grouped before writing any detector** (hard rule 5).
 - **Cache every model record** by content hash and prompt version, so you can iterate on rules offline for free.
 - **Log every model call** (provider, model, tokens, row id) from the first paid call. You need this for the usage report.
 
@@ -119,12 +119,8 @@ BASELINE / RESULT / BLAST RADIUS / COUNTERFACTUAL / VERDICT
 ```
 
 - **Compute the ceiling first.** If a gap touches two rows, it isn't worth an hour.
-- **Justify with the domain, not the samples.** Sample rows can show that a case exists or that a rule is wrong. They are never a rule's only reason. Never tune until one sample number matches.
-- **One labeled row is noise.** With 20 to 30 samples, one row is 3 to 5 points. Revert when a label-free check regresses, or when two or more labeled rows regress for reasons you can't explain.
-- **Diff the whole output** after every core change, not just the field you targeted. Measure the model's run-to-run noise once, so you know what size of change actually means something.
-- **Prove counterfactuals.** Turn a component off and show its effect stops.
-- **One bad row never kills the run.** Validate, retry once, then write an honest escalation or safe-default row. Never write a partial output file.
-- **Keep `CONSTANTS.md`** with a provenance column for every tunable number (measured, spec, standard, bound or judgement), and put the same reason in a comment beside the constant.
+- **Diff the whole output** after every core change, not just the field you targeted. Measure the model's run-to-run noise once, so you know what size of change actually means something. With 20 to 30 labeled samples, one row is 3 to 5 points.
+- **Iterate under the hard rules** on samples, noise, counterfactuals, row safety and constants: rules 3, 4, 9, 10 and 11 in [`SKILL.md`](hackerrank-orchestrate/SKILL.md#hard-rules-canonical-copy-other-files-link-here). The decision table behind them is in [`evaluation.md`](hackerrank-orchestrate/references/evaluation.md) §4.
 
 ### Hours 13 to 18: output rows and self-score
 
@@ -180,11 +176,12 @@ The skill keeps one canonical list of 14 hard rules in [`SKILL.md`](hackerrank-o
 **Claude Code:** copy the folder into your project or your personal skills directory. It triggers from its description; no slash command is needed.
 
 ```bash
-mkdir -p .claude/skills
-cp -r hackerrank-orchestrate .claude/skills/
+python tools/package_skill.py --install .claude/skills   # clean, validated copy; add --force to replace one
 ```
 
-**Claude.ai:** zip the `hackerrank-orchestrate` folder (with `SKILL.md` at its top level) and upload it as a custom skill.
+A plain `cp -r hackerrank-orchestrate .claude/skills/` also works, but it copies any `__pycache__` folders left by running the scripts.
+
+**Claude.ai:** run `python tools/package_skill.py` and upload `dist/hackerrank-orchestrate.zip` as a custom skill. The zip holds one top-level `hackerrank-orchestrate/` folder with `SKILL.md` in it, and leaves out caches, tests and fixtures. Packaging stops if the staged copy fails validation.
 
 ### Example prompts
 
@@ -206,7 +203,7 @@ The interview opens in two hours. Build my drill from code/ and quiz me.
 
 ### Checker scripts
 
-Standard-library Python 3.9+, nothing to install, no network. Each takes paths and schemas as arguments and embeds no dataset.
+Standard-library Python 3.9+, nothing to install, no network. Each takes paths and schemas as arguments and embeds no dataset. Bad input (non-UTF-8 files, CR-only or NUL-containing CSVs, very long fields, broken symlinks, a malformed config) gives a one-line error and exit code, not a traceback; `tests/test_hostile_inputs.py` holds those cases.
 
 | Script | What it catches |
 |---|---|
@@ -244,11 +241,15 @@ hackerrank-orchestrate/           the skill
 ├── scripts/                      the nine checkers above
 └── assets/                       change record, decision log, CONSTANTS.md, usage-log schema
     └── editions/                 log-format profiles per edition, plus a template
+docs/COVERAGE.md                  rubric criteria and orchestrate-loop capabilities mapped to guidance and checks
 evals/triggers.json               44 prompts that should (22) and should not (22) trigger the skill
-tests/                            script tests, edge cases and golden outputs on small fixtures
-tools/validate_skill.py           structure and policy check, run in CI
+tests/                            script and tool tests, hostile inputs, golden outputs on small fixtures
+tools/validate_skill.py           structure, policy and context-budget check, run in CI
+tools/package_skill.py            builds dist/hackerrank-orchestrate.zip and optional clean install
+tools/footprint.py                always-loaded and on-demand size of the skill, against budgets
 tools/run_trigger_evals.py        trigger evals: offline proxy, or opt-in live run
 VERSION, CHANGELOG.md             release version and history
+dist/                             build output from package_skill.py (git-ignored)
 ```
 
 Development:
@@ -259,6 +260,8 @@ python -W error -m unittest discover -s tests -v
 python tools/run_trigger_evals.py --offline
 python hackerrank-orchestrate/scripts/selfcheck.py tests/fixtures/project/selfcheck.json
 python hackerrank-orchestrate/scripts/selfcheck.py selfcheck.json   # claims check on this repo; other sections UNKNOWN
+python tools/package_skill.py --out /tmp/dist   # build and validate the upload zip
+python tools/footprint.py --summary             # context footprint against budgets
 
 # Opt-in, needs ANTHROPIC_API_KEY, makes network calls, never run in CI:
 python tools/run_trigger_evals.py --live --model <model-id>
@@ -284,6 +287,7 @@ Every link above was fetched on 2026-10-13 and loaded. The community `hackerrank
 - **Leaderboard per-stage figures in `references/rubric.md` are INFERRED.** They were computed by orchestrate-loop from public leaderboard data; the leaderboard API was not reachable here to re-derive them.
 - **The toolkit digest in `references/kit-repo.md` is secondhand.** The toolkit repository could not be located, so its commands are unverified.
 - **Script behavior is MEASURED** by the test suite in `tests/` on Python 3.9, 3.11 and 3.13 (CI matrix). The fixtures are small and synthetic; real starter repos may differ, and the log-format profiles cover only the editions whose starters were public. Each profile states its provenance: `sept-2026` and `june-2026` are VERIFIED against the official starters' `AGENTS.md`, except that `june-2026`'s strict tool-name checks are INFERRED from September; `template` is UNKNOWN until filled.
+- **Context footprint is ESTIMATED** by `tools/footprint.py` as characters / 4, not by a tokenizer. The budgets in `tools/validate_skill.py` are the measured sizes plus about 10%.
 - Not affiliated with or endorsed by HackerRank.
 
 MIT licensed. See [LICENSE](LICENSE).

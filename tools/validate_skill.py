@@ -27,6 +27,9 @@ PERSONAL_MARKERS = [re.compile(p, re.I) for p in (r"global\s+#\s*\d", r"\b\d{1,3
                                                     r"\bmy (score|rank)\b")]
 MAX_BODY_LINES = 80
 MAX_DESC = 900
+# Context budgets in characters, set at the size measured for v2.2.0 plus about 10%
+# (tools/footprint.py reports the same parts). Raise one only on purpose.
+FOOTPRINT_BUDGETS = {"skill_body": 7600, "always_loaded": 8500, "on_demand": 167000}
 LINE_LIMITS = {"references/behind-schedule.md": 40, "references/edition-update.md": 40, "references/kit-repo.md": 90}
 ARCHETYPE_SECTIONS = ("Architecture that held up", "Guards that fit", "Grounding test", "Where rows are lost")
 PROFILE_KEYS = {"name", "entry_regex", "prompt_header", "section_headers", "session_start_title_match",
@@ -51,8 +54,43 @@ def frontmatter(text):
 
 
 def read(path):
-    with open(path, encoding="utf-8") as fh:
+    """Lenient read: check_files reports invalid UTF-8 once, so later checks must not crash on it."""
+    with open(path, encoding="utf-8", errors="replace") as fh:
         return fh.read()
+
+
+TEXT_EXTS = (".md", ".py", ".json", ".txt", ".csv", ".yml", ".yaml")
+
+
+def check_files(skill_dir, errors):
+    """Report broken symlinks and text files that are not UTF-8; both break an installed skill."""
+    for dirpath, dirnames, files in os.walk(skill_dir):
+        dirnames[:] = [d for d in dirnames if d != "__pycache__"]
+        for fn in files:
+            p = os.path.join(dirpath, fn)
+            rel = os.path.relpath(p, skill_dir)
+            if not os.path.exists(p):
+                errors.append(f"{rel} is a broken symlink")
+            elif fn.endswith(TEXT_EXTS):
+                try:
+                    with open(p, encoding="utf-8") as fh:
+                        fh.read()
+                except UnicodeDecodeError:
+                    errors.append(f"{rel} is not valid UTF-8")
+
+
+def on_demand_chars(skill_dir):
+    total = 0
+    for dirpath, dirnames, filenames in os.walk(skill_dir):
+        dirnames[:] = [d for d in dirnames if d != "__pycache__"]
+        for f in filenames:
+            p = os.path.join(dirpath, f)
+            if (f.endswith((".pyc", ".pyo")) or os.path.relpath(p, skill_dir) == "SKILL.md"
+                    or not os.path.isfile(p)):
+                continue
+            with open(p, encoding="utf-8", errors="replace") as fh:
+                total += len(fh.read())
+    return total
 
 
 def check_skill(skill_dir, errors):
@@ -60,6 +98,7 @@ def check_skill(skill_dir, errors):
     if not os.path.exists(skill_md):
         errors.append(f"{skill_md} not found")
         return None
+    check_files(skill_dir, errors)
     text = read(skill_md)
     fm, body = frontmatter(text)
     if fm is None:
@@ -86,6 +125,11 @@ def check_skill(skill_dir, errors):
     body_lines = len(body.strip("\n").splitlines())
     if body_lines >= MAX_BODY_LINES:
         errors.append(f"SKILL.md body is {body_lines} lines; keep it under {MAX_BODY_LINES}")
+    sizes = {"skill_body": len(body), "always_loaded": len(desc) + len(body), "on_demand": on_demand_chars(skill_dir)}
+    for part, limit in sorted(FOOTPRINT_BUDGETS.items()):
+        if sizes[part] > limit:
+            errors.append(f"footprint: {part} is {sizes[part]} characters, over its budget of {limit} "
+                          "(see tools/footprint.py)")
 
     # Hard rules: one numbered, contiguous list in SKILL.md.
     m = re.search(r"^## Hard rules.*?$(.*?)(?=^## )", body, re.S | re.M)
@@ -100,15 +144,15 @@ def check_skill(skill_dir, errors):
             for dirpath, _, files in os.walk(skill_dir):
                 for fn in files:
                     p = os.path.join(dirpath, fn)
-                    if fn.endswith(".md") and p != skill_md and phrase in read(p):
+                    if fn.endswith(".md") and p != skill_md and os.path.isfile(p) and phrase in read(p):
                         errors.append(f"hard rule {i} is restated verbatim in {os.path.relpath(p, skill_dir)}; link instead")
 
     # Every referenced path exists inside the skill folder.
     for dirpath, _, files in os.walk(skill_dir):
         for fn in files:
-            if not fn.endswith(".md"):
-                continue
             path = os.path.join(dirpath, fn)
+            if not fn.endswith(".md") or not os.path.isfile(path):
+                continue
             rel = os.path.relpath(path, skill_dir)
             content = read(path)
             for ref in sorted(set(re.findall(r"`?((?:references|scripts|assets)/[A-Za-z0-9_./\-]+)`?", content))):
@@ -188,7 +232,28 @@ def check_python(path, label, errors, require_failure_line=False):
         errors.append(f"{label} docstring must name the failure it prevents ('Failure it prevents: ...')")
 
 
+def hard_rule_titles(skill_md):
+    _, body = frontmatter(read(skill_md))
+    m = re.search(r"^## Hard rules.*?$(.*?)(?=^## )", body, re.S | re.M)
+    return [r.strip().rstrip(".") for r in re.findall(r"^\d+\.\s+\*\*(.+?)\*\*", m.group(1), re.M)] if m else []
+
+
+def check_docs_restate_no_rules(root, errors):
+    """Hard rules have one copy: the README and docs/ link to SKILL.md instead of restating them."""
+    docs = [os.path.join(root, "README.md")]
+    docs_dir = os.path.join(root, "docs")
+    docs += sorted(os.path.join(docs_dir, f) for f in os.listdir(docs_dir) if f.endswith(".md")) if os.path.isdir(docs_dir) else []
+    titles = hard_rule_titles(os.path.join(root, "hackerrank-orchestrate", "SKILL.md"))
+    for path in docs:
+        if os.path.exists(path):
+            text = read(path)
+            for i, phrase in enumerate(titles, 1):
+                if phrase in text:
+                    errors.append(f"hard rule {i} is restated verbatim in {os.path.relpath(path, root)}; link instead")
+
+
 def check_repo(errors):
+    check_docs_restate_no_rules(ROOT, errors)
     evals_path = os.path.join(ROOT, "evals", "triggers.json")
     try:
         evals = json.loads(read(evals_path))

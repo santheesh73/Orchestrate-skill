@@ -38,6 +38,10 @@ import io
 import os
 import re
 import sys
+import warnings
+
+# A justification can exceed the csv module's 131072-character default field limit.
+csv.field_size_limit(min(sys.maxsize, 2**31 - 1))
 
 SKIP_DIRS = {".git", "__pycache__", "node_modules", ".venv", "venv", "env", "dist", "build"}
 REGEX_EXTS = {".js", ".ts", ".tsx", ".jsx", ".go", ".java", ".kt", ".rb"}
@@ -45,9 +49,19 @@ STRING_RE = re.compile(r"""(?:"([^"\\\n]{2,})"|'([^'\\\n]{2,})')""")
 ID_LIKE = re.compile(r"^(?=.*[A-Za-z])(?=.*\d)[A-Za-z0-9][A-Za-z0-9_\-.:]*$")
 
 
+def read_utf8(path, encoding="utf-8"):
+    try:
+        with open(path, encoding=encoding, newline="") as fh:
+            return fh.read()
+    except UnicodeDecodeError:
+        raise ValueError(f"{path} is not valid UTF-8") from None
+
+
 def read_csv(path):
-    with open(path, encoding="utf-8-sig", newline="") as fh:
-        rows = list(csv.reader(io.StringIO(fh.read())))
+    try:
+        rows = list(csv.reader(io.StringIO(read_utf8(path, "utf-8-sig"), newline=None)))
+    except csv.Error as exc:  # e.g. a NUL byte on Python 3.9
+        raise ValueError(f"{path} is not parseable as CSV: {exc}") from None
     return (rows[0], rows[1:]) if rows else ([], [])
 
 
@@ -96,7 +110,9 @@ def python_literals(path):
     with open(path, encoding="utf-8-sig", errors="replace") as fh:
         src = fh.read()
     try:
-        tree = ast.parse(src)
+        with warnings.catch_warnings():  # invalid escapes in participant code must not hide the file
+            warnings.simplefilter("ignore")
+            tree = ast.parse(src)
     except SyntaxError:
         return [], []
     skip = docstring_nodes(tree)
@@ -138,16 +154,16 @@ def walk(root):
         dirnames[:] = sorted(d for d in dirnames if d not in SKIP_DIRS and not d.startswith("."))
         for f in sorted(filenames):
             p = os.path.join(dirpath, f)
-            yield p, os.path.relpath(p, root)
+            if os.path.isfile(p):  # skips dangling symlinks
+                yield p, os.path.relpath(p, root)
 
 
 def load_lines(path):
     out = set()
-    with open(path, encoding="utf-8") as fh:
-        for line in fh:
-            line = line.split("#", 1)[0].strip()
-            if line:
-                out.add(line)
+    for line in read_utf8(path).splitlines():
+        line = line.split("#", 1)[0].strip()
+        if line:
+            out.add(line)
     return out
 
 
@@ -208,7 +224,7 @@ def main(argv=None):
             return 2
     try:
         findings = scan(data, args.code, args.spec, args.allowlist, args.min_length)
-    except (OSError, UnicodeDecodeError) as exc:
+    except (OSError, ValueError) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
     for rel, lineno, msg in findings:

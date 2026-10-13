@@ -35,6 +35,10 @@ import io
 import os
 import re
 import sys
+import warnings
+
+# A justification can exceed the csv module's 131072-character default field limit.
+csv.field_size_limit(min(sys.maxsize, 2**31 - 1))
 
 CLAIM_RE = re.compile(r"\b(\d[\d,]*)\s+(?:unit\s+|passing\s+|labeled\s+|sample\s+|input\s+|output\s+)?"
                       r"(tests?|rows?|constants?|requests?)\b", re.I)
@@ -60,10 +64,12 @@ def count_tests(repo, exclude=DEFAULT_EXCLUDES):
             p = os.path.join(dirpath, f)
             if excluded(os.path.relpath(p, repo), exclude):
                 continue
-            if f.endswith(".py") and (f.startswith("test_") or f.endswith("_test.py")):
+            if f.endswith(".py") and (f.startswith("test_") or f.endswith("_test.py")) and os.path.isfile(p):
                 with open(p, encoding="utf-8-sig", errors="replace") as fh:
                     try:
-                        tree = ast.parse(fh.read())
+                        with warnings.catch_warnings():  # invalid escapes must not hide a test file
+                            warnings.simplefilter("ignore")
+                            tree = ast.parse(fh.read())
                     except SyntaxError:
                         continue
                 n += sum(1 for node in ast.walk(tree)
@@ -74,16 +80,25 @@ def count_tests(repo, exclude=DEFAULT_EXCLUDES):
     return n
 
 
+def read_utf8(path, encoding="utf-8"):
+    try:
+        with open(path, encoding=encoding, newline="") as fh:
+            return fh.read()
+    except UnicodeDecodeError:
+        raise ValueError(f"{path} is not valid UTF-8") from None
+
+
 def count_csv_rows(path):
-    with open(path, encoding="utf-8-sig", newline="") as fh:
-        rows = list(csv.reader(io.StringIO(fh.read())))
+    try:
+        rows = list(csv.reader(io.StringIO(read_utf8(path, "utf-8-sig"), newline=None)))
+    except csv.Error as exc:  # e.g. a NUL byte on Python 3.9
+        raise ValueError(f"{path} is not parseable as CSV: {exc}") from None
     return max(len([r for r in rows if any(c.strip() for c in r)]) - 1, 0)
 
 
 def count_constants(path):
     n = 0
-    with open(path, encoding="utf-8") as fh:
-        lines = [l.strip() for l in fh if l.strip().startswith("|")]
+    lines = [l.strip() for l in read_utf8(path).splitlines() if l.strip().startswith("|")]
     for l in lines[2:]:  # skip header and separator
         cells = [c.strip() for c in l.strip("|").split("|")]
         if cells and cells[0] and not set(cells[0]) <= set("-: "):
@@ -143,7 +158,11 @@ def main(argv=None):
         print(f"error: missing {missing or 'docs'}", file=sys.stderr)
         return 2
     exclude = ([] if args.no_default_exclude else list(DEFAULT_EXCLUDES)) + args.exclude
-    results, live = audit(docs, args.repo, args.csv, args.constants, exclude)
+    try:
+        results, live = audit(docs, args.repo, args.csv, args.constants, exclude)
+    except (OSError, ValueError) as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
     for status, doc, lineno, text, actual in results:
         if args.quiet and status != "MISMATCH":
             continue
