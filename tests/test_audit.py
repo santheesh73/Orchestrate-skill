@@ -344,6 +344,20 @@ class OutputNeverOverwritesInput(Tmp):
             self.assertEqual(rc, 2, text)
             self.assertEqual(read(victim), before)
 
+    def test_verifier_drill_with_tests_and_source_targets(self):
+        """Independent verifier, A1: with --include-tests the guard did not know the test
+        files were read, so --out code/tests/test_a.py overwrote one; --out onto a source file
+        the drill skips (code/.hidden/h.py) also replaced it."""
+        self.path("code/a.py", "LIMIT = 5\n")
+        test_file = self.path("code/tests/test_a.py", "THRESH_X = 3\n")
+        hidden = self.path("code/.hidden/h.py", "X = 1\n")
+        code = os.path.join(self.d, "code")
+        for args, victim in (([code, "--include-tests"], test_file), ([code], hidden)):
+            before = read(victim)
+            rc, text = run(interview_drill, args + ["--out", victim])
+            self.assertEqual(rc, 2, text)
+            self.assertEqual(read(victim), before)
+
     def test_package_refuses_targets_that_overlap_the_source(self):
         src = os.path.join(self.d, "hackerrank-orchestrate")
         shutil.copytree(SKILL, src, ignore=shutil.ignore_patterns("__pycache__"))

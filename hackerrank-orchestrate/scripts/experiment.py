@@ -157,7 +157,7 @@ def label_outcome(rows, labels, id_col, label_cols):
 
 
 def exp_dir(base, name):
-    if not NAME_RE.match(name or ""):
+    if not NAME_RE.fullmatch(name or ""):
         raise UsageError(f"experiment name {name!r} must be letters, digits, '.', '_' or '-' (at most 64)")
     return os.path.join(base, name)
 
@@ -186,8 +186,26 @@ def load_meta(path):
     return m
 
 
+def same_place(a, b):
+    """Two paths name one file, by resolved path (works before either exists) or by inode."""
+    if os.path.realpath(a) == os.path.realpath(b):
+        return True
+    return os.path.exists(a) and os.path.exists(b) and os.path.samefile(a, b)
+
+
+def copy_into(src, dest):
+    """Copy beside dest, then rename over it: a symlink planted at dest is replaced, never followed."""
+    tmp = dest + ".tmp"
+    if os.path.lexists(tmp):
+        os.unlink(tmp)
+    shutil.copyfile(src, tmp)
+    os.replace(tmp, dest)
+
+
 def save_meta(path, meta):
     tmp = path + ".tmp"
+    if os.path.lexists(tmp):
+        os.unlink(tmp)
     with open(tmp, "w", encoding="utf-8") as fh:
         json.dump(meta, fh, indent=1)
     os.replace(tmp, path)
@@ -204,6 +222,8 @@ def cmd_start(a):
         missing = [c for c in label_cols if c not in lf]
         if missing or not label_cols:
             raise UsageError(f"--labels has no column(s) {missing or 'to compare'}")
+        if same_place(a.labels, a.output):
+            raise UsageError("--labels is the --output file; every changed row would count as better")
         labels = a.labels
     run_cmd(a.cmd, a.timeout)
     load_rows(a.output, a.id_col)  # validate before storing anything
@@ -216,7 +236,7 @@ def cmd_start(a):
     except OSError as exc:
         raise UsageError(f"cannot create {d}: {exc.strerror or exc}")
     try:
-        shutil.copyfile(a.output, os.path.join(d, "baseline.csv"))
+        copy_into(a.output, os.path.join(d, "baseline.csv"))
     except OSError as exc:
         shutil.rmtree(d, ignore_errors=True)
         raise UsageError(f"cannot write {d}: {exc.strerror or exc}")
@@ -243,13 +263,15 @@ def cmd_finish(a):
     if m.get("status") != "started":
         raise UsageError(f"experiment {a.name!r} already finished ({m.get('status')}); start a new one")
     record = a.record or os.path.join(a.dir, "changes.md")
-    for kept in (m["output"], m["labels"]):
-        if kept and os.path.exists(record) and os.path.exists(kept) and os.path.samefile(record, kept):
-            raise UsageError(f"--record {record} is the experiment's own input; appending would corrupt it")
+    check_record(record, m, a.dir)
     run_cmd(m["cmd"], m["timeout"])
+    check_record(record, m, a.dir)  # the command may have created the output since
     before = load_rows(os.path.join(d, "baseline.csv"), m["id_col"])
     after = load_rows(m["output"], m["id_col"])
-    shutil.copyfile(m["output"], os.path.join(d, "after.csv"))
+    try:
+        copy_into(m["output"], os.path.join(d, "after.csv"))
+    except OSError as exc:
+        raise UsageError(f"cannot write {d}: {exc.strerror or exc}")
     checks_after = run_checks(m["checks"], m["timeout"])
     changed, total = compare(before, after, m["id_col"], m["ignore"])
 
@@ -290,6 +312,19 @@ def cmd_finish(a):
     save_meta(os.path.join(d, "meta.json"), m)
     print(f"change record appended to {record}")
     return EXIT[verdict]
+
+
+def check_record(record, m, base):
+    """The record never lands on the experiment's inputs or inside any experiment's folder."""
+    for kept in (m["output"], m["labels"]):
+        if kept and same_place(record, kept):
+            raise UsageError(f"--record {record} is the experiment's own input; appending would corrupt it")
+    try:
+        inside = os.path.relpath(os.path.realpath(record), os.path.realpath(base))
+    except ValueError:  # another drive on Windows
+        return
+    if not inside.startswith(os.pardir) and os.sep in inside:
+        raise UsageError(f"--record {record} is inside an experiment folder; it would be overwritten or corrupt it")
 
 
 def change_record(a, m, lines, changed, total, labeled, better, worse, verdict, reason):

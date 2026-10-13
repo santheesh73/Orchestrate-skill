@@ -109,3 +109,7 @@ A rubric was written before any run. Each scenario ran twice, each time in a new
 | 5 | 600 seeded byte-level fuzz runs over ten scripts | none |
 
 Round 5 found nothing new, so the rounds stopped there (MEASURED).
+
+## 8. Independent verification
+
+A separate agent that did not do the work re-ran the baseline on 151b535, re-read five claims and attacked two fixes. Its baseline matched (169 tests OK on 3.9, 3.11, 3.12 and 3.13; footprint and proxy exact) and all five claims held at that commit. It broke both attacked fixes: the `--out` guard missed test files read under `--include-tests`, and `experiment.py` could be made to SHIP with the output as its own labels, to append its record to a recreated output, and to follow a planted symlink. All of these, and three minor ones inside the experiments folder, are fixed with tests that fail on the previous head (`test_verifier_*` in `tests/test_experiment.py` and `tests/test_audit.py`) (MEASURED).

@@ -274,6 +274,61 @@ class HostileExperimentInputs(unittest.TestCase):
             with open(target, "rb") as fh:
                 self.assertEqual(fh.read(), before)
 
+    def cmd_experiment(self, name, labels, **extra):
+        """start NAME whose --cmd copies cur.csv onto the output, as a real pipeline rewrites it."""
+        self.cur = self.write("cur.csv", "id,v\n1,a\n2,b\n3,c\n4,d\n")
+        shutil.copyfile(self.cur, self.ok)
+        cmd = f'"{PY}" -I -c "import shutil; shutil.copyfile(r\'{self.cur}\', r\'{self.ok}\')"'
+        return run(["--dir", self.exp, "start", name, "--output", self.ok, "--id-col", "id", "--cmd", cmd,
+                    "--check", f'"{PY}" -c pass', "--labels", labels])
+
+    def test_verifier_labels_equal_to_output_are_refused(self):
+        """Independent verifier, B1: --labels pointing at the output (or a link to it) made
+        every changed row count as better, so any change shipped."""
+        link = os.path.join(self.d, "link.csv")
+        os.symlink(self.ok, link)
+        for labels in (self.ok, link):
+            rc, out = self.cmd_experiment("b1" + str(len(labels)), labels)
+            self.assertEqual(rc, 2, out)
+            self.assertIn("--labels is the --output file", out)
+
+    def test_verifier_record_cannot_reach_the_output_after_cmd_recreates_it(self):
+        """Independent verifier, B2: with the output deleted before finish, the guard saw no
+        file, --cmd recreated it, and the record was appended to it; also via a dangling link."""
+        labels = self.write("lab.csv", "id,v\n1,a\n2,b\n")
+        dangling = os.path.join(self.d, "dang.md")
+        os.symlink(self.ok, dangling)
+        for name, record in (("b2a", self.ok), ("b2b", dangling)):
+            self.assertEqual(self.cmd_experiment(name, labels)[0], 0)
+            os.remove(self.ok)
+            rc, out = run(["--dir", self.exp, "finish", name, "--record", record])
+            self.assertEqual(rc, 2, out)
+            self.assertFalse(os.path.exists(self.ok) and "CHANGE:" in open(self.ok, encoding="utf-8").read())
+
+    def test_verifier_planted_symlink_in_the_experiment_folder_is_not_followed(self):
+        """Independent verifier, B3: a symlink planted at NAME/after.csv made finish write the
+        output over the labels file and then ship on the overwritten labels."""
+        labels = self.write("lab2.csv", "id,v\n1,a\n2,b\n3,c\n4,d\n")
+        self.assertEqual(self.cmd_experiment("b3", labels)[0], 0)
+        os.symlink(labels, os.path.join(self.exp, "b3", "after.csv"))
+        with open(self.cur, "w", encoding="utf-8") as fh:
+            fh.write("id,v\n1,zz\n2,yy\n3,xx\n4,ww\n")
+        rc, out = run(["--dir", self.exp, "finish", "b3"])
+        with open(labels, encoding="utf-8") as fh:
+            self.assertEqual(fh.read(), "id,v\n1,a\n2,b\n3,c\n4,d\n")
+        self.assertNotEqual(rc, 0, out)
+
+    def test_verifier_record_inside_an_experiment_folder_and_newline_names(self):
+        """Independent verifier, minor: a record inside an experiment folder was lost
+        (meta.json) or corrupted another experiment's baseline; a name ending in a newline
+        was accepted."""
+        labels = self.write("lab.csv", "id,v\n1,a\n2,b\n")
+        self.assertEqual(self.cmd_experiment("m1", labels)[0], 0)
+        for target in ("m1/meta.json", "m1/baseline.csv"):
+            rc, out = run(["--dir", self.exp, "finish", "m1", "--record", os.path.join(self.exp, target)])
+            self.assertEqual(rc, 2, out)
+        self.assertEqual(run(["--dir", self.exp, "start", "nl\n", "--output", self.ok, "--id-col", "id"])[0], 2)
+
     def test_check_that_cannot_start_and_zero_timeout_are_refused(self):
         rc, out = run(["--dir", self.exp, "start", "c", "--output", self.ok, "--id-col", "id",
                        "--check", os.path.join(self.d, "no-such-program")])

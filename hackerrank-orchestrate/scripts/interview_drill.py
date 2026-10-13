@@ -278,7 +278,12 @@ def main(argv=None):
             "- What are the two biggest limitations, and what experiment would resolve each?", ""]
     report = "\n".join(out)
     if args.out:
-        read = [p for root in args.paths for p, _ in walk(root)] + ([args.constants] if args.constants else [])
+        skip = SKIP_DIRS - {"tests", "test"} if args.include_tests else SKIP_DIRS
+        read = [p for root in args.paths for p, _ in walk(root, skip)] + ([args.constants] if args.constants else [])
+        ext = os.path.splitext(args.out)[1]
+        if ext == ".py" or ext in REGEX_EXTS:
+            print(f"error: --out {args.out} is a source file; the drill is markdown", file=sys.stderr)
+            return 2
         if overwrites_input(args.out, read):
             print(f"error: --out {args.out} is a file this drill reads; refusing to overwrite it", file=sys.stderr)
             return 2
