@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.1.0 (unreleased)
+
+### Not ported from orchestrate-loop (deliberately)
+- Its personal results, ranks and per-stage scores: personal data, not guidance.
+- Its full-stack build checklist: a different HackerRank product, out of scope.
+- Its dated next-edition plan: it goes stale after one edition; `references/edition-update.md` replaces it with a repeatable process.
+- Its kit command setup that copies the toolkit's skills into `.claude/skills/`: overlapping triggers would compete with this skill.
+- Its text: the repository has no license, so ideas are restated in new wording and credited.
+
 ## 2.0.0
 
 First release in this repository. Rebuilt from the earlier `orchestrate-loop` skill.
