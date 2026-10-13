@@ -6,7 +6,7 @@ The hard rules live in `SKILL.md`; this file gives the detail behind the loops t
 1. The agent loop
 2. Plan, build, review
 3. Changing things: the change record
-4. Relaying prompts between chat and Claude Code
+4. Relaying prompts between chat and the coding agent
 5. Checking reports before believing them
 6. Keeping every row safe
 7. Gates and how to spend 24 hours
@@ -62,14 +62,14 @@ Rules:
 - If a 5% to 25% miss is directionally consistent across many rows, suspect one systematic bug (ordering, boundary dates, a conservative estimate applied twice) before many independent errors.
 - Attack your own measurement. Two real cases: an ablation claimed no row out of 110 moved, but both of its arms had bound the same backend at import time, and the true count was 5; and a benchmark run silently replaced the file meant for submission. A tidy number from a faulty harness does more harm than an obvious error.
 
-## 4. Relaying prompts between chat and Claude Code
+## 4. Relaying prompts between chat and the coding agent
 
-1. In chat, Claude drafts a prompt that Claude Code can take verbatim.
-2. The user sends it into Claude Code as the next message (at kickoff, as the opening message).
-3. The user brings Claude Code's report back to chat, plus any artifacts it produced.
-4. Claude checks each claim (§5), marks what it could not confirm, and drafts the following prompt.
+1. In chat, the assistant drafts a prompt that the coding agent can take verbatim.
+2. The user sends it into the coding agent as the next message (at kickoff, as the opening message).
+3. The user brings the agent's report back to chat, plus any artifacts it produced.
+4. The assistant checks each claim (§5), marks what it could not confirm, and drafts the following prompt.
 
-A prompt points at files that already exist (sections of `AGENTS.md`, `.claude/skills/`, `log.txt`) by name rather than copying their content.
+A prompt points at files that already exist (sections of `AGENTS.md`, the installed skill folder, `log.txt`) by name rather than copying their content.
 
 ## 5. Checking reports before believing them
 

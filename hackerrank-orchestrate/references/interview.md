@@ -42,7 +42,7 @@ Weak to strong:
 
 ## 4. Ownership and honesty
 
-- Say "I chose X because…", not "Claude built…". Be precise about which parts the AI generated and which you designed; the criteria ask you to distinguish them. `assets/decision_log.md` is the source.
+- Say "I chose X because…", not "the AI built…". Be precise about which parts the AI generated and which you designed; the criteria ask you to distinguish them. `assets/decision_log.md` is the source.
 - "I don't remember the exact value, but here is how it was chosen" is a good answer. A confident wrong one is not.
 
 Claims never to make unless directly supported: "I wrote every line myself"; unqualified "deterministic"; "100%" without the set and size; "no dataset-specific assumptions" without the corpus-literal test; "handles every attack"; "tests prove it generalizes"; "it will rank well"; "incremental commits" without reading `git log` first.
