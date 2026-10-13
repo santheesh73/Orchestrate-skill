@@ -18,12 +18,12 @@ Figures below are MEASURED in this repository unless labeled otherwise.
 - `scripts/contract_extract.py`: drafts the MUST list from `AGENTS.md` and `problem_statement.md`, and diffs two editions.
 - `scripts/corpus_literals.py`: flags ids, strings and number combinations copied from the dataset into code.
 - `scripts/claim_audit.py`: flags test, row and constant counts in docs that no longer match the repo. It skips `tests/fixtures` when counting tests (configurable with `--exclude` and `--no-default-exclude`, or `exclude` in `selfcheck.json`), so a fixture project's tests are not added to the real suite's count. A root `selfcheck.json` runs the claims check on this repository.
-- `assets/editions/` log-format profiles (`sept-2026`, `june-2026`, `template`) and `check_log.py --profile` / `--list-profiles`; output on the v2.0.0 fixtures is byte-identical (golden-file test).
+- `assets/editions/` log-format profiles (`sept-2026`, `june-2026`, `template`) and `check_log.py --profile` / `--list-profiles`; output on the v2.0.0 fixtures is byte-identical (golden-file test). Each profile records `provenance` (VERIFIED / INFERRED / UNKNOWN) and `provenance_source`, and the validator requires both. `sept-2026` and `june-2026` are VERIFIED against section 5 of the official starters' `AGENTS.md`; in `june-2026`, the strict tool-name checks (`exactly_one`, `harness_not_model`) are INFERRED, carried over from September, because the June starter does not state them. `template` is UNKNOWN until filled.
 - `references/behind-schedule.md` and `references/edition-update.md`.
 - `rubric.md`: every organizer figure labeled VERIFIED (read in the post-mortem on 2026-10-13); per-stage top 1/10/50 table labeled INFERRED (secondhand; the leaderboard API was not reachable).
 - `kit-repo.md`: fuller toolkit digest, labeled secondhand (the toolkit repository could not be located).
 - `tools/run_trigger_evals.py`: offline lexical proxy, and an opt-in live mode that needs an API key and never runs in CI. `evals/triggers.json` grows to 44 cases (22 should trigger, 22 should not, including near misses).
-- Edge-case tests and validator tests; 72 tests in total.
+- Edge-case tests and validator tests; 74 tests in total.
 - `VERSION` file, credits section.
 
 ### Changed

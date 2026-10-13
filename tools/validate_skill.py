@@ -30,7 +30,9 @@ MAX_DESC = 900
 LINE_LIMITS = {"references/behind-schedule.md": 40, "references/edition-update.md": 40, "references/kit-repo.md": 90}
 ARCHETYPE_SECTIONS = ("Architecture that held up", "Guards that fit", "Grounding test", "Where rows are lost")
 PROFILE_KEYS = {"name", "entry_regex", "prompt_header", "section_headers", "session_start_title_match",
-                "tool_rule", "required_turn_sections", "title_max_length", "secret_scan"}
+                "tool_rule", "required_turn_sections", "title_max_length", "secret_scan",
+                "provenance", "provenance_source"}
+PROVENANCE_LABELS = {"VERIFIED", "INFERRED", "UNKNOWN"}
 # Files that live in a participant's starter repo or submission, not in this skill.
 EXTERNAL_FILES = {"problem_statement.md", "usage_report.md", "evalutation_criteria.md", "decisions.md", "changes.md"}
 TEXT_EXTS = (".md", ".py", ".json", ".yml", ".yaml", ".txt", ".csv")
@@ -146,6 +148,10 @@ def check_skill(skill_dir, errors):
                 missing = PROFILE_KEYS - set(prof)
                 if missing:
                     errors.append(f"assets/editions/{fn} lacks keys {sorted(missing)}")
+                if "provenance" in prof and prof["provenance"] not in PROVENANCE_LABELS:
+                    errors.append(f"assets/editions/{fn}: provenance must be one of {sorted(PROVENANCE_LABELS)}")
+                if "provenance_source" in prof and not str(prof["provenance_source"]).strip():
+                    errors.append(f"assets/editions/{fn}: provenance_source is empty")
                 re.compile(prof.get("entry_regex", ""))
             except (ValueError, re.error) as exc:
                 errors.append(f"assets/editions/{fn}: {exc}")

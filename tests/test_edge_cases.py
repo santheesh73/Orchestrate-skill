@@ -2,6 +2,7 @@
 
 import contextlib
 import io
+import json
 import os
 import shutil
 import sys
@@ -269,6 +270,29 @@ class Validator(Tmp):
         errs = "\n".join(self.errors(dest))
         self.assertIn("hard rule 4 is restated verbatim", errs)
         self.assertIn("numbered 1..N contiguously", errs)
+
+    def test_every_shipped_profile_has_a_provenance_label(self):
+        for fn in sorted(os.listdir(os.path.join(SKILL, "assets", "editions"))):
+            with open(os.path.join(SKILL, "assets", "editions", fn), encoding="utf-8") as fh:
+                prof = json.load(fh)
+            self.assertIn(prof.get("provenance"), validate_skill.PROVENANCE_LABELS, fn)
+            self.assertTrue(prof.get("provenance_source", "").strip(), fn)
+
+    def test_catches_missing_or_bad_profile_provenance(self):
+        dest = self.copy_skill()
+        june = os.path.join(dest, "assets", "editions", "june-2026.json")
+        self.edit(june, '"provenance": "VERIFIED"', '"provenance": "PROBABLY"')
+        sept = os.path.join(dest, "assets", "editions", "sept-2026.json")
+        with open(sept, encoding="utf-8") as fh:
+            prof = json.load(fh)
+        del prof["provenance"]
+        prof["provenance_source"] = " "
+        with open(sept, "w", encoding="utf-8") as fh:
+            json.dump(prof, fh)
+        errs = "\n".join(self.errors(dest))
+        self.assertIn("june-2026.json: provenance must be one of", errs)
+        self.assertIn("sept-2026.json lacks keys ['provenance']", errs)
+        self.assertIn("sept-2026.json: provenance_source is empty", errs)
 
     def test_catches_long_reference_without_contents_and_bad_archetype(self):
         dest = self.copy_skill()

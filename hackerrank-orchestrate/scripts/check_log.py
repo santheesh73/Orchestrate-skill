@@ -268,9 +268,9 @@ def main(argv=None):
     if args.list_profiles:
         for name in shipped_profiles():
             with open(os.path.join(PROFILE_DIR, name + ".json"), encoding="utf-8") as fh:
-                desc = json.load(fh).get("description", "")
+                prof = json.load(fh)
             mark = " (default)" if name == DEFAULT_PROFILE else ""
-            print(f"{name}{mark}: {desc}")
+            print(f"{name}{mark} [{prof.get('provenance', 'UNKNOWN')}]: {prof.get('description', '')}")
         return 0
     if not args.log:
         ap.error("the log path is required")
