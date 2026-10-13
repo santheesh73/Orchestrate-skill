@@ -54,8 +54,29 @@ def frontmatter(text):
 
 
 def read(path):
-    with open(path, encoding="utf-8") as fh:
+    """Lenient read: check_files reports invalid UTF-8 once, so later checks must not crash on it."""
+    with open(path, encoding="utf-8", errors="replace") as fh:
         return fh.read()
+
+
+TEXT_EXTS = (".md", ".py", ".json", ".txt", ".csv", ".yml", ".yaml")
+
+
+def check_files(skill_dir, errors):
+    """Report broken symlinks and text files that are not UTF-8; both break an installed skill."""
+    for dirpath, dirnames, files in os.walk(skill_dir):
+        dirnames[:] = [d for d in dirnames if d != "__pycache__"]
+        for fn in files:
+            p = os.path.join(dirpath, fn)
+            rel = os.path.relpath(p, skill_dir)
+            if not os.path.exists(p):
+                errors.append(f"{rel} is a broken symlink")
+            elif fn.endswith(TEXT_EXTS):
+                try:
+                    with open(p, encoding="utf-8") as fh:
+                        fh.read()
+                except UnicodeDecodeError:
+                    errors.append(f"{rel} is not valid UTF-8")
 
 
 def on_demand_chars(skill_dir):
@@ -64,7 +85,8 @@ def on_demand_chars(skill_dir):
         dirnames[:] = [d for d in dirnames if d != "__pycache__"]
         for f in filenames:
             p = os.path.join(dirpath, f)
-            if f.endswith((".pyc", ".pyo")) or os.path.relpath(p, skill_dir) == "SKILL.md":
+            if (f.endswith((".pyc", ".pyo")) or os.path.relpath(p, skill_dir) == "SKILL.md"
+                    or not os.path.isfile(p)):
                 continue
             with open(p, encoding="utf-8", errors="replace") as fh:
                 total += len(fh.read())
@@ -76,6 +98,7 @@ def check_skill(skill_dir, errors):
     if not os.path.exists(skill_md):
         errors.append(f"{skill_md} not found")
         return None
+    check_files(skill_dir, errors)
     text = read(skill_md)
     fm, body = frontmatter(text)
     if fm is None:
@@ -121,15 +144,15 @@ def check_skill(skill_dir, errors):
             for dirpath, _, files in os.walk(skill_dir):
                 for fn in files:
                     p = os.path.join(dirpath, fn)
-                    if fn.endswith(".md") and p != skill_md and phrase in read(p):
+                    if fn.endswith(".md") and p != skill_md and os.path.isfile(p) and phrase in read(p):
                         errors.append(f"hard rule {i} is restated verbatim in {os.path.relpath(p, skill_dir)}; link instead")
 
     # Every referenced path exists inside the skill folder.
     for dirpath, _, files in os.walk(skill_dir):
         for fn in files:
-            if not fn.endswith(".md"):
-                continue
             path = os.path.join(dirpath, fn)
+            if not fn.endswith(".md") or not os.path.isfile(path):
+                continue
             rel = os.path.relpath(path, skill_dir)
             content = read(path)
             for ref in sorted(set(re.findall(r"`?((?:references|scripts|assets)/[A-Za-z0-9_./\-]+)`?", content))):

@@ -35,7 +35,8 @@ def est_tokens(chars):
 def measure(skill_dir):
     """Return (parts, files): character counts per part, and (relpath, bytes, chars) per file."""
     skill_md = os.path.join(skill_dir, "SKILL.md")
-    fields, body = validate_skill.frontmatter(validate_skill.read(skill_md))
+    with open(skill_md, encoding="utf-8") as fh:  # strict: a garbled SKILL.md must not be measured
+        fields, body = validate_skill.frontmatter(fh.read())
     if fields is None:
         raise ValueError(f"{skill_md} has no frontmatter")
     parts = {"description": len(fields.get("description", "")), "skill_body": len(body)}
@@ -46,6 +47,8 @@ def measure(skill_dir):
             if f.endswith((".pyc", ".pyo")):
                 continue
             p = os.path.join(dirpath, f)
+            if not os.path.isfile(p):  # a broken symlink; validate_skill.py reports it
+                continue
             rel = os.path.relpath(p, skill_dir).replace(os.sep, "/")
             with open(p, encoding="utf-8", errors="replace") as fh:
                 chars = len(fh.read())

@@ -95,14 +95,24 @@ def main(argv=None):
             print(f"packaging stopped: {len(errors)} validation errors in the staged copy")
             return 1
         zip_path = os.path.join(args.out, SKILL_NAME + ".zip")
-        write_zip(staged, zip_path)
+        try:
+            write_zip(staged, zip_path)
+        except OSError as exc:
+            print(f"error: cannot write {zip_path}: {exc.strerror}", file=sys.stderr)
+            return 2
         with zipfile.ZipFile(zip_path) as zf:
             n = sum(1 for i in zf.infolist() if not i.is_dir())
         print(f"wrote {zip_path}: {n} files, {os.path.getsize(zip_path)} bytes; staged copy validated")
         if target:
-            if os.path.exists(target):
-                shutil.rmtree(target)
-            shutil.copytree(staged, target)
+            try:
+                if os.path.isdir(target) and not os.path.islink(target):
+                    shutil.rmtree(target)
+                elif os.path.lexists(target):
+                    os.remove(target)
+                shutil.copytree(staged, target)
+            except OSError as exc:
+                print(f"error: cannot install to {target}: {exc.strerror}", file=sys.stderr)
+                return 2
             print(f"installed {target}")
     return 0
 

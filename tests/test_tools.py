@@ -151,5 +151,51 @@ class Coverage(unittest.TestCase):
         self.assertNotIn("| none |", text)
 
 
+class HostileSkillFolders(unittest.TestCase):
+    """Adversarial round 3: a non-UTF-8 SKILL.md or a broken symlink in the skill crashed the
+    validator and packager, and --out or --install pointing at a file raised tracebacks."""
+
+    def setUp(self):
+        self.d = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, self.d)
+        self.skill = os.path.join(self.d, "hackerrank-orchestrate")
+        shutil.copytree(SKILL, self.skill, ignore=shutil.ignore_patterns("__pycache__"))
+
+    def test_non_utf8_skill_md_is_an_error_not_a_crash(self):
+        with open(os.path.join(self.skill, "SKILL.md"), "wb") as fh:
+            fh.write(b"\xff\xfe---\n")
+        rc, text = run(validate_skill, ["--skill-dir", self.skill, "--standalone"])
+        self.assertEqual(rc, 1)
+        self.assertIn("SKILL.md is not valid UTF-8", text)
+        self.assertEqual(run(package_skill, ["--skill-dir", self.skill, "--out", os.path.join(self.d, "o")])[0], 1)
+        self.assertEqual(run(footprint, ["--skill-dir", self.skill])[0], 2)
+
+    @unittest.skipUnless(hasattr(os, "symlink"), "needs symlinks")
+    def test_broken_symlink_is_reported_and_not_packaged(self):
+        try:
+            os.symlink(os.path.join(self.d, "gone.md"), os.path.join(self.skill, "references", "gone.md"))
+        except OSError:
+            self.skipTest("symlinks not permitted here")
+        rc, text = run(validate_skill, ["--skill-dir", self.skill, "--standalone"])
+        self.assertEqual(rc, 1)
+        self.assertIn("references/gone.md is a broken symlink", text.replace(os.sep, "/"))
+        self.assertEqual(run(footprint, ["--skill-dir", self.skill, "--summary"])[0], 0)
+        out = os.path.join(self.d, "o")
+        self.assertEqual(run(package_skill, ["--skill-dir", self.skill, "--out", out])[0], 0)
+        with zipfile.ZipFile(os.path.join(out, "hackerrank-orchestrate.zip")) as zf:
+            self.assertNotIn("hackerrank-orchestrate/references/gone.md", zf.namelist())
+
+    def test_out_or_install_onto_a_file_is_a_usage_error(self):
+        blocker = os.path.join(self.d, "blocker")
+        with open(blocker, "w") as fh:
+            fh.write("x")
+        rc, text = run(package_skill, ["--out", blocker])
+        self.assertEqual(rc, 2)
+        self.assertIn("cannot write", text)
+        rc, text = run(package_skill, ["--out", os.path.join(self.d, "o"), "--install", blocker])
+        self.assertEqual(rc, 2)
+        self.assertIn("cannot install", text)
+
+
 if __name__ == "__main__":
     unittest.main()
