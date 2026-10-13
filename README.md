@@ -176,11 +176,12 @@ The skill keeps one canonical list of 14 hard rules in [`SKILL.md`](hackerrank-o
 **Claude Code:** copy the folder into your project or your personal skills directory. It triggers from its description; no slash command is needed.
 
 ```bash
-mkdir -p .claude/skills
-cp -r hackerrank-orchestrate .claude/skills/
+python tools/package_skill.py --install .claude/skills   # clean, validated copy; add --force to replace one
 ```
 
-**Claude.ai:** zip the `hackerrank-orchestrate` folder (with `SKILL.md` at its top level) and upload it as a custom skill.
+A plain `cp -r hackerrank-orchestrate .claude/skills/` also works, but it copies any `__pycache__` folders left by running the scripts.
+
+**Claude.ai:** run `python tools/package_skill.py` and upload `dist/hackerrank-orchestrate.zip` as a custom skill. The zip holds one top-level `hackerrank-orchestrate/` folder with `SKILL.md` in it, and leaves out caches, tests and fixtures. Packaging stops if the staged copy fails validation.
 
 ### Example prompts
 
@@ -202,7 +203,7 @@ The interview opens in two hours. Build my drill from code/ and quiz me.
 
 ### Checker scripts
 
-Standard-library Python 3.9+, nothing to install, no network. Each takes paths and schemas as arguments and embeds no dataset.
+Standard-library Python 3.9+, nothing to install, no network. Each takes paths and schemas as arguments and embeds no dataset. Bad input (non-UTF-8 files, CR-only or NUL-containing CSVs, very long fields, broken symlinks, a malformed config) gives a one-line error and exit code, not a traceback; `tests/test_hostile_inputs.py` holds those cases.
 
 | Script | What it catches |
 |---|---|
@@ -240,11 +241,15 @@ hackerrank-orchestrate/           the skill
 ├── scripts/                      the nine checkers above
 └── assets/                       change record, decision log, CONSTANTS.md, usage-log schema
     └── editions/                 log-format profiles per edition, plus a template
+docs/COVERAGE.md                  rubric criteria and orchestrate-loop capabilities mapped to guidance and checks
 evals/triggers.json               44 prompts that should (22) and should not (22) trigger the skill
-tests/                            script tests, edge cases and golden outputs on small fixtures
-tools/validate_skill.py           structure and policy check, run in CI
+tests/                            script and tool tests, hostile inputs, golden outputs on small fixtures
+tools/validate_skill.py           structure, policy and context-budget check, run in CI
+tools/package_skill.py            builds dist/hackerrank-orchestrate.zip and optional clean install
+tools/footprint.py                always-loaded and on-demand size of the skill, against budgets
 tools/run_trigger_evals.py        trigger evals: offline proxy, or opt-in live run
 VERSION, CHANGELOG.md             release version and history
+dist/                             build output from package_skill.py (git-ignored)
 ```
 
 Development:
@@ -255,6 +260,8 @@ python -W error -m unittest discover -s tests -v
 python tools/run_trigger_evals.py --offline
 python hackerrank-orchestrate/scripts/selfcheck.py tests/fixtures/project/selfcheck.json
 python hackerrank-orchestrate/scripts/selfcheck.py selfcheck.json   # claims check on this repo; other sections UNKNOWN
+python tools/package_skill.py --out /tmp/dist   # build and validate the upload zip
+python tools/footprint.py --summary             # context footprint against budgets
 
 # Opt-in, needs ANTHROPIC_API_KEY, makes network calls, never run in CI:
 python tools/run_trigger_evals.py --live --model <model-id>
@@ -280,6 +287,7 @@ Every link above was fetched on 2026-10-13 and loaded. The community `hackerrank
 - **Leaderboard per-stage figures in `references/rubric.md` are INFERRED.** They were computed by orchestrate-loop from public leaderboard data; the leaderboard API was not reachable here to re-derive them.
 - **The toolkit digest in `references/kit-repo.md` is secondhand.** The toolkit repository could not be located, so its commands are unverified.
 - **Script behavior is MEASURED** by the test suite in `tests/` on Python 3.9, 3.11 and 3.13 (CI matrix). The fixtures are small and synthetic; real starter repos may differ, and the log-format profiles cover only the editions whose starters were public. Each profile states its provenance: `sept-2026` and `june-2026` are VERIFIED against the official starters' `AGENTS.md`, except that `june-2026`'s strict tool-name checks are INFERRED from September; `template` is UNKNOWN until filled.
+- **Context footprint is ESTIMATED** by `tools/footprint.py` as characters / 4, not by a tokenizer. The budgets in `tools/validate_skill.py` are the measured sizes plus about 10%.
 - Not affiliated with or endorsed by HackerRank.
 
 MIT licensed. See [LICENSE](LICENSE).

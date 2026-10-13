@@ -1,5 +1,37 @@
 # Changelog
 
+## 2.2.0
+
+Figures below are MEASURED in this repository unless labeled otherwise. The scripts check a participant's own work; they are not part of a submission.
+
+### Fixed
+- Adversarial testing in three rounds ran every script and tool on hostile input; 16 reproduced defects, each now has a regression test (`tests/test_hostile_inputs.py`, `tests/test_tools.py`).
+  - Round 1 (7): `usage_report.py`, `interview_drill.py`, `claim_audit.py` and `corpus_literals.py` raised tracebacks on non-UTF-8 files; `selfcheck.py` crashed on a section that is not an object, iterated a string given where a list belongs character by character, and did not resolve Windows-style relative paths; `SyntaxWarning` text from a participant's file leaked into `selfcheck.py` output, and under `-W error` that file's tests went uncounted.
+  - Round 2 (6): every CSV reader raised on CR-only line endings and on fields over 131072 characters; Python 3.9 raised on NUL bytes; a dangling symlink in a code folder crashed `interview_drill.py` and stopped `corpus_literals.py`; `--out` into a missing folder raised tracebacks in three scripts; `selfcheck.py` passed a non-integer `min_length` through.
+  - Round 3 (3): a non-UTF-8 `SKILL.md` or a broken symlink inside the skill crashed `validate_skill.py` and `package_skill.py`; `--out` or `--install` onto an existing file raised tracebacks.
+  - Round 3 still found defects, so no clean round was reached within the three-round limit.
+- Interview figures stated precisely: in the organizer's transcripts, very short answers correlated with interview score at r = −0.568 and total words at r = 0.615 (VERIFIED, May 2026 post-mortem). Top-quartile balance: 37 of the May top 50 on all four artifacts plus 11 on three is VERIFIED; the June and August readings stay INFERRED. The generic-justification cap reads "about 70 out of 100".
+- The README restated several hard rules; it now links to `SKILL.md`.
+
+### Added
+- `tools/package_skill.py`: builds `dist/hackerrank-orchestrate.zip` with one top-level folder and no development files, validates the staged copy with the standalone checks, and optionally installs it (`--install DIR`, `--force`). Prevents a rejected upload or dev files shipped to users.
+- `tools/footprint.py` and `FOOTPRINT_BUDGETS` in the validator (measured size plus about 10%). Prevents silent growth of the always-loaded context. Token counts are ESTIMATED as characters / 4.
+- `docs/COVERAGE.md`: every rubric sub-criterion and every orchestrate-loop capability mapped to guidance and a check, with a test that every path exists. Prevents an unnoticed gap.
+- Validator checks: hard-rule titles restated verbatim in `README.md` or `docs/`; broken symlinks and non-UTF-8 text files inside the skill.
+- CI packages the skill, validates the installed copy with `--standalone`, and prints the footprint summary.
+- Test count at the 2.2.0 release: 102.
+
+### Changed
+- `selfcheck.py` rejects a config whose sections or fields have the wrong JSON type (exit 4) instead of crashing or silently mis-checking.
+- `dist/` is ignored by git.
+
+### Not done
+- Trigger accuracy against a live model: UNKNOWN. `ANTHROPIC_API_KEY` and `TRIGGER_EVAL_MODEL` were not set, so `tools/run_trigger_evals.py --live` was not run. The offline proxy is unchanged: precision 0.72, recall 0.59 (MEASURED, proxy only).
+- Leaderboard per-stage figures: still INFERRED; the leaderboard was not reachable to re-derive them.
+- Toolkit digest: still secondhand; the toolkit repository could not be located.
+- October 2026 edition: no public starter repository, so no profile was added (UNKNOWN).
+- The `v2.1.0` tag: the git proxy in the build environment refused the tag push; it has to be created on GitHub.
+
 ## 2.1.0
 
 Figures below are MEASURED in this repository unless labeled otherwise.
