@@ -9,7 +9,7 @@ Run from the repo root:  python tools/validate_skill.py
 Check a copied skill folder on its own (as installed under .claude/skills/):
   python tools/validate_skill.py --skill-dir /path/to/.claude/skills/hackerrank-orchestrate --standalone
 
-Exit code 0 when valid, 1 otherwise. Standard library only; no network.
+Exit code 0 when valid, 1 otherwise, 2 on usage errors. Standard library only; no network.
 """
 
 import argparse

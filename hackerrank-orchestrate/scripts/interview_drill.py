@@ -24,6 +24,9 @@ Example:
   python interview_drill.py code/ --constants CONSTANTS.md --out drill.md
 
 Standard library only.
+
+Exit 0 when the drill is written, 2 on usage errors (missing paths, unreadable
+--constants, an --out path that cannot be written).
 """
 
 import argparse

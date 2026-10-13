@@ -18,6 +18,9 @@ Example:
       --price "model-a=3:15" --requests 250 --out code/evaluation/usage_report.md
 
 Standard library only.
+
+Exit 0 when the report is written, 2 on usage errors (unreadable or malformed log,
+bad --price, an --out path that cannot be written).
 """
 
 import argparse

@@ -55,7 +55,7 @@ Weights are from the May 2026 post-mortem (VERIFIED; see `hackerrank-orchestrate
 
 | Addition | Failure it prevents |
 |---|---|
-| `hackerrank-orchestrate/scripts/` (9 checkers) and `tests/` (105 tests) | Rules that nobody can run; regressions in the checkers |
+| `hackerrank-orchestrate/scripts/` (9 checkers) and `tests/` (108 tests) | Rules that nobody can run; regressions in the checkers |
 | `hackerrank-orchestrate/assets/editions/` | A log checker that rejects another edition's format |
 | `tools/validate_skill.py` | Structure and policy drift (dates in the trigger, restated rules, missing scripts) |
 | `tools/package_skill.py` | A rejected upload, or dev files shipped inside the skill |
