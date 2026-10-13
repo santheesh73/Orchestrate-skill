@@ -75,6 +75,12 @@ INPUTS = {
     "unreadable": _unreadable,
     "spaces_unicode": lambda d: _write(os.path.join(d, "sp ace", "ünï cødé.csv"), "id,status\n1,ok\n"),
     "very_long_path": lambda d: os.path.join(d, *(["x" * 200] * 25), "f.csv"),
+    "deep_json": lambda d: _write(os.path.join(d, "deep.json"), "[" * 100000 + "]" * 100000),
+    "newline_in_name": lambda d: _write(os.path.join(d, "new\nline.csv"), "id,status\n1,ok\n"),
+    "dash_name": lambda d: _write(os.path.join(d, "-dash.csv"), "id,status\n1,ok\n"),
+    "symlink_to_dir": lambda d: _symlink(d, "dirlink", d),
+    "dev_null": lambda d: os.devnull if os.name != "nt" else None,
+    "many_lines": lambda d: _write(os.path.join(d, "many.csv"), "id,status\n" + "".join(f"{i},ok\n" for i in range(400000))),
     "wrong_json_types": lambda d: _write(os.path.join(d, "types.json"),
                                          json.dumps({"log": [1, 2], "output": {"path": 5, "columns": "id"}})),
 }

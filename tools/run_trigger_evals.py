@@ -203,7 +203,7 @@ def main(argv=None):
     try:
         name, desc = read_skill(args.skill)
         evals = load_evals(args.evals, args.split)
-    except (OSError, ValueError) as exc:  # ValueError covers bad JSON and non-UTF-8 bytes
+    except (OSError, ValueError, RecursionError) as exc:  # bad or too deeply nested JSON, non-UTF-8 bytes
         print(f"error: {exc}", file=sys.stderr)
         return 2
     if args.offline:

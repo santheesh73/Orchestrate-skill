@@ -230,7 +230,7 @@ def main(argv=None):
             cfg = json.load(fh)
         if not isinstance(cfg, dict):
             raise ValueError("config must be a JSON object")
-    except (OSError, ValueError) as exc:
+    except (OSError, ValueError, RecursionError) as exc:  # RecursionError: JSON nested too deeply
         print(f"error: {exc}", file=sys.stderr)
         return 4
     unknown = set(cfg) - set(CHECKS)

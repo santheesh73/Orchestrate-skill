@@ -316,7 +316,7 @@ def main(argv=None):
             profile["entry_regex"] = args.entry_regex
         if args.prompt_header:
             profile["prompt_header"] = args.prompt_header
-    except (ValueError, OSError, json.JSONDecodeError, re.error) as exc:
+    except (ValueError, OSError, json.JSONDecodeError, re.error, RecursionError) as exc:  # deep nesting
         print(f"error: {exc}", file=sys.stderr)
         return 2
 
