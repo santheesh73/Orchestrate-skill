@@ -5,7 +5,7 @@
 This repository has two parts:
 
 1. **A field guide to HackerRank Orchestrate** (this README): what the event is, how it is scored, and a tested way to approach the 24 hours.
-2. **`hackerrank-orchestrate/`**, a Claude skill that applies this guide during the event. It writes your Claude Code prompts, checks the reports that come back, and includes scripts that catch the mistakes that cost the most points.
+2. **`hackerrank-orchestrate/`**, a Claude skill that applies this guide during the event. It writes the prompts for your coding agent (Claude Code, Codex, Cursor, OpenCode, Antigravity), checks the reports that come back, and includes scripts that catch the mistakes that cost the most points.
 
 > **The live challenge page and your edition's `AGENTS.md` and `problem_statement.md` always win.** The format changes between editions. Everything here comes from public material on past editions, linked in [Sources](#sources).
 
@@ -94,7 +94,7 @@ The core idea: **the model describes, code decides** (the skill's core principle
 Contract misses cost points that no model quality can recover. Before any design:
 
 1. Read `AGENTS.md`, `problem_statement.md` and `README.md` **in full**, not from memory of a past edition.
-2. **Don't overwrite `CLAUDE.md`.** Its `@AGENTS.md` import is what makes the mandatory logging run, and your transcript is graded from that log. Add strategy below the import, or send it as your first message.
+2. **Don't edit `AGENTS.md` or overwrite `CLAUDE.md`.** `AGENTS.md` is what makes the mandatory logging run (`CLAUDE.md` just imports it with `@AGENTS.md`), and your transcript is graded from that log. Send strategy as your first message, or add it below the import.
 3. Write down every MUST: output file and location, exact columns and order, allowed values and formats, one row per input id, required extra files (such as `usage_report.md`), the log format and `tool=` rule, forbidden inputs (organizer-only files, hardcoded labels), and any stated conflict-resolution or tie-break order.
 4. Compare with the last edition you know. New sections are where the new traps are.
 5. Put that MUST list into your first prompt so the build starts against it.
@@ -133,7 +133,7 @@ BASELINE / RESULT / BLAST RADIUS / COUNTERFACTUAL / VERDICT
 
 - **Freeze the code early enough** to run from a fresh clone using only your README, rerun the full dataset once, and generate the usage report from that exact run.
 - **Re-derive every number** you cite (test counts especially) from the live repo. Docs drift under heavy iteration.
-- **Confirm the code zip, output CSV and log tell the same story.** No secrets, no organizer-only files, `CLAUDE.md` untouched.
+- **Confirm the code zip, output CSV and log tell the same story.** No secrets, no organizer-only files, `AGENTS.md` and `CLAUDE.md` untouched.
 - **Rehearse the interview** before you're under deadline pressure.
 
 ### The interview
@@ -148,7 +148,7 @@ The judge asks about **your** code, not about agents in general. In one [first-h
 
 ## Rules that hold up across editions
 
-The skill keeps one canonical list of 14 hard rules in [`SKILL.md`](hackerrank-orchestrate/SKILL.md#hard-rules-canonical-copy-other-files-link-here), and the evaluation rules behind them in [`evaluation.md`](hackerrank-orchestrate/references/evaluation.md). They are not repeated here so the two can't drift apart. The three that cost the most points when broken: don't overwrite `CLAUDE.md`; samples motivate or falsify, but only the domain justifies a rule; one labeled row is noise.
+The skill keeps one canonical list of 14 hard rules in [`SKILL.md`](hackerrank-orchestrate/SKILL.md#hard-rules-canonical-copy-other-files-link-here), and the evaluation rules behind them in [`evaluation.md`](hackerrank-orchestrate/references/evaluation.md). They are not repeated here so the two can't drift apart. The three that cost the most points when broken: don't edit the starter's `AGENTS.md` or `CLAUDE.md`; samples motivate or falsify, but only the domain justifies a rule; one labeled row is noise.
 
 ## Common mistakes
 
@@ -169,30 +169,29 @@ The skill keeps one canonical list of 14 hard rules in [`SKILL.md`](hackerrank-o
 
 ## Using the skill
 
-`hackerrank-orchestrate/` is a Claude skill that applies everything above during the event. By default it acts as your strategist: it writes paste-ready prompts for Claude Code, checks the report that comes back against real artifacts, and writes the next prompt. It never invents a schema, score or test count.
+`hackerrank-orchestrate/` is a Claude skill that applies everything above during the event. By default it acts as your strategist: it writes paste-ready prompts for your coding agent, checks the report that comes back against real artifacts, and writes the next prompt. It never invents a schema, score or test count.
 
 ### Install
 
-**Claude Code:** copy the folder into your project or your personal skills directory. It triggers from its description; no slash command is needed.
+The same folder installs, unchanged, for Claude Code, Claude.ai, OpenAI Codex, OpenCode, Google Antigravity and Cursor; only the location differs. It has been run in Claude Code. For the other agents the locations come from their own docs, and whether the skill triggers there is UNKNOWN. **[docs/INSTALL.md](docs/INSTALL.md)** has the folder for each agent with its evidence label, known caveats, and a fallback opening message for when an agent does not pick the skill up.
 
 ```bash
-python tools/package_skill.py --install .claude/skills   # clean, validated copy; add --force to replace one
+python3 -I tools/package_skill.py --project ../my-entry --for all   # .claude/skills and .agents/skills
+python3 -I tools/package_skill.py --install ~/.claude/skills        # any one folder; add --force to replace a copy
 ```
 
-With `--force`, the new copy is built and validated beside the old one and swapped in; if anything fails, the old copy stays as it was.
+Each install is a clean, validated copy. With `--force`, the new copy is built and validated beside the old one and swapped in; if anything fails, the old copy stays as it was. A plain `cp -r` also works, but it copies any `__pycache__` folders left by running the scripts.
 
-A plain `cp -r hackerrank-orchestrate .claude/skills/` also works, but it copies any `__pycache__` folders left by running the scripts.
-
-**Claude.ai:** run `python tools/package_skill.py` and upload `dist/hackerrank-orchestrate.zip` as a custom skill. The zip holds one top-level `hackerrank-orchestrate/` folder with `SKILL.md` in it, and leaves out caches, tests and fixtures. Packaging stops if the staged copy fails validation.
+**Claude.ai:** run `python3 -I tools/package_skill.py` and upload `dist/hackerrank-orchestrate.zip` as a custom skill. The zip holds one top-level `hackerrank-orchestrate/` folder with `SKILL.md` in it, and leaves out caches, tests and fixtures. Packaging stops if the staged copy fails validation.
 
 ### Example prompts
 
 ```
-The Orchestrate starter repo just dropped. AGENTS.md and problem_statement.md are below. Give me the Claude Code kickoff prompt.
+The Orchestrate starter repo just dropped. AGENTS.md and problem_statement.md are below. Give me the kickoff prompt for my coding agent.
 ```
 
 ```
-Claude Code just finished this round; its report is below. Check it and write my next iteration prompt.
+My agent just finished this round; its report is below. Check it and write my next iteration prompt.
 ```
 
 ```
@@ -211,7 +210,7 @@ Standard-library Python 3.9+, nothing to install, no network. Each takes paths a
 |---|---|
 | `selfcheck.py selfcheck.json` | Runs the checks below from one config and prints PASS, WARN, FAIL or UNKNOWN per section; a skipped check, or a claims check that examined nothing, is UNKNOWN, never a pass. Exit 0 PASS, 1 WARN, 2 UNKNOWN, 3 FAIL, 4 bad config |
 | `contract_extract.py starter/` and `--diff old/ new/` | The MUST, MUST NOT, required files, columns and allowed values in `AGENTS.md` and `problem_statement.md`, and what changed since the last edition (a heuristic; read the files too) |
-| `check_log.py log.txt --expect-tool "Claude Code" --profile sept-2026` | Missing, placeholder, generic or model-name `tool=` lines; empty prompt blocks; secrets; non-append-only timestamps. `--list-profiles` shows the edition formats; copy `assets/editions/template.json` for a new one |
+| `check_log.py log.txt --expect-tool "Claude Code" --profile sept-2026` (use your own harness name) | Missing, placeholder, generic or model-name `tool=` lines; empty prompt blocks; secrets; non-append-only timestamps. `--list-profiles` shows the edition formats; copy `assets/editions/template.json` for a new one |
 | `preflight.py output.csv --template dataset/output.csv --inputs dataset/<inputs>.csv --id-col <id> --enum "col=a\|b"` | Wrong or duplicate header columns, wrong order, missing or duplicate ids, off-enum values, blanks, a collapsed distribution |
 | `rerun_diff.py run1.csv run2.csv --id-col <id>` | Row and column churn between runs; your noise floor |
 | `usage_report.py usage.jsonl --run-id final --price "<model>=<in>:<out>"` | Builds `evaluation/usage_report.md` with per-model and overall totals |
@@ -244,10 +243,11 @@ hackerrank-orchestrate/           the skill
 └── assets/                       change record, decision log, CONSTANTS.md, usage-log schema
     └── editions/                 log-format profiles per edition, plus a template
 docs/COVERAGE.md                  rubric criteria and orchestrate-loop capabilities mapped to guidance and checks
+docs/INSTALL.md                   install folder per agent (Claude Code, Claude.ai, Codex, OpenCode, Antigravity, Cursor), with evidence labels
 evals/triggers.json               44 prompts that should (22) and should not (22) trigger the skill
 tests/                            script and tool tests, hostile inputs, golden outputs on small fixtures
 tools/validate_skill.py           structure, policy and context-budget check, run in CI
-tools/package_skill.py            builds dist/hackerrank-orchestrate.zip and optional clean install
+tools/package_skill.py            builds dist/hackerrank-orchestrate.zip; installs a clean copy into a folder or a project (--for claude, agents, all)
 tools/footprint.py                always-loaded and on-demand size of the skill, against budgets
 tools/run_trigger_evals.py        trigger evals: offline proxy, or opt-in live run
 VERSION, CHANGELOG.md             release version and history

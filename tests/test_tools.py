@@ -5,6 +5,7 @@ import io
 import os
 import re
 import shutil
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -287,6 +288,154 @@ class AtomicInstall(unittest.TestCase):
         self.assertFalse(os.path.islink(self.target))
         with open(os.path.join(elsewhere, "SKILL.md"), encoding="utf-8") as fh:
             self.assertEqual(fh.read(), "OLD COPY\n")  # the link's target was not touched
+
+
+class InstallDocChecks(unittest.TestCase):
+    """v2.3.0: docs/INSTALL.md must cover the six agents; SKILL.md body names no install folder."""
+
+    def setUp(self):
+        self.d = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, self.d)
+
+    def test_install_doc_missing_or_incomplete(self):
+        errs = []
+        validate_skill.check_install_doc(self.d, errs)
+        self.assertEqual(errs, ["docs/INSTALL.md is missing"])
+        os.makedirs(os.path.join(self.d, "docs"))
+        with open(os.path.join(self.d, "docs", "INSTALL.md"), "w", encoding="utf-8") as fh:
+            fh.write("Claude Code, Claude.ai, Codex, OpenCode and Cursor.\n")
+        errs = []
+        validate_skill.check_install_doc(self.d, errs)
+        self.assertEqual(errs, ["docs/INSTALL.md does not name Antigravity"])
+        errs = []
+        validate_skill.check_install_doc(ROOT, errs)
+        self.assertEqual(errs, [])
+
+    def test_agent_install_path_in_skill_body_is_an_error(self):
+        skill = os.path.join(self.d, "hackerrank-orchestrate")
+        shutil.copytree(SKILL, skill, ignore=shutil.ignore_patterns("__pycache__"))
+        with open(os.path.join(skill, "SKILL.md"), "a", encoding="utf-8") as fh:
+            fh.write("\nInstall it under `~/.gemini/config/skills/` for Antigravity.\n")
+        errs = []
+        validate_skill.check_skill(skill, errs)
+        self.assertEqual([e for e in errs if "install path" in e],
+                         ["SKILL.md body names the agent-specific install path '.gemini/config'; "
+                          "install folders belong in docs/INSTALL.md"])
+
+
+class ProjectInstall(unittest.TestCase):
+    """v2.3.0: --project DIR --for {claude,agents,all} installs into a project's skill folders."""
+
+    def setUp(self):
+        self.d = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, self.d)
+        self.project = os.path.join(self.d, "entry")
+        os.makedirs(self.project)
+
+    def target(self, layout):
+        return os.path.join(self.project, layout, "skills", "hackerrank-orchestrate")
+
+    def install(self, *extra):
+        return run(package_skill, ["--out", os.path.join(self.d, "dist"), "--project", self.project] + list(extra))
+
+    def tree(self, top):
+        files = {}
+        for path, rel in package_skill.skill_files(top):
+            with open(path, "rb") as fh:
+                files[rel] = fh.read()
+        return files
+
+    def test_each_layout_installs_only_its_folder(self):
+        for layout, present in (("claude", ".claude"), ("agents", ".agents")):
+            with self.subTest(layout=layout):
+                shutil.rmtree(self.project)
+                os.makedirs(self.project)
+                rc, text = self.install("--for", layout)
+                self.assertEqual(rc, 0, text)
+                self.assertEqual(os.listdir(self.project), [present])
+                self.assertTrue(os.path.isfile(os.path.join(self.target(present), "SKILL.md")))
+
+    def test_all_installs_two_identical_copies(self):
+        rc, text = self.install()  # --for defaults to all
+        self.assertEqual(rc, 0, text)
+        claude, agents = self.tree(self.target(".claude")), self.tree(self.target(".agents"))
+        self.assertIn("SKILL.md", claude)
+        self.assertEqual(claude, agents)
+        # v2.3.0 defect: validating the installed copy ran each script's --help without -B,
+        # which wrote __pycache__ into every installed skill.
+        for layout in (".claude", ".agents"):
+            self.assertFalse([dp for dp, _, _ in os.walk(self.target(layout)) if "__pycache__" in dp])
+
+    def test_existing_target_without_force_installs_nothing(self):
+        os.makedirs(self.target(".agents"))
+        rc, text = self.install("--for", "all")
+        self.assertEqual(rc, 2, text)
+        self.assertIn("pass --force", text)
+        self.assertFalse(os.path.exists(os.path.join(self.project, ".claude")))
+        self.assertEqual(os.listdir(self.target(".agents")), [])
+        self.assertEqual(self.install("--for", "all", "--force")[0], 0)
+
+    def test_failure_mid_copy_keeps_the_old_copy(self):
+        os.makedirs(self.target(".agents"))
+        with open(os.path.join(self.target(".agents"), "SKILL.md"), "w", encoding="utf-8") as fh:
+            fh.write("OLD COPY\n")
+        real = shutil.copytree
+        skills = os.path.join(self.project, ".agents", "skills")
+
+        def broken(src, dst, *a, **k):
+            if dst.startswith(skills):
+                os.makedirs(dst)
+                raise OSError(28, "No space left on device")
+            return real(src, dst, *a, **k)
+
+        package_skill.shutil.copytree = broken
+        try:
+            rc, text = self.install("--for", "agents", "--force")
+        finally:
+            package_skill.shutil.copytree = real
+        self.assertEqual(rc, 2, text)
+        with open(os.path.join(self.target(".agents"), "SKILL.md"), encoding="utf-8") as fh:
+            self.assertEqual(fh.read(), "OLD COPY\n")
+        self.assertEqual(os.listdir(skills), ["hackerrank-orchestrate"])  # no temp debris
+
+    def test_usage_errors(self):
+        self.assertEqual(run(package_skill, ["--for", "all"])[0], 2)
+        self.assertEqual(run(package_skill, ["--project", os.path.join(self.d, "missing")])[0], 2)
+        self.assertEqual(self.install("--for", "codex")[0], 2)
+
+
+class PortabilitySmoke(unittest.TestCase):
+    """v2.3.0: an installed copy, in either layout, validates and runs on its own.
+
+    Each check is a fresh `python -I -B` process (no user site, no cwd on sys.path, no
+    __pycache__ written into the installed folder; -I ignores PYTHONDONTWRITEBYTECODE) with the
+    proxy variables pointed at a closed port, so a script that reached for the network or
+    for a file in this repo would fail here.
+    """
+
+    def test_installed_copy_validates_and_every_script_answers_help(self):
+        d = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, d)
+        rc, text = run(package_skill, ["--out", os.path.join(d, "dist"), "--project", d, "--for", "all"])
+        self.assertEqual(rc, 0, text)
+        env = dict(os.environ)
+        for var in ("HTTP_PROXY", "HTTPS_PROXY", "http_proxy", "https_proxy", "ALL_PROXY"):
+            env[var] = "http://127.0.0.1:9"
+        for layout in (".claude", ".agents"):
+            installed = os.path.join(d, layout, "skills", "hackerrank-orchestrate")
+            jobs = [[os.path.join(ROOT, "tools", "validate_skill.py"), "--standalone", "--skill-dir", installed]]
+            scripts = os.path.join(installed, "scripts")
+            names = sorted(f for f in os.listdir(scripts) if f.endswith(".py"))
+            self.assertGreaterEqual(len(names), 9)
+            jobs += [[os.path.join(scripts, f), "--help"] for f in names]
+            for job in jobs:
+                with self.subTest(layout=layout, job=os.path.basename(job[0])):
+                    proc = subprocess.run([sys.executable, "-I", "-B", "-W", "error"] + job, cwd=d, env=env,
+                                          stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                                          universal_newlines=True, timeout=60)
+                    self.assertEqual(proc.returncode, 0, proc.stdout)
+                    self.assertNotIn("Traceback", proc.stdout)
+            self.assertFalse(any("__pycache__" in dp for dp, _, _ in os.walk(installed)))
 
 
 if __name__ == "__main__":

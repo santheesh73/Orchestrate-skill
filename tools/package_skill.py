@@ -14,6 +14,11 @@ What it does:
      (for example DIR = .claude/skills). An existing copy there is replaced only with
      --force, and atomically: the new copy is built and validated beside it first, and
      on any failure the previous copy is left as it was.
+  5. With --project DIR, installs into a project's skill folders the same way:
+     --for claude gives DIR/.claude/skills (Claude Code), --for agents gives
+     DIR/.agents/skills (Codex, Cursor, OpenCode, Antigravity; see docs/INSTALL.md),
+     and --for all (the default) gives both. Every target is checked before any is
+     written, so an existing copy without --force installs nothing.
 
 Exit 0 on success, 1 when validation fails, 2 on usage errors. Standard library only;
 no network. The packaged scripts check a participant's own work; they are not part of
@@ -22,6 +27,7 @@ a submission.
 Examples:
   python tools/package_skill.py
   python tools/package_skill.py --out /tmp/dist --install ~/.claude/skills --force
+  python tools/package_skill.py --project ../my-entry --for all
 """
 
 import argparse
@@ -34,6 +40,8 @@ import zipfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SKILL_NAME = "hackerrank-orchestrate"
+PROJECT_LAYOUTS = {"claude": [".claude/skills"], "agents": [".agents/skills"],
+                   "all": [".claude/skills", ".agents/skills"]}
 EXCLUDE_DIRS = {"__pycache__", "tests", "fixtures", ".git", ".pytest_cache"}
 EXCLUDE_FILES = ("*.pyc", "*.pyo", ".DS_Store", "Thumbs.db", "*~", "*.swp")
 
@@ -107,16 +115,29 @@ def main(argv=None):
     ap.add_argument("--skill-dir", default=os.path.join(ROOT, SKILL_NAME), help="skill folder to package")
     ap.add_argument("--out", default=os.path.join(ROOT, "dist"), help="output directory for the zip (default dist/)")
     ap.add_argument("--install", metavar="DIR", help="also copy the clean skill to DIR/" + SKILL_NAME)
+    ap.add_argument("--project", metavar="DIR", help="also install into the project DIR (see --for)")
+    ap.add_argument("--for", dest="layout", choices=sorted(PROJECT_LAYOUTS),
+                    help="with --project: .claude/skills, .agents/skills, or both (default all)")
     ap.add_argument("--force", action="store_true", help="replace an existing installed copy")
     args = ap.parse_args(argv)
+    if args.layout and not args.project:
+        ap.error("--for needs --project DIR")
 
     if not os.path.isfile(os.path.join(args.skill_dir, "SKILL.md")):
         print(f"error: no SKILL.md in {args.skill_dir}", file=sys.stderr)
         return 2
-    target = os.path.join(os.path.expanduser(args.install), SKILL_NAME) if args.install else None
-    if target and os.path.lexists(target) and not args.force:
-        print(f"error: {target} exists; pass --force to replace it", file=sys.stderr)
-        return 2
+    targets = [os.path.join(os.path.expanduser(args.install), SKILL_NAME)] if args.install else []
+    if args.project:
+        project = os.path.expanduser(args.project)
+        if not os.path.isdir(project):
+            print(f"error: project folder {project} does not exist", file=sys.stderr)
+            return 2
+        targets += [os.path.join(project, *sub.split("/"), SKILL_NAME)
+                    for sub in PROJECT_LAYOUTS[args.layout or "all"]]
+    for target in targets:
+        if os.path.lexists(target) and not args.force:
+            print(f"error: {target} exists; pass --force to replace it; nothing installed", file=sys.stderr)
+            return 2
 
     with tempfile.TemporaryDirectory() as tmp:
         staged = os.path.join(tmp, SKILL_NAME)
@@ -137,7 +158,7 @@ def main(argv=None):
         with zipfile.ZipFile(zip_path) as zf:
             n = sum(1 for i in zf.infolist() if not i.is_dir())
         print(f"wrote {zip_path}: {n} files, {os.path.getsize(zip_path)} bytes; staged copy validated")
-        if target:
+        for target in targets:
             try:
                 install(staged, target)
             except (OSError, ValueError) as exc:

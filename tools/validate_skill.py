@@ -30,6 +30,10 @@ MAX_DESC = 900
 # Context budgets in characters, set at the size measured for v2.2.0 plus about 10%
 # (tools/footprint.py reports the same parts). Raise one only on purpose.
 FOOTPRINT_BUDGETS = {"skill_body": 7600, "always_loaded": 8500, "on_demand": 167000}
+# The six agents docs/INSTALL.md must cover, and the per-agent install folders that belong
+# there rather than in the SKILL.md body (the body is read by every agent alike).
+SUPPORTED_AGENTS = ("Claude Code", "Claude.ai", "Codex", "OpenCode", "Antigravity", "Cursor")
+AGENT_PATH_RE = re.compile(r"\.(?:claude|agents|opencode|cursor|gemini)/(?:skills|config|antigravity)?|\.config/opencode")
 LINE_LIMITS = {"references/behind-schedule.md": 40, "references/edition-update.md": 40, "references/kit-repo.md": 90}
 ARCHETYPE_SECTIONS = ("Architecture that held up", "Guards that fit", "Grounding test", "Where rows are lost")
 PROFILE_KEYS = {"name", "entry_regex", "prompt_header", "section_headers", "session_start_title_match",
@@ -125,6 +129,10 @@ def check_skill(skill_dir, errors):
     body_lines = len(body.strip("\n").splitlines())
     if body_lines >= MAX_BODY_LINES:
         errors.append(f"SKILL.md body is {body_lines} lines; keep it under {MAX_BODY_LINES}")
+    path_hit = AGENT_PATH_RE.search(body)
+    if path_hit:
+        errors.append(f"SKILL.md body names the agent-specific install path {path_hit.group(0)!r}; "
+                      "install folders belong in docs/INSTALL.md")
     sizes = {"skill_body": len(body), "always_loaded": len(desc) + len(body), "on_demand": on_demand_chars(skill_dir)}
     for part, limit in sorted(FOOTPRINT_BUDGETS.items()):
         if sizes[part] > limit:
@@ -211,8 +219,10 @@ def check_skill(skill_dir, errors):
     for f in on_disk:
         p = os.path.join(scripts_dir, f)
         check_python(p, f"scripts/{f}", errors, require_failure_line=True)
-        proc = subprocess.run([sys.executable, p, "--help"], stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                              timeout=60)
+        # -I: run as an installed copy would be run; -B: write no __pycache__ into the folder
+        # being checked (package_skill validates the installed copy in place).
+        proc = subprocess.run([sys.executable, "-I", "-B", p, "--help"], stdout=subprocess.PIPE,
+                              stderr=subprocess.PIPE, timeout=60)
         if proc.returncode != 0 or b"usage" not in proc.stdout.lower():
             errors.append(f"scripts/{f} --help failed (exit {proc.returncode})")
     return desc
@@ -252,8 +262,21 @@ def check_docs_restate_no_rules(root, errors):
                     errors.append(f"hard rule {i} is restated verbatim in {os.path.relpath(path, root)}; link instead")
 
 
+def check_install_doc(root, errors):
+    """docs/INSTALL.md is the one place install folders live, and it covers every supported agent."""
+    path = os.path.join(root, "docs", "INSTALL.md")
+    if not os.path.isfile(path):
+        errors.append("docs/INSTALL.md is missing")
+        return
+    text = read(path)
+    missing = [a for a in SUPPORTED_AGENTS if a.lower() not in text.lower()]
+    if missing:
+        errors.append(f"docs/INSTALL.md does not name {', '.join(missing)}")
+
+
 def check_repo(errors):
     check_docs_restate_no_rules(ROOT, errors)
+    check_install_doc(ROOT, errors)
     evals_path = os.path.join(ROOT, "evals", "triggers.json")
     try:
         evals = json.loads(read(evals_path))
