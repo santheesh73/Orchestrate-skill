@@ -64,6 +64,7 @@ Standard-library Python 3.9+, no installs. Each takes paths and schemas as argum
 | `scripts/check_log.py log.txt --expect-tool "HARNESS" [--profile NAME]` | One valid `tool=` line per entry, prompt block present, no secrets, append-only; formats in `assets/editions/` |
 | `scripts/preflight.py output.csv --template … --inputs … --id-col …` | Exact header and order, one row per input id, no duplicates, enums, blanks |
 | `scripts/rerun_diff.py run_a.csv run_b.csv --id-col …` | Row and column churn between two runs; the noise floor |
+| `scripts/experiment.py start NAME …`, then `finish NAME` | One change record: re-run, full-set diff, labeled rows better and worse, the resolution-table verdict |
 | `scripts/usage_report.py usage.jsonl --price MODEL=IN:OUT` | Builds `evaluation/usage_report.md` from a per-call token log |
 | `scripts/interview_drill.py code/ --constants CONSTANTS.md` | Questions from your own constants, thresholds and orderings, with file:line |
 | `scripts/corpus_literals.py --data … --code code/ --spec …` | Code literals copied from the dataset (sample coupling) |

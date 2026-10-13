@@ -40,20 +40,7 @@ Record who decided in `assets/decision_log.md` (me / AI suggested and I accepted
 
 First work out the **ceiling**: the number of sample rows this gap reaches, and of those, the number it actually causes to be wrong (as opposed to some other cause). If the ceiling is two rows, spend your hour elsewhere.
 
-Anything beyond a trivial edit then gets a record (`assets/change_record.md`):
-
-```
-CHANGE:
-REQUIREMENT:    the line it serves, quoted from problem_statement.md or AGENTS.md
-CLAIM:
-JUSTIFICATION:  why the domain says this rule should exist (not "it fixes row X")
-METRIC:         label-free checks + field-level sample accuracy
-BASELINE:
-RESULT:
-BLAST RADIUS:   rows that changed across all inputs; how many improved; how many got worse
-COUNTERFACTUAL: turn the change off; does the effect go away?
-VERDICT:        SHIP or REJECT (apply the resolution table in evaluation.md)
-```
+Anything beyond a trivial edit then gets a record. The fields, in order, are in `assets/change_record.md` (the one copy): CHANGE, REQUIREMENT, CEILING, CLAIM, JUSTIFICATION, METRIC, BASELINE, RESULT, BLAST RADIUS, COUNTERFACTUAL, VERDICT. `scripts/experiment.py` fills the measured ones for you: `start` snapshots the output and label-free checks before the edit, `finish` re-runs them, diffs the full input set, applies the resolution table in `evaluation.md` and appends the record.
 
 Rules:
 - When the core or the extraction step changes, compare the **whole** output with the last run (`scripts/rerun_diff.py`), not only the column you meant to change.
