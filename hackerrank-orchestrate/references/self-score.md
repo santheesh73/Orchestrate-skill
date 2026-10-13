@@ -4,13 +4,17 @@ Never skipped. It works with or without the community toolkit.
 
 ## Path A: bundled scripts plus manual checklist (always available)
 
-Run in this order and fix blockers before moving on:
+One command runs the automated part. Write a `selfcheck.json` once (the format is in `scripts/selfcheck.py --help`), then:
 
-1. `scripts/check_log.py log.txt --expect-tool "<harness>"`: zero errors.
-2. `scripts/preflight.py output.csv --template … --inputs … --id-col … [--enum …]`: zero errors.
-3. `scripts/rerun_diff.py` on two offline runs from the cache: zero changed rows. Then once against a cold re-derivation to record the noise floor.
-4. `scripts/usage_report.py`: the report exists in `code/evaluation/usage_report.md` (or wherever the contract says) and describes the final full run.
-5. `scripts/interview_drill.py code/ --constants CONSTANTS.md`: no constant missing from `CONSTANTS.md`.
+```
+python scripts/selfcheck.py selfcheck.json
+```
+
+It runs, and prints one row each for: the log (`check_log.py`), the output contract (`preflight.py`), the usage report's existence and content, constants missing from `CONSTANTS.md` (`interview_drill.py`), code literals copied from the dataset (`corpus_literals.py`), and numbers in docs versus the live repo (`claim_audit.py`). A section you did not configure prints UNKNOWN, never PASS. Fix every FAIL before moving on; read every WARN.
+
+Two checks are not in selfcheck because they need two runs. Do them by hand:
+- `scripts/rerun_diff.py` on two offline runs from the cache: zero changed rows.
+- Once, against a cold re-derivation, to record the noise floor.
 
 Then score each artifact against `rubric.md` honestly, one line each, labeled VERIFIED or INFERRED:
 
@@ -21,7 +25,7 @@ Then score each artifact against `rubric.md` honestly, one line each, labeled VE
 - [ ] Rationale in docstrings and beside constants; README is setup and run only
 - [ ] Pinned dependencies, seeded or deterministic sampling, secrets from env vars
 - [ ] Runs from a fresh clone with only the README; tests pass, each file alone
-- [ ] No corpus literals or hardcoded labels (grep test)
+- [ ] No corpus literals or hardcoded labels (`corpus_literals.py`)
 
 **Output CSV (30)**
 - [ ] Preflight clean; distribution not collapsed onto one value
@@ -38,4 +42,4 @@ Name the weakest artifact and spend the next block of time there.
 
 ## Path B: community toolkit (optional)
 
-If the user has the community `hackerrank-orchestrate-skills` toolkit installed, also run its gates (`orchestrate evaluate .`, `orchestrate mentor "<proposal>"`, and `orchestrate release .` at freeze). See `kit-repo.md`. Its scores measure the shape of the work, not correctness and not a real HackerRank score; never quote them as predictions. If it is not installed, Path A is the complete gate; do not block on the toolkit.
+If the user has the community `hackerrank-orchestrate-skills` toolkit installed, also run its gates (`orchestrate evaluate .`, `orchestrate mentor "<proposal>"`, and `orchestrate release .` at freeze). See `kit-repo.md`. Its scores reflect how the work is structured; they say nothing about correctness and are not HackerRank scores; never quote them as predictions. If it is not installed, Path A is the complete gate; do not block on the toolkit.

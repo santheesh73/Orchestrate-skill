@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 """Check an Orchestrate output CSV against the contract before submitting.
 
+Failure it prevents: whole rows lost to a wrong header, a missing or duplicate id,
+or an off-enum value, regardless of how good the reasoning was.
+
 Checks:
   - the file is UTF-8 and parses as CSV
   - the header equals the expected columns, in order (from --template or --columns)
@@ -90,6 +93,9 @@ def main(argv=None):
         return 1
 
     header, data = rows[0], rows[1:]
+    dup_cols = sorted({c for c in header if header.count(c) > 1})
+    if dup_cols:
+        errors.append(f"duplicate header columns: {dup_cols}")
     if header != expected:
         if [h.strip() for h in header] == expected:
             errors.append("header has stray whitespace around column names")

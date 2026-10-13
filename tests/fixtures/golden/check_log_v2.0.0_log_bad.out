@@ -1,0 +1,10 @@
+ERROR line 3: tool= still holds a placeholder: '<exact_harness_or_coding_agent_name>'
+ERROR line 14: tool= looks like a model name, not a harness: 'claude-opus-4'
+ERROR line 6 (Build the loop): 'User Prompt' block is empty
+ERROR line 16 (Second turn): timestamp goes backwards; the log must be append-only
+ERROR line 16 (Second turn): 2 tool= lines; the rule asks for exactly one
+ERROR line 22: tool= is a generic label: 'AI'
+ERROR line 16 (Second turn): per-turn entry has no 'User Prompt' block
+ERROR line 11: possible secret (Anthropic API key); redact as [REDACTED]
+3 entries checked: 8 errors, 0 warnings
+rc=1

@@ -1,0 +1,26 @@
+{
+  "name": "june-2026",
+  "description": "June 2026 starter AGENTS.md section 5: same entry header; SESSION START carries 'Agent:' instead of tool=, per-turn entries carry tool= in Context.",
+  "provenance": "VERIFIED",
+  "provenance_source": "AGENTS.md section 5 of the official starter github.com/interviewstreet/hackerrank-orchestrate-june26, commit 241c791, read on 2026-10-13: entry header, section headers, 'Agent:' in SESSION START, tool= under Context in per-turn entries, 80-character titles.",
+  "provenance_notes": "INFERRED: tool_rule.exactly_one and tool_rule.harness_not_model. The June starter shows tool=<agent_name> but states no strict tool-name rule; these checks are carried over from September.",
+  "entry_regex": "^##\\s*\\[(?P<ts>[^\\]]+)\\]\\s*(?P<title>.*)$",
+  "prompt_header": "User Prompt",
+  "section_headers": [
+    "Agent Response Summary:",
+    "Actions:",
+    "Context:"
+  ],
+  "session_start_title_match": "session start",
+  "tool_rule": {
+    "key": "tool",
+    "required_in": "turns",
+    "exactly_one": true,
+    "harness_not_model": true
+  },
+  "required_turn_sections": [
+    "Agent Response Summary:"
+  ],
+  "title_max_length": 80,
+  "secret_scan": true
+}

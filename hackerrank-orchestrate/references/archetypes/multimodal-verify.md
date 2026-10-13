@@ -4,22 +4,22 @@ Shape: decide whether a claim is supported, contradicted or unverifiable from im
 
 ## Architecture that held up
 
-- **Perception is a tool loop with a zoom.** The vision model can crop or inspect a named region (quadrants, object aliases, or coordinates) before reporting. An invalid region returns a center crop plus a note, not an error. Cap rounds (about 6), then force a final answer.
-- **Typed seam.** One object is the only bridge from the model to the decision code. Enums are defined once; the tool schema and validator are generated from them; a test asserts they equal the problem statement's lists.
-- **Verdict function in pure code** over the perception record. History is an additive overlay only: it can add review flags but never change the verdict, enforced by never passing history to the verdict function.
+- **The vision model looks closer through a zoom tool.** Before it reports, it may request a crop by quadrant, by an object alias or by coordinates. A request for a region that does not exist gets the middle of the image and an explanatory note rather than an error. After roughly 6 rounds the loop demands the final answer.
+- **Typed seam.** A single typed object is all the decision code ever receives from the model. Its enums live in one place, the tool schema and the validator are derived from them, and a test compares them with the lists in the problem statement.
+- **Verdict function in pure code** over the perception record. History can only add things, such as review flags; it cannot alter the verdict, and the reason is structural: the verdict function has no history parameter.
 - **Design review before coding** with severity-tagged findings and a complexity audit; every component names the failure it prevents. A tool that failed that test was demoted to plain code.
 
 ## Guards that fit
 
-- **Gate "not enough information" on evidence sufficiency,** not on a soft authenticity flag. When a prescribed rule conflicted with a ground-truth row, the author adopted the safer gate and wrote the deviation down as an open decision instead of deciding silently.
-- **Fingerprint reused media.** Hash each image so the same photo reused across claims is detectable. Cache by content hash, never by path.
-- **Majority vote only on borderline reads.** Three runs on borderline cases cost modestly more per row. The author reported the expensive error class improving across two separate runs; treat the causal link as their claim and measure variance first.
+- **Return "not enough information" when the evidence is insufficient,** and do not base it on a vague authenticity signal. Where the rule given in the spec disagreed with a labeled row, the author chose the more cautious condition and logged the departure as an unresolved decision rather than settling it quietly.
+- **Detect recycled photos.** Hashing every image exposes one photo submitted with several claims. Key the cache on the file's content hash; a path can change.
+- **Vote across three runs, but only for borderline readings.** That raises the per-row cost a little. The author reported the expensive error class improving across two separate runs; treat the causal link as their claim and measure variance first.
 - **Justifications generated from logged facts** (the cue, the branch, the rule), with a deterministic template fallback.
-- **Byte-exact echo of input columns** via the stdlib CSV module, all-quoted UTF-8, and a round-trip test.
+- **Input columns copied to the output byte for byte,** written with Python's standard `csv` module as fully quoted UTF-8, and covered by a write-then-read test.
 
 ## Grounding tests
 
-- **Blank-drop:** replace the image with a blank; the verdict must collapse to "not enough information". A vision agent that approves a claim with a blank image was matching text, not pixels.
+- **Blank-drop:** substitute an empty image; the answer must fall back to "not enough information". If a claim still gets approved with no picture, the agent was reading the text and ignoring the image.
 - **Swap:** give the row a different image; the output must change.
 
 ## Where rows are lost

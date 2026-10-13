@@ -1,6 +1,6 @@
 # Output CSV: the stage top finishers lose
 
-The CSV is 30 points and is the weakest stage for most of the top 50 in public leaderboards. Strong code with a mediocre CSV is the common top-50 profile; a team that also gets the rows right separates. Reserve explicit build time for it (gate 5), not the last hour.
+The CSV is 30 points and is the weakest stage for most of the top 50 in public leaderboards. Many top-50 entries pair strong code with an average CSV, so getting the rows right as well is where a team pulls ahead. Reserve explicit build time for it (gate 5), not the last hour.
 
 ## 1. Contract first
 
@@ -43,9 +43,9 @@ ids, amounts, dates, quoted fact>; <the alternative that lost and why>.
 
 ## 4. Safety and escalation rows
 
-- The adversarial safety score is separate. Check the adversarial rows on their own: injected instructions in messages or images, impersonation, override demands.
+- Safety is scored separately: one 0–100 score for the submission as a whole (rubric.md §2). Check the adversarial rows on their own: injected instructions in messages or images, impersonation, override demands.
 - Escalate when evidence is thin, the request is high-risk, or the run failed for that row, and say why in the justification.
-- Escalating or refusing everything is invalid. Check the output distribution after every run.
+- Escalating everything was invalid in May 2026, and so was replying to everything (rubric.md §3). Check the output distribution after every run.
 
 ## 5. Consistency checks worth automating
 

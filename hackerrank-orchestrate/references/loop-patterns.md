@@ -3,25 +3,25 @@
 The hard rules live in `SKILL.md`; this file gives the detail behind the loops they reference.
 
 ## Contents
-1. Agent loop
-2. Plan → Build → Review
-3. Iteration loop with change record
-4. Prompt relay loop
-5. Verify-before-trust loop
-6. Per-row safety loop
-7. Phase gates and the 24-hour budget
+1. The agent loop
+2. Plan, build, review
+3. Changing things: the change record
+4. Relaying prompts between chat and Claude Code
+5. Checking reports before believing them
+6. Keeping every row safe
+7. Gates and how to spend 24 hours
 
 ---
 
-## 1. Agent loop
+## 1. The agent loop
 
-The model chooses which tool to call, with what arguments, how many times, and when it is done. Code supplies only:
+Inside the loop the model decides everything about tool use: the tool, its arguments, the number of calls and the moment to stop. Your code contributes three things only:
 
 - a **step cap** (a named constant, typically 6 to 10 tool rounds)
-- a **fallback** when the cap is hit or no valid final answer arrives (an honest escalation or safe-default row)
+- a **fallback** for when the cap runs out or the final answer fails validation (an honest escalation or safe-default row)
 - a **final-answer contract** (a typed, validated structure, never free text that code then parses loosely)
 
-What graders look for is a loop **a reviewer can find and read in ten seconds**: one named function or graph, explicit termination, prompts and tool descriptions in named files or constants. A framework is fine. The May 2026 winner built on `langchain.agents.create_agent`; a raw Messages API loop works equally well. What fails is a "loop" that is really a hardcoded decision tree.
+What graders look for is a loop **a reviewer can find and read in ten seconds**: one named function or graph, explicit termination, prompts and tool descriptions in named files or constants. A framework is fine. The May 2026 winner built on `langchain.agents.create_agent` (VERIFIED in its code); a raw API loop is just as acceptable when it is as easy to find. What fails is code called a loop that is actually a fixed if/else tree.
 
 Tool design is prompt engineering:
 - Fewer, well-chosen tools. One tool with modes (search, read, grep) beat many narrow tools in the May winner.
@@ -30,56 +30,56 @@ Tool design is prompt engineering:
 - The deterministic core is exposed as tools; the model never does arithmetic.
 - Untrusted content (messages, documents, image text) is fenced and treated as data.
 
-## 2. Plan → Build → Review
+## 2. Plan, build, review
 
-Every cycle: state the plan, the alternatives and why you picked one; build with specific instructions; review, including rejecting your own first draft out loud with a reason. Say which phase gate you are in at the start of each cycle. The transcript is scored on direction and ownership (35%) and iteration and verification (25%), so this has to happen from message 1. It cannot be retrofitted.
+In each cycle, lay out the plan along with the options you passed over and why; give precise build instructions; then review, and when you throw away a first draft of your own, give the reason in the transcript. Name your current phase gate as each cycle opens. The transcript is scored on direction and ownership (35%) and iteration and verification (25%), so this has to happen from message 1. It cannot be retrofitted.
 
 Record who decided in `assets/decision_log.md` (me / AI suggested and I accepted / AI suggested and I rejected). That feeds both the transcript and the interview honesty score.
 
-## 3. Iteration loop with change record
+## 3. Changing things: the change record
 
-Before touching anything, compute the **ceiling**: how many sample rows does this gap touch, and how many are wrong because of it versus unrelated causes? A two-row ceiling is not worth an hour.
+First work out the **ceiling**: the number of sample rows this gap reaches, and of those, the number it actually causes to be wrong (as opposed to some other cause). If the ceiling is two rows, spend your hour elsewhere.
 
-Then every non-trivial change gets a record (`assets/change_record.md`):
+Anything beyond a trivial edit then gets a record (`assets/change_record.md`):
 
 ```
 CHANGE:
-REQUIREMENT:    exact line in problem_statement.md or AGENTS.md
+REQUIREMENT:    the line it serves, quoted from problem_statement.md or AGENTS.md
 CLAIM:
 JUSTIFICATION:  why the domain says this rule should exist (not "it fixes row X")
 METRIC:         label-free checks + field-level sample accuracy
 BASELINE:
 RESULT:
-BLAST RADIUS:   rows changed on the full input set; right direction; wrong direction
-COUNTERFACTUAL: disable the change; does the effect disappear?
-VERDICT:        SHIP / REJECT (apply the resolution table in evaluation.md)
+BLAST RADIUS:   rows that changed across all inputs; how many improved; how many got worse
+COUNTERFACTUAL: turn the change off; does the effect go away?
+VERDICT:        SHIP or REJECT (apply the resolution table in evaluation.md)
 ```
 
 Rules:
-- Diff the **full** output against the previous run after any core or extraction change (`scripts/rerun_diff.py`), not just the target field.
+- When the core or the extraction step changes, compare the **whole** output with the last run (`scripts/rerun_diff.py`), not only the column you meant to change.
 - Reject a large blast radius with a small gain.
 - Log rejections with the number that killed them. A rejected change is strong interview material.
 - If a 5% to 25% miss is directionally consistent across many rows, suspect one systematic bug (ordering, boundary dates, a conservative estimate applied twice) before many independent errors.
-- Attack your own measurement. Real examples: an ablation reported "0 of 110 rows changed" because both arms used the same backend bound at import (the real answer was 5); a benchmark overwrote the submission artifact. A clean result from a broken harness is the most dangerous output.
+- Attack your own measurement. Two real cases: an ablation claimed no row out of 110 moved, but both of its arms had bound the same backend at import time, and the true count was 5; and a benchmark run silently replaced the file meant for submission. A tidy number from a faulty harness does more harm than an obvious error.
 
-## 4. Prompt relay loop
+## 4. Relaying prompts between chat and Claude Code
 
-1. Claude (chat) writes a paste-ready prompt for Claude Code.
-2. The user pastes it as the next message (the first message for kickoff).
-3. The user pastes the Claude Code report back, with any artifacts.
-4. Claude verifies the claims (§5), flags anything unverified, and writes the next prompt.
+1. In chat, Claude drafts a prompt that Claude Code can take verbatim.
+2. The user sends it into Claude Code as the next message (at kickoff, as the opening message).
+3. The user brings Claude Code's report back to chat, plus any artifacts it produced.
+4. Claude checks each claim (§5), marks what it could not confirm, and drafts the following prompt.
 
-Prompts reference standing files by name (`AGENTS.md` sections, `.claude/skills/`, `log.txt`) instead of restating them.
+A prompt points at files that already exist (sections of `AGENTS.md`, `.claude/skills/`, `log.txt`) by name rather than copying their content.
 
-## 5. Verify-before-trust loop
+## 5. Checking reports before believing them
 
 - Inspect real artifacts: `output.csv`, `log.txt`, test output, hashes. Run the bundled scripts rather than trusting a summary.
-- Check that the code, the output and the log tell the same story (same test count, same figures).
+- Make sure the code, the output and the log agree: one test count, one set of figures.
 - Re-run install and tests from a fresh environment on the exact artifact you will submit.
 - Docs drift under heavy iteration. Re-derive every number from the live repo before reciting it.
-- Skepticism cuts both ways: when verification confirms a surprising result, say so and drop the doubt.
+- Doubt is not a goal in itself. If checking confirms a surprising result, accept it and say so.
 
-## 6. Per-row safety loop
+## 6. Keeping every row safe
 
 For each input row: run, validate against the output schema, retry once on a schema violation, and on any other exception log the traceback and write an honest escalation or safe-default row. Checkpoint per row so a crash resumes with only the missing rows. Assign every failure one disposition up front:
 
@@ -89,7 +89,7 @@ For each input row: run, validate against the output schema, retry once on a sch
 
 Never write a partial output file; it looks like a submission.
 
-## 7. Phase gates and the 24-hour budget
+## 7. Gates and how to spend 24 hours
 
 ```
 Gate 0  Starter contract and rubric          (starter-contract.md, rubric.md)
@@ -98,12 +98,12 @@ Gate 2  Agent architecture and typed seam
 Gate 3  Robustness and adversarial cases     (before writing input handling)
 Gate 4  Implement with tests; cache model records
 Gate 5  Output rows and justifications        (output-csv.md)
-Gate 6  Transcript hygiene                    (continuous)
-Gate 7  Self-score                            (self-score.md; never skipped)
+Gate 6  Keep the transcript clean             (all the time)
+Gate 7  Score yourself                        (self-score.md; never skipped)
 Gate 8  Interview readiness                   (interview.md)
 Gate 9  Final freeze and packaging
 ```
 
-Skip depth inside a gate when behind, never the gate.
+Running late? Do less inside a gate; do not drop a gate (`behind-schedule.md`).
 
-Rough budget: 0–1h gates 0–1 · 1–3h gates 2–3 · 3–13h build with tests, iterate offline from the cache · 13–16h output rows and justifications · 16–18h self-score and fix the weakest artifact · 18–20h interview drill · 20–23h freeze and package · last hour buffer. About 70% of the score is not the code.
+Rough budget: 0–1h gates 0–1 · 1–3h gates 2–3 · 3–13h build with tests, iterate offline from the cache · 13–16h output rows and justifications · 16–18h self-score and fix the weakest artifact · 18–20h interview drill · 20–23h freeze and package · last hour buffer. Code is only 30 of the 100 points.

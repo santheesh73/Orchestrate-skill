@@ -4,7 +4,7 @@
 
 ## 1. What the judge asks
 
-It asks about **your** code, not about agents in general. First-hand examples from September 2026: "Which statistic estimates variable spend?", "On the same date, which is applied first, the debit or the credit?". One participant answered "debits first" when the code did credits first and lost points for contradicting the implementation. Generic prep missed these.
+It asks about **your** code, not about agents in general. In one first-hand September 2026 account ([source](https://dev.to/earlgreyhot1701d/my-first-ai-judge-interview-what-could-possibly-go-wrong-22el), VERIFIED), the questions, as reconstructed by the author, included what value estimated variable expenses, what happened first when salary and bills landed on the same day, and how they knew the outputs were correct across all requests. The author had an earlier written report that said debits came first; the submitted function actually applied credits first. Their lesson: the real questions were more specific than anything they had prepared, so knowing your own implementation matters more than general prep.
 
 Topics probed across editions: high-level architecture, deterministic versus model reasoning, the end-to-end flow of one row, retrieval, confidence, escalation, the AI-assisted workflow, tradeoffs, limitations.
 
@@ -38,7 +38,7 @@ Weak to strong:
 | Is it deterministic? | "Yes." | "Given the cached model record, yes; the live provider call is not, and here is the measured noise floor." |
 | Did you overfit? | "No." | The finding / principle / refused-rule triples. |
 | What's your accuracy? | A bare percentage. | The set, its size, and that one row is 3 to 5 points. |
-| More time? | "Polish." | The specific uncertainty and the experiment that resolves it. |
+| More time? | "Polish." | Name what you are unsure of and the experiment that would settle it. |
 
 ## 4. Ownership and honesty
 
@@ -53,7 +53,7 @@ Claims never to make unless directly supported: "I wrote every line myself"; unq
 - Drill file answered against the code.
 - One row traced end to end.
 - Three rejections memorized with numbers.
-- Boundary sentence for every guarantee.
-- `git log` read.
-- Two limitations chosen to volunteer.
+- For each guarantee, one sentence on where it stops holding.
+- Read through `git log` once.
+- Pick two limitations you will raise unprompted.
 - Sleep protected; do not rehearse for the first time under deadline pressure.

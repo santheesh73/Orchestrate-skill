@@ -1,0 +1,23 @@
+{
+  "name": "sept-2026",
+  "description": "September 2026 starter AGENTS.md section 5: '## [ISO-8601] Title' entries, one tool= line in every entry including SESSION START, verbatim User Prompt block in per-turn entries.",
+  "provenance": "VERIFIED",
+  "provenance_source": "AGENTS.md section 5 of the official starter github.com/interviewstreet/hackerrank-orchestrate-september26, commit a7b9744, read on 2026-10-13. Every field, including the strict tool= rule, is stated there.",
+  "entry_regex": "^##\\s*\\[(?P<ts>[^\\]]+)\\]\\s*(?P<title>.*)$",
+  "prompt_header": "User Prompt",
+  "section_headers": [
+    "Agent Response Summary:",
+    "Actions:",
+    "Context:"
+  ],
+  "session_start_title_match": "session start",
+  "tool_rule": {
+    "key": "tool",
+    "required_in": "all",
+    "exactly_one": true,
+    "harness_not_model": true
+  },
+  "required_turn_sections": [],
+  "title_max_length": 80,
+  "secret_scan": true
+}

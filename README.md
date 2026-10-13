@@ -30,6 +30,7 @@ This repository has two parts:
 - [Repository layout](#repository-layout)
 - [Sources](#sources)
 - [Caveats and license](#caveats-and-license)
+- [Credits](#credits)
 
 ---
 
@@ -45,7 +46,7 @@ HackerRank Orchestrate is a recurring, global, solo hackathon for building an **
 
 You build the agent, run it over every input row, and submit three things: a **code zip**, the generated **output CSV**, and your **AI chat transcript**. After submitting you take a **live interview with an AI judge** about your solution.
 
-Problems so far have taken different shapes: support-ticket triage over a document corpus (May 2026), claim verification against images (June 2026), adversarial message routing (August 2026), and a financial "buy or wait" planner over dated records (September 2026). Expect something new each time. The reliable skills are the approach, not the domain.
+Problems so far have taken different shapes: support-ticket triage over a document corpus (May 2026), claim verification against images (June 2026), adversarial message routing (August 2026, as described in orchestrate-loop), and a financial "buy or wait" planner over dated records (September 2026). Expect something new each time. The reliable skills are the approach, not the domain.
 
 ## How it is scored
 
@@ -54,7 +55,7 @@ Four artifacts, 100 points:
 | Artifact | Points | What is judged |
 |---|---|---|
 | **Code zip** | 30 | Agent architecture 30% · prompt and tool craft 30% · robustness 25% · engineering rigor 15% |
-| **Output CSV** | 30 | Per-row accuracy against a hidden golden set, plus a separate adversarial safety score |
+| **Output CSV** | 30 | Per-row correctness against a hidden golden set, plus one 0–100 safety score for the submission as a whole |
 | **AI judge interview** | 30 | Technical depth and ownership 40% · problem understanding and judgment 25% · communication 20% · honesty 15% |
 | **Chat transcript** | 10 | Direction and architecture ownership 35% · technical specificity 25% · iteration and verification 25% · safety and edge cases 15% |
 
@@ -62,20 +63,20 @@ Sub-weights are from the organizer's post-mortem of the May 2026 edition. Rules 
 
 - **The code grader reads source only.** README claims earn nothing in the code score; design reasons belong in code comments and docstrings.
 - **A generic justification caps a row at about 70%,** even when the label is right.
-- **Escalating or refusing everything is invalid.**
+- **Escalating everything is invalid, and so is replying to everything.**
 - **Short interview answers score low.** The organizer measured a correlation of about −0.57.
 - **Ties break on interview, then code, then output, then transcript.**
 - Since September 2026, `code.zip` must include **`evaluation/usage_report.md`** (model calls, tokens and estimated cost for the final run), and every log entry needs a valid **`tool=` line** naming your coding harness.
 
 ## What separates the top 50
 
-From public leaderboards for the May, June and August 2026 editions:
+Labels: **VERIFIED** means read in the organizer's post-mortem; **INFERRED** means computed by [orchestrate-loop](https://github.com/bsrikumar855-dot/orchestrate-loop) from public leaderboard data that could not be re-checked here. The full table is in [`rubric.md`](hackerrank-orchestrate/references/rubric.md#5-what-the-leaderboards-show).
 
-- **Balance beats a peak.** Most of each top 50 was in the top quartile on **all four** artifacts. Every top-10 finisher was, per the organizer.
-- **The output CSV is where strong teams lose.** It was the weakest stage for 49 of the June top 50 and 34 of the August top 50. Great code with a mediocre CSV is the typical top-50 profile, so getting the rows right is how you separate.
-- **The transcript and interview are cheap points most people leave behind.** Field medians are around 1.4 to 3.8 out of 10 for transcript and 11 to 15 out of 30 for interview. Top-50 averages are 63% to 89% of the maximum.
-- **Simple, explainable architectures win.** A single agent with tools held 7 of the May top 10. One June author's earlier 15-stage pipeline finished mid-pack because they couldn't measure what each stage contributed. Their next, smaller design did far better.
-- **Behavior beats tooling.** Claude Code users were overrepresented at the top, but the organizer credits *how* people worked: reasoning about tradeoffs, evidence, and visible ownership of decisions.
+- **Balance beats a peak.** Every top-10 finisher in May was in the top quartile on all four artifacts (VERIFIED). Most of each top 50 in May, June and August was too (INFERRED).
+- **The output CSV is where strong teams lose.** It was the weakest stage for 49 of the June top 50 and 34 of the August top 50 (INFERRED). Great code with a mediocre CSV is the typical top-50 profile, so getting the rows right is how you separate.
+- **The transcript and interview are cheap points most people leave behind.** Across the field, the median transcript score sat roughly between 1.4 and 3.8 of 10, and the median interview score between 11 and 15 of 30, while top-50 averages were 63% to 89% of the maximum (INFERRED).
+- **Simple, explainable architectures win.** A single agent with tools held 7 of the May top 10 (VERIFIED). One June author had earlier entered with a 15-stage pipeline and placed mid-table, unable to show what any one stage added; their next, smaller design did far better (INFERRED, from that author's write-up as summarized in orchestrate-loop).
+- **Behavior beats tooling.** Claude Code was used by 44% of the May top 50 versus 14.4% of all transcripts, but the organizer credits *how* people worked: reasoning about tradeoffs, evidence, and visible ownership of decisions (VERIFIED).
 
 ## How to approach it
 
@@ -129,7 +130,7 @@ BASELINE / RESULT / BLAST RADIUS / COUNTERFACTUAL / VERDICT
 
 - **Attack the boundary calls.** Top finishers mostly lose rows where the model's default guess sits near the line between two classes. Write resolved definitions with contrastive examples into the prompt, rather than tuning thresholds against a handful of samples.
 - **Make justifications specific:** the decision, the rule that fired, the evidence ids actually read, and the alternative that lost. If a justification would read the same on another row, it's generic.
-- **Check the adversarial rows separately,** since they carry their own safety score. Check that the output hasn't collapsed onto one value.
+- **Check the adversarial rows separately,** since safety is scored on its own. Check that the output hasn't collapsed onto one value.
 - **Self-score every artifact honestly** against the rubric. Name the weakest one and spend the next block there.
 
 ### Hours 18 to 24: interview prep, freeze, submit
@@ -141,7 +142,7 @@ BASELINE / RESULT / BLAST RADIUS / COUNTERFACTUAL / VERDICT
 
 ### The interview
 
-The judge asks about **your** code, not about agents in general. In one first-hand September 2026 account, the questions were things like "which statistic estimates variable spend?" and "on the same date, which is applied first, the debit or the credit?". A candidate answered "debits first" while their code applied credits first, and lost points for contradicting the implementation.
+The judge asks about **your** code, not about agents in general. In one [first-hand September 2026 account](https://dev.to/earlgreyhot1701d/my-first-ai-judge-interview-what-could-possibly-go-wrong-22el), the questions included what value estimated variable expenses and what happened first when salary and bills landed on the same day. The author's own earlier report said debits came first, but the submitted code applied credits first. Their lesson: the real questions were more specific than anything they had prepared for.
 
 - **Build your question bank from your code:** every constant, threshold, sort order and gate, each answered against the line it lives on.
 - **Answer in this shape:** decision, the alternative you rejected, the evidence, the limitation. Four sentences or more, never one line.
@@ -151,19 +152,7 @@ The judge asks about **your** code, not about agents in general. In one first-ha
 
 ## Rules that hold up across editions
 
-1. Don't overwrite `CLAUDE.md`. Obey the starter contract literally.
-2. Samples motivate or falsify; the domain justifies.
-3. One labeled row is noise.
-4. Decide grouping keys and statistics before writing detectors.
-5. Never gate a decision on the truthiness of a model-written free-text field. Use booleans and enums.
-6. Every non-trivial change gets a change record.
-7. Rationale lives in source, not the README.
-8. Every constant has a provenance.
-9. Prove counterfactuals.
-10. One bad row never kills the run.
-11. Self-score is never skipped.
-12. Rehearse the interview early, from your own code.
-13. State the boundary of every guarantee, and name your limitations first.
+The skill keeps one canonical list of 14 hard rules in [`SKILL.md`](hackerrank-orchestrate/SKILL.md#hard-rules-canonical-copy-other-files-link-here), and the evaluation rules behind them in [`evaluation.md`](hackerrank-orchestrate/references/evaluation.md). They are not repeated here so the two can't drift apart. The three that cost the most points when broken: don't overwrite `CLAUDE.md`; samples motivate or falsify, but only the domain justifies a rule; one labeled row is noise.
 
 ## Common mistakes
 
@@ -204,7 +193,7 @@ The Orchestrate starter repo just dropped. AGENTS.md and problem_statement.md ar
 ```
 
 ```
-Here is the Claude Code report from the last round. Verify it and give me the next iteration prompt.
+Claude Code just finished this round; its report is below. Check it and write my next iteration prompt.
 ```
 
 ```
@@ -217,17 +206,21 @@ The interview opens in two hours. Build my drill from code/ and quiz me.
 
 ### Checker scripts
 
-Standard-library Python 3.9+, nothing to install. Each takes paths and schemas as arguments and embeds no dataset.
+Standard-library Python 3.9+, nothing to install, no network. Each takes paths and schemas as arguments and embeds no dataset.
 
 | Script | What it catches |
 |---|---|
-| `check_log.py log.txt --expect-tool "Claude Code"` | Missing, placeholder, generic or model-name `tool=` lines; empty prompt blocks; secrets; non-append-only timestamps |
-| `preflight.py output.csv --template dataset/output.csv --inputs dataset/<inputs>.csv --id-col <id> --enum "col=a\|b"` | Wrong header or column order, missing or duplicate ids, off-enum values, blanks, a collapsed distribution |
+| `selfcheck.py selfcheck.json` | Runs the checks below from one config and prints PASS, WARN, FAIL or UNKNOWN per section; a skipped check is UNKNOWN, never a pass. Exit 0 PASS, 1 WARN, 2 UNKNOWN, 3 FAIL, 4 bad config |
+| `contract_extract.py starter/` and `--diff old/ new/` | The MUST, MUST NOT, required files, columns and allowed values in `AGENTS.md` and `problem_statement.md`, and what changed since the last edition (a heuristic; read the files too) |
+| `check_log.py log.txt --expect-tool "Claude Code" --profile sept-2026` | Missing, placeholder, generic or model-name `tool=` lines; empty prompt blocks; secrets; non-append-only timestamps. `--list-profiles` shows the edition formats; copy `assets/editions/template.json` for a new one |
+| `preflight.py output.csv --template dataset/output.csv --inputs dataset/<inputs>.csv --id-col <id> --enum "col=a\|b"` | Wrong or duplicate header columns, wrong order, missing or duplicate ids, off-enum values, blanks, a collapsed distribution |
 | `rerun_diff.py run1.csv run2.csv --id-col <id>` | Row and column churn between runs; your noise floor |
 | `usage_report.py usage.jsonl --run-id final --price "<model>=<in>:<out>"` | Builds `evaluation/usage_report.md` with per-model and overall totals |
 | `interview_drill.py code/ --constants CONSTANTS.md` | Interview questions from your constants, thresholds, orderings and statistics, each with `file:line`, plus constants missing from `CONSTANTS.md` |
+| `corpus_literals.py --data dataset/*.csv --code code/ --spec problem_statement.md` | Ids, strings and number combinations copied from the dataset into code (sample coupling) |
+| `claim_audit.py README.md CONSTANTS.md --repo . --csv output.csv --constants CONSTANTS.md` | Test, row and constant counts in your docs that no longer match the repo |
 
-All scripts live in `hackerrank-orchestrate/scripts/`. **They check your work and are not part of your submission.** The rules require the participant to be the author.
+An example `selfcheck.json` is in `tests/fixtures/project/`. All scripts live in `hackerrank-orchestrate/scripts/`. **They check your work and are not part of your submission.** The rules require the participant to be the author.
 
 ## Repository layout
 
@@ -245,19 +238,30 @@ hackerrank-orchestrate/           the skill
 │   ├── self-score.md             gate 7, with or without the community toolkit
 │   ├── winning-approaches.md     cross-cutting patterns from top finishers
 │   ├── prompt-templates.md       kickoff, iteration, audit, output-row pass, freeze
+│   ├── behind-schedule.md        which depth to cut, gate by gate, when time runs short
+│   ├── edition-update.md         how to update the skill after each edition closes
 │   └── kit-repo.md               optional community toolkit digest
-├── scripts/                      the five checkers above
+├── scripts/                      the nine checkers above
 └── assets/                       change record, decision log, CONSTANTS.md, usage-log schema
-evals/triggers.json               prompts that should and should not trigger the skill
-tests/                            script tests on small fixtures
-tools/validate_skill.py           structure check, run in CI
+    └── editions/                 log-format profiles per edition, plus a template
+evals/triggers.json               44 prompts that should (22) and should not (22) trigger the skill
+tests/                            script tests, edge cases and golden outputs on small fixtures
+tools/validate_skill.py           structure and policy check, run in CI
+tools/run_trigger_evals.py        trigger evals: offline proxy, or opt-in live run
+VERSION, CHANGELOG.md             release version and history
 ```
 
 Development:
 
 ```bash
 python tools/validate_skill.py
-python -m unittest discover -s tests -v
+python -W error -m unittest discover -s tests -v
+python tools/run_trigger_evals.py --offline
+python hackerrank-orchestrate/scripts/selfcheck.py tests/fixtures/project/selfcheck.json
+python hackerrank-orchestrate/scripts/selfcheck.py selfcheck.json   # claims check on this repo; other sections UNKNOWN
+
+# Opt-in, needs ANTHROPIC_API_KEY, makes network calls, never run in CI:
+python tools/run_trigger_evals.py --live --model <model-id>
 ```
 
 ## Sources
@@ -267,14 +271,25 @@ python -m unittest discover -s tests -v
 - Official starter repos: [june26](https://github.com/interviewstreet/hackerrank-orchestrate-june26), [september26](https://github.com/interviewstreet/hackerrank-orchestrate-september26)
 - [A first-hand September 2026 AI-judge interview](https://dev.to/earlgreyhot1701d/my-first-ai-judge-interview-what-could-possibly-go-wrong-22el)
 - [A practitioner's guide across three editions](https://medium.com/@shreesh.exe22/hackerrank-orchestrate-3268f0d710a5)
-- Public leaderboards for the May, June and August 2026 editions (percentages computed from that data)
+- Public leaderboards for the May, June and August 2026 editions (per-stage percentages computed secondhand from that data; INFERRED)
 - [October 2026 challenge page](https://www.hackerrank.com/hackerrank-orchestrate-october26)
+
+Every link above was fetched on 2026-10-13 and loaded. The community `hackerrank-orchestrate-skills` toolkit could not be located, so it is not linked.
 
 ## Caveats and license
 
 - Scoring sub-weights come from the May 2026 post-mortem, and later editions may reweight. Check the live page.
 - Patterns come from the few public top-finisher repos and write-ups that were reachable. They describe what top finishers did, not proof of what caused their rank.
-- Trigger accuracy is covered by `evals/triggers.json` but hasn't been measured against a live model run yet.
+- **Trigger accuracy against a live model: UNKNOWN.** `tools/run_trigger_evals.py --live` exists but has not been run, because no API key was available where this was built. What *was* measured is an offline lexical-overlap proxy over the 44 cases in `evals/triggers.json` (22 should trigger, 22 should not): precision 0.72, recall 0.59 at threshold 0.3 (MEASURED, proxy only; it is not model behavior).
+- **Leaderboard per-stage figures in `references/rubric.md` are INFERRED.** They were computed by orchestrate-loop from public leaderboard data; the leaderboard API was not reachable here to re-derive them.
+- **The toolkit digest in `references/kit-repo.md` is secondhand.** The toolkit repository could not be located, so its commands are unverified.
+- **Script behavior is MEASURED** by the test suite in `tests/` on Python 3.9, 3.11 and 3.13 (CI matrix). The fixtures are small and synthetic; real starter repos may differ, and the log-format profiles cover only the editions whose starters were public. Each profile states its provenance: `sept-2026` and `june-2026` are VERIFIED against the official starters' `AGENTS.md`, except that `june-2026`'s strict tool-name checks are INFERRED from September; `template` is UNKNOWN until filled.
 - Not affiliated with or endorsed by HackerRank.
 
 MIT licensed. See [LICENSE](LICENSE).
+
+## Credits
+
+- Ideas, structure and the first set of lessons came from [orchestrate-loop](https://github.com/bsrikumar855-dot/orchestrate-loop), an earlier Orchestrate skill. That repository has no license, so its prose is not copied here; this repository is an independent rewrite that credits it as a source of ideas. What it shares with orchestrate-loop is factual: the leaderboard figures in `references/rubric.md` (labeled INFERRED, with this credit), the toolkit's command lines, and file and rule names.
+- The optional toolkit digest summarizes the community `hackerrank-orchestrate-skills` toolkit, as described secondhand in orchestrate-loop. Credit for that method belongs to its authors.
+- Neither project is affiliated with this one, and none of them is affiliated with or endorsed by HackerRank.

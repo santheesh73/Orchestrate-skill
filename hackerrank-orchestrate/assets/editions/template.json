@@ -1,0 +1,23 @@
+{
+  "name": "template",
+  "description": "Copy to EDITION.json and fill from the new starter's AGENTS.md log-format section. Fields: entry_regex needs named groups ts and title; tool_rule.required_in is all, turns or none; required_turn_sections lists headers every per-turn entry must contain.",
+  "provenance": "UNKNOWN",
+  "provenance_source": "Not an edition. A copy of the sept-2026 layout to fill from a new starter's AGENTS.md; set provenance and provenance_source when you do.",
+  "entry_regex": "^##\\s*\\[(?P<ts>[^\\]]+)\\]\\s*(?P<title>.*)$",
+  "prompt_header": "User Prompt",
+  "section_headers": [
+    "Agent Response Summary:",
+    "Actions:",
+    "Context:"
+  ],
+  "session_start_title_match": "session start",
+  "tool_rule": {
+    "key": "tool",
+    "required_in": "all",
+    "exactly_one": true,
+    "harness_not_model": true
+  },
+  "required_turn_sections": [],
+  "title_max_length": 80,
+  "secret_scan": true
+}

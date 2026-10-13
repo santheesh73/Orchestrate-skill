@@ -2,32 +2,29 @@
 
 Cross-cutting patterns from public top-finisher material. Problem-specific patterns are in `archetypes/`; leaderboard calibration is in `rubric.md` §5.
 
-**Evidence limits, read first.** Sources reachable so far: the May 2026 #1 repo and write-up ([code](https://github.com/saai-syvendra/hackerrank-orchestrate), [write-up](https://saai.syvendra.com/myspace/hackerrank-orchestrate)), a June 2026 top-3 project and an August 2026 top-40 project (both with full design docs), the organizer's post-mortem, the official starter repos, and a first-hand September 2026 interview write-up. The June, August and September #1 repos were not found. These are patterns top finishers used, not proof each one caused the rank. The organizer's own conclusion is that behavior (tradeoff reasoning, evidence, ownership) drove results more than any tool or stack.
+**Evidence limits, read first.** Sources reachable so far: the May 2026 #1 repo and write-up ([code](https://github.com/saai-syvendra/hackerrank-orchestrate), [write-up](https://saai.syvendra.com/myspace/hackerrank-orchestrate)), a June 2026 top-3 project and an August 2026 top-40 project (both with full design docs), the organizer's post-mortem, the official starter repos, and a first-hand September 2026 interview write-up. The June, August and September #1 repos were not found. Treat everything below as habits that top finishers shared, not as proven causes of their ranks. The organizer's post-mortem itself credits behavior (weighing tradeoffs, showing evidence, owning decisions) over any particular tool or stack.
 
-## 1. The master pattern: the model describes, code decides
+## 1. The master pattern: the model observes, code rules
 
-- The model returns a **structured record of observations** (a proposed label, ranked candidates, yes/no claims about the evidence). It does not return the binding answer.
-- Pure functions turn that record into the final columns through an ordered **rule table**. The rule that won, and the rules that fired and lost, are written on the row's trace.
-- Benefits, each testable and each a good interview answer:
-  1. **Repeatable.** Cache the record; re-run the decision layer offline with zero API calls (a `--from-cache` flag).
-  2. **Auditable.** Every column traces to a rule id plus a logged observation.
-  3. **Injection-resistant by structure.** Hostile text can at worst corrupt one observation; it cannot reach code that never takes it as input.
-  4. **Constraints are structural.** "History may add caution but never flip the verdict" is enforced by leaving history out of the verdict function's inputs, not by a prompt sentence.
-- **Rules declare the inputs they read** (a `reads` set). Two tests defend the seam: a threat-model test proves injected text cannot reach rules that do not read it, and an ablation test removes each declared input and requires the rule to stop firing.
-- **Separate error classes.** Class A: your code or rules (deterministic; fix and re-grade free from the cache). Class B: the model misperceived (needs a paid re-run; batch these). Most wasted budget is re-rolling Class B hoping to fix Class A.
-- **Honest limit.** This pattern earns code and interview points but does not fix wrong boundary calls by the model. Budget time for `output-csv.md` §2 as well.
+- The model's job is to fill in a **typed record of what it saw**: a suggested label, a shortlist of candidates, true/false answers to specific questions about the evidence. The binding answer is not part of that record.
+- Deterministic functions map the record onto the output columns by walking a prioritized **rule table**. Each row's trace names the winning rule and every rule that matched but lost.
+- What this buys you, each item both testable and worth saying in the interview:
+  1. **Repeatable.** Store each record in a cache; a `--from-cache` flag replays the decision code with no API traffic at all.
+  2. **Auditable.** You can follow any output cell back to one rule id and the observation it consumed.
+  3. **Injection-resistant by construction.** A hostile input can spoil the observation it lands in, nothing more; the decision code never reads raw input.
+  4. **Constraints live in signatures.** If history may raise caution but must never change the verdict, the verdict function simply does not take history as a parameter. No prompt wording is needed.
+- **Each rule lists what it reads** (a `reads` set). Two tests guard that boundary: a threat-model test shows that hostile text never arrives at a rule whose `reads` excludes it, and an ablation test deletes each listed input in turn and checks that the rule no longer matches.
+- **Keep two kinds of error apart.** Type A lives in your rules or code: it is deterministic, and once fixed you can re-grade from the cache for free. Type B is a wrong observation from the model: only a paid re-run helps, so collect them and re-run in one batch. Budget usually leaks when someone re-runs the model over and over to cure what was really a Type A bug.
+- **Honest limit.** The pattern wins code and interview credit, but it cannot rescue a model that misjudges borderline rows. Leave time for `output-csv.md` §2 too.
 
 ## 2. Patterns that recur across winners
 
-- **Single agent with tools** led the May top 10 (7 of 10). Default to it for cross-evidence reasoning unless you measured otherwise. One first-hand case found a single agent holding all evidence beat multi-agent summary hand-offs.
-- **Pre-model short-circuit rules** in a fixed order (empty, pleasantry, out of scope, injection, too vague) answer with a canned correct response and save a model call.
-- **Typed seam.** One schema module defines the enums; the tool schema and output validator are generated from it; a unit test asserts those literals equal the problem statement's lists.
-- **Citation guard.** Compare cited evidence with evidence actually read this turn. Drop unread citations; if nothing verified was cited and nothing was read, downgrade to an escalation and say so.
-- **Fence untrusted content** with an unguessable nonce; escape the fence token if it appears in the content.
-- **Content-addressed cache** keyed by file-bytes hash plus prompt version, shipped with the submission so a reviewer can reproduce the output with no key.
-- **Cheap model for tagging, stronger model where it matters.** Prompt-cache the stable prefix and verify the cache-read token count is non-zero.
+- **Single agent with tools** led the May top 10 (7 of 10). Start there for problems that need reasoning across several pieces of evidence, and move away only on measured grounds. One first-hand account reports a single agent that held the whole evidence set outperforming a multi-agent design that passed summaries between agents.
+- **Guards with their own archetype pages:** pre-model short-circuit rules and the citation guard (`archetypes/retrieval-triage.md`), nonce-fenced untrusted content and a content-addressed cache shipped with the submission (`archetypes/adversarial-routing.md`), blank-drop and swap grounding tests (`archetypes/multimodal-verify.md`).
+- **Typed seam.** Define every enum once, in one schema module. Derive the tool schema and the output validator from that module, and keep a unit test that compares its literals with the lists in the problem statement.
+- **Cheap model for tagging, stronger model where it matters.** Put the unchanging prompt prefix in the prompt cache, then check the logs for a cache-read token count above zero.
 - **Cost is a first-class number,** tracked per row. Since September 2026 it is also a required deliverable (`usage_report.md`).
-- **Fewer components you can explain.** A June author's earlier 15-stage pipeline finished mid-pack because they could not measure why each piece helped; the smaller, measured design did far better. Cut any component you cannot tie to a failure it prevents.
+- **Fewer components you can explain.** One June author had earlier built a 15-stage pipeline that landed mid-table, because nobody could show what each stage contributed; a smaller design with measured parts placed far higher. Remove any part you cannot connect to a specific failure it stops.
 
 ## 3. Design-doc suite (one to two hours at the start)
 
@@ -36,10 +33,10 @@ Short, cross-checked, one source of truth. In the transcript it shows planning; 
 1. Problem analysis, including places the spec contradicts itself and how you resolved them
 2. Dataset analysis (facts only)
 3. Generalization policy (`evaluation.md` §1)
-4. Threat model: what is attacker-controlled, which code can read it
-5. Failure modes: failure, how it shows, where caught, what happens instead, disposition
-6. System design and rule table with `reads` sets
-7. Evaluation strategy: gates, noise floor, resolution table
+4. Threat model: which inputs an attacker controls, and which functions are allowed to see them
+5. Failure modes: for each one, its symptom, the place it is detected, the fallback behavior, and its disposition
+6. System design, plus the rule table with each rule's `reads` set
+7. How you will evaluate: gates, the noise floor, the resolution table
 8. Design review: severity-tagged findings and a complexity audit
 9. Decision log with who decided (`assets/decision_log.md`)
 
@@ -47,12 +44,12 @@ Short, cross-checked, one source of truth. In the transcript it shows planning; 
 
 | Do | Do not |
 |---|---|
-| Keep the model as a perceiver; put binding decisions in tested pure code | Let the model write the final label, number or evidence id |
-| Cache model records by content hash; ship the cache | Re-roll the model hoping for a better number |
-| Guard citations against what was actually read | Cite documents only seen in snippets |
-| Prove inputs matter (blank-drop, swap, ablation) | Claim a rule reads something without a test that removes it |
-| Escalate honestly when evidence is thin or the row failed | Fabricate a confident answer, crash the batch, or escalate everything |
-| Assign every failure a disposition up front | Write a partial output file |
-| Measure the noise floor once | Celebrate or reject a one-row change |
-| Put rationale in source | Rely on README claims for code points |
+| Use the model to observe; make binding decisions in pure functions with tests | Let the model produce the final label, figure or evidence id |
+| Key cached model records by a hash of their inputs, and include the cache in the submission | Call the model again and again until a number looks better |
+| Allow a citation only if the full document was actually opened | Cite something you saw only as a search snippet |
+| Show each input matters by removing or swapping it (blank-drop, swap, ablation) | Assert that a rule depends on an input when no test takes it away |
+| Escalate when evidence is weak or the row errored, and say why | Invent a confident answer, let one row crash the run, or escalate every row |
+| Decide in advance what happens on each kind of failure | Leave a half-written output file behind |
+| Measure the noise floor a single time and reuse it | Treat a change in one row as a win or a loss |
+| Keep rationale in source | Rely on README claims for code points |
 | Reserve time for output rows and justifications | Treat the CSV as solved because the code is strong |

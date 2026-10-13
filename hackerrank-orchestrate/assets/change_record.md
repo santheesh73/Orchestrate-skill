@@ -4,8 +4,8 @@ Copy one block per non-trivial change. Keep them in a file inside the repo (for 
 
 ```
 CHANGE:          one line, what changed
-REQUIREMENT:     exact line in problem_statement.md or AGENTS.md this serves
-CEILING:         rows this gap touches; how many are wrong because of it vs other causes
+REQUIREMENT:     the line it serves, quoted from problem_statement.md or AGENTS.md
+CEILING:         rows the gap reaches; of those, how many it (not something else) makes wrong
 CLAIM:           what will improve, and in which column
 JUSTIFICATION:   the domain reason this rule should exist (never "it fixes row X")
 METRIC:          label-free checks + field-level sample accuracy

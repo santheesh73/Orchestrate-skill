@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 """Build evaluation/usage_report.md from a per-call JSONL token log.
 
+Failure it prevents: a missing or hand-estimated usage report, which the September
+2026 contract made a required file inside code.zip.
+
 Each JSONL line is one model call (see assets/usage_log_schema.md):
   {"provider": "anthropic", "model": "<id>", "request_id": "r_001",
    "input_tokens": 1234, "output_tokens": 210, "run_id": "final"}

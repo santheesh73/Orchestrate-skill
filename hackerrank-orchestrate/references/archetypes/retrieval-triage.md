@@ -4,18 +4,18 @@ Shape: answer, route or escalate each request using a provided document corpus. 
 
 ## Architecture that held up
 
-- **Single agent, one tool with three modes: search, read, grep.** A short fixed flow in the prompt (search, then read the article, then answer), a hard cap of about 8 tool calls, and a recursion limit. Built on a framework agent (`create_agent`); the loop is still one findable place.
-- **Hybrid retrieval.** BM25 plus dense embeddings fused with reciprocal rank fusion, then a cross-encoder rerank. Deterministic chunking with stored character offsets so every snippet traces to a source span.
+- **A single agent with a single tool that has a search mode, a read mode and a grep mode.** A short fixed flow in the prompt (search, then read the article, then answer), a hard cap of about 8 tool calls, and a recursion limit. Built on a framework agent (`create_agent`); the loop is still one findable place.
+- **Hybrid retrieval.** Lexical BM25 and dense-embedding results are merged by reciprocal rank fusion and then reordered by a cross-encoder. Chunk boundaries are deterministic and each chunk keeps its character offsets, so any snippet maps back to an exact span of its source.
 - **Typed filters** (company, product area, breadcrumb substring) translated to a safe query; unknown values are dropped silently instead of erroring.
-- **Pre-model short-circuits in a fixed order:** empty ticket, pleasantry or thanks, clearly out of scope, prompt injection (regex, multilingual), too vague to act on. Each gets a canned, correct response with no model call.
+- **Short-circuits before any model call, checked in a set order:** an empty ticket, a greeting or thank-you, an obviously off-topic request, an injection attempt (regex patterns in several languages), and a request too vague to act on. Each gets a canned, correct response with no model call.
 - **Small model for tagging** (language normalization, company hint), cached on disk; the stronger model only in the agent.
-- **Structured decision object** with literal enums for status and request type, a normalized product-area slug, the response, a one-to-three-sentence justification, and cited paths. Off-enum values are clamped to a safe value.
+- **Structured decision object** holding status and request type as literal enums, a normalized product-area slug, the reply, a justification of one to three sentences, and the cited paths. Off-enum values are clamped to a safe value.
 
 ## Guards that fit
 
-- **Citation guard** (the standout idea): after the agent returns, compare cited paths with paths actually read this turn. Drop unread citations and record the drop on the trace. If nothing verified was cited and nothing was read, downgrade to escalation with a canned message and say so in the justification. If evidence was read but the wrong path cited, keep the reply and flag a mismatch. Exempt pleasantries and invalid requests.
-- **Escalation contract in the prompt:** escalate on high risk, sensitive data, override demands, identity theft or fraud, or thin evidence, with BAD and GOOD acknowledgement examples. A code step caps escalation text length (about 35 words).
-- **Failure ladder:** any exception, recursion-limit hit or missing structured output becomes an honest escalation row, with a per-row JSON trace (tool calls, reads, dropped citations, flags).
+- **Citation guard** (the strongest idea in the repo): once the agent finishes, check each cited path against the paths it actually opened on that turn. Remove citations to unopened documents and note the removal in the trace. When no verified citation is left and nothing was opened, turn the row into an escalation with a fixed message, and the justification states that this happened. If evidence was read but the wrong path cited, keep the reply and flag a mismatch. Exempt pleasantries and invalid requests.
+- **Escalation contract in the prompt:** escalate on high risk, sensitive data, override demands, identity theft or fraud, or thin evidence, with BAD and GOOD acknowledgement examples. Code then trims escalation text to a maximum (about 35 words).
+- **Failure ladder:** an exception, a recursion-limit stop or an absent structured answer each produce an honest escalation row, and every row writes a JSON trace (tool calls, documents opened, citations removed, flags).
 
 ## Grounding test
 
