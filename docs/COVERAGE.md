@@ -55,13 +55,15 @@ Weights are from the May 2026 post-mortem (VERIFIED; see `hackerrank-orchestrate
 
 | Addition | Failure it prevents |
 |---|---|
-| `hackerrank-orchestrate/scripts/` (9 checkers) and `tests/` (127 tests) | Rules that nobody can run; regressions in the checkers |
+| `hackerrank-orchestrate/scripts/` (10 checkers) and `tests/` (169 tests) | Rules that nobody can run; regressions in the checkers |
 | `hackerrank-orchestrate/assets/editions/` | A log checker that rejects another edition's format |
 | `tools/validate_skill.py` | Structure and policy drift (dates in the trigger, restated rules, missing scripts) |
 | `tools/package_skill.py` | A rejected upload, or dev files shipped inside the skill |
 | `tools/footprint.py` | Silent growth of the always-loaded context |
 | `tools/run_trigger_evals.py` and `evals/triggers.json` | Trigger regressions going unnoticed |
 | `tests/test_cli_matrix.py` | The next crash on input nobody tried: every CLI against every hostile input class |
+| `hackerrank-orchestrate/scripts/experiment.py` | A change-record verdict worked out by hand, two ways |
+| `docs/AUDIT.md` and `tests/test_audit.py` | A capability that reads as working but was never made to fail (mutation-tested rows) |
 
 ## 4. Deliberately not ported
 

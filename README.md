@@ -204,15 +204,16 @@ The interview opens in two hours. Build my drill from code/ and quiz me.
 
 ### Checker scripts
 
-Standard-library Python 3.9+, nothing to install, no network. Each takes paths and schemas as arguments and embeds no dataset. Bad input (non-UTF-8 files, CR-only or NUL-containing CSVs, very long fields, broken symlinks, a malformed config) gives a one-line error and a documented exit code, not a traceback. `tests/test_cli_matrix.py` runs every script and tool against every input class on each test run; `tests/test_hostile_inputs.py` holds the individual regressions.
+Standard-library Python 3.9+, nothing to install, no network. Each takes paths and schemas as arguments and embeds no dataset. Bad input (non-UTF-8 files, CR-only or NUL-containing CSVs, very long fields, broken symlinks, named pipes, a malformed config) gives a one-line error and a documented exit code, not a traceback. A check that examined nothing exits 3 (UNKNOWN), never 0, and no `--out` overwrites a file the script reads. `tests/test_cli_matrix.py` runs every script and tool against every input class on each test run; `tests/test_hostile_inputs.py` holds the individual regressions.
 
 | Script | What it catches |
 |---|---|
-| `selfcheck.py selfcheck.json` | Runs the checks below from one config and prints PASS, WARN, FAIL or UNKNOWN per section; a skipped check, or a claims check that examined nothing, is UNKNOWN, never a pass. Exit 0 PASS, 1 WARN, 2 UNKNOWN, 3 FAIL, 4 bad config |
+| `selfcheck.py selfcheck.json` | Runs the checks below from one config and prints PASS, WARN, FAIL or UNKNOWN per section; a skipped check, or one that examined nothing (no data rows, no source file, no claim), is UNKNOWN, never a pass. Its `starter` section fails if `AGENTS.md` changed since kickoff or `CLAUDE.md` lost its `@AGENTS.md` line. Exit 0 PASS, 1 WARN, 2 UNKNOWN, 3 FAIL, 4 bad config |
 | `contract_extract.py starter/` and `--diff old/ new/` | The MUST, MUST NOT, required files, columns and allowed values in `AGENTS.md` and `problem_statement.md`, and what changed since the last edition (a heuristic; read the files too) |
 | `check_log.py log.txt --expect-tool "Claude Code" --profile sept-2026` (use your own harness name) | Missing, placeholder, generic or model-name `tool=` lines; empty prompt blocks; secrets; non-append-only timestamps. `--list-profiles` shows the edition formats; copy `assets/editions/template.json` for a new one |
 | `preflight.py output.csv --template dataset/output.csv --inputs dataset/<inputs>.csv --id-col <id> --enum "col=a\|b"` | Wrong or duplicate header columns, wrong order, missing or duplicate ids, off-enum values, blanks, a collapsed distribution |
 | `rerun_diff.py run1.csv run2.csv --id-col <id>` | Row and column churn between runs; your noise floor |
+| `experiment.py start NAME --output output.csv --id-col <id> --check "…" --labels dataset/output.csv`, then `finish NAME` | One change record: re-runs the checks, diffs the full output, counts labeled rows made better and worse, applies the resolution table (SHIP, REJECT, NOISE or UNKNOWN; a one-row gain is never SHIP) and appends the record. It never edits your code or data |
 | `usage_report.py usage.jsonl --run-id final --price "<model>=<in>:<out>"` | Builds `evaluation/usage_report.md` with per-model and overall totals |
 | `interview_drill.py code/ --constants CONSTANTS.md` | Interview questions from your constants, thresholds, orderings and statistics, each with `file:line`, plus constants missing from `CONSTANTS.md` |
 | `corpus_literals.py --data dataset/*.csv --code code/ --spec problem_statement.md` | Ids, strings and number combinations copied from the dataset into code (sample coupling) |
@@ -239,7 +240,7 @@ hackerrank-orchestrate/           the skill
 │   ├── behind-schedule.md        which depth to cut, gate by gate, when time runs short
 │   ├── edition-update.md         how to update the skill after each edition closes
 │   └── kit-repo.md               optional community toolkit digest
-├── scripts/                      the nine checkers above
+├── scripts/                      the ten checkers above
 └── assets/                       change record, decision log, CONSTANTS.md, usage-log schema
     └── editions/                 log-format profiles per edition, plus a template
 docs/COVERAGE.md                  rubric criteria and orchestrate-loop capabilities mapped to guidance and checks
@@ -288,7 +289,7 @@ Every link above was fetched on 2026-10-13 and loaded. The community `hackerrank
 - **Trigger accuracy against a live model: UNKNOWN.** `tools/run_trigger_evals.py --live` exists but has not been run, because no API key was available where this was built. What *was* measured is an offline lexical-overlap proxy over the 56 cases in `evals/triggers.json` (28 should trigger, 28 should not; 12 of them phrased as Codex, Cursor, OpenCode and Antigravity users): precision 0.76, recall 0.68 at threshold 0.3 (MEASURED, proxy only; it is not model behavior). In Claude Code the skill was invoked for one Orchestrate question and not for one near miss (VERIFIED, one run each; see [docs/INSTALL.md](docs/INSTALL.md)).
 - **Leaderboard per-stage figures in `references/rubric.md` are INFERRED.** They were computed by orchestrate-loop from public leaderboard data; the leaderboard API was not reachable here to re-derive them.
 - **The toolkit digest in `references/kit-repo.md` is secondhand.** The toolkit repository could not be located, so its commands are unverified.
-- **Script behavior is MEASURED** by the 127 tests in `tests/`, run on Python 3.9, 3.11 and 3.13 (CI matrix). The fixtures are small and synthetic; real starter repos may differ, and the log-format profiles cover only the editions whose starters were public. Each profile states its provenance: `sept-2026` and `june-2026` are VERIFIED against the official starters' `AGENTS.md`, except that `june-2026`'s strict tool-name checks are INFERRED from September; `template` is UNKNOWN until filled.
+- **Script behavior is MEASURED** by the 169 tests in `tests/`, run on Python 3.9, 3.11 and 3.13 (CI matrix). The fixtures are small and synthetic; real starter repos may differ, and the log-format profiles cover only the editions whose starters were public. Each profile states its provenance: `sept-2026` and `june-2026` are VERIFIED against the official starters' `AGENTS.md`, except that `june-2026`'s strict tool-name checks are INFERRED from September; `template` is UNKNOWN until filled.
 - **Context footprint is ESTIMATED** by `tools/footprint.py` as characters / 4, not by a tokenizer. The budgets in `tools/validate_skill.py` are the measured sizes plus about 10%.
 - Not affiliated with or endorsed by HackerRank.
 
