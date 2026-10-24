@@ -1,0 +1,6 @@
+recursive-include hackerrank-orchestrate *
+recursive-include skills *
+recursive-include tools *.py
+include LICENSE THIRD_PARTY_NOTICES.md VERSION
+global-exclude *.pyc
+global-exclude __pycache__

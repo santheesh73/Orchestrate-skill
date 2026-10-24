@@ -1,3 +1,7 @@
 __pycache__/
 *.pyc
 dist/
+build/
+*.egg-info/
+.orchestrate/
+examples/offline/evaluation/
