@@ -141,6 +141,11 @@ def evaluate(root, config_name, allow_exec=False, pass_env=()):
                 checks[key] = {'status': 'UNKNOWN', 'classification': 'valid_contract_required'}
             else:
                 checks[key] = compare(root, config[key], contract['output'], contract['id_column'])
+    # Capture all bindings before any authorized command can change them. A replay
+    # alias of output must not replace its pre-command digest with a fresh value.
+    bindings = {name: digest(value) for name, value in data.items()}
+    for name in [config_name] + [config[k] for k in ('contract', 'authority', 'baseline', 'replay', 'usage', 'requirements', 'estimate_text') if config.get(k)]:
+        bindings.setdefault(name, digest(read_bytes(confined(root, name))))
     commands = config.get('checks', [])
     if not isinstance(commands, list) or len(commands) > 50:
         raise ToolkitError('checks must be a bounded list')
@@ -154,9 +159,6 @@ def evaluate(root, config_name, allow_exec=False, pass_env=()):
         text = read_bytes(confined(root, config['estimate_text'])).decode('utf-8')
         checks['token_estimate'] = {'status': 'PASS', 'tokens': (len(text) + 3) // 4,
                                     'evidence': 'ESTIMATED chars/4, not a tokenizer or measured provider usage'}
-    bindings = {name: digest(value) for name, value in data.items()}
-    for name in [config_name] + [config[k] for k in ('contract', 'authority', 'baseline', 'replay', 'usage', 'requirements', 'estimate_text') if config.get(k)]:
-        bindings[name] = digest(read_bytes(confined(root, name)))
     if any(digest(read_bytes(confined(root, name))) != expected for name, expected in bindings.items()):
         checks['source_stability'] = {'status': 'FAIL', 'classification': 'source_changed_during_evaluation'}
     return {'schema_version': 1, 'kind': 'evaluation', 'at': now(), 'overall': worst([c['status'] for c in checks.values()]),

@@ -212,6 +212,11 @@ class Universal(unittest.TestCase):
         self.assertEqual(report['overall'], 'FAIL')
         self.assertEqual(report['checks']['baseline']['changed_rows'], 1)
         self.assertEqual(report['checks']['replay']['status'], 'PASS')
+        self.json('evaluation.json', {'contract': 'contract.json', 'replay': 'output.csv', 'checks': [
+            {'name': 'mutating check', 'argv': ['python', '-c',
+                "from pathlib import Path; Path('output.csv').write_text('id,status\\n01,review\\n02,review\\n')"]}]})
+        changed = evaluation.evaluate(self.root, 'evaluation.json', allow_exec=True)
+        self.assertEqual(changed['overall'], 'FAIL', 'a check must not silently replace a file already validated as replay input')
 
     def test_usage_prices_and_unknown_evidence(self):
         self.fixture()
