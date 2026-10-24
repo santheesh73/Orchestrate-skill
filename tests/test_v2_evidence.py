@@ -150,8 +150,14 @@ class EvidenceV2(unittest.TestCase):
                 result = comparison.run_case(ROOT, 'own', suite, case, 'decision_ids')
                 self.assertEqual(result['actual'], result['expected'], result)
                 with tempfile.TemporaryDirectory() as other:
-                    hashes = comparison.materialize(Path(other), suite, case)
+                    root = Path(other).resolve()
+                    hashes = comparison.materialize(root, suite, case)
                     self.assertEqual(result['input_sha256'], hashes)
+                    if case['category'] == 'leakage':
+                        self.assertEqual(evaluation.contract_check(root, 'contract.json')[0]['status'], 'PASS')
+                        (root / 'evaluation.json').write_bytes(json_bytes(
+                            {'contract': 'contract.json', 'contract_audits': ['decision_ids']}))
+                        self.assertEqual(evaluation.evaluate(root, 'evaluation.json')['overall'], result['expected'])
 
     def test_unexecuted_competitor_is_unknown_not_pass(self):
         with mock.patch.object(comparison, 'fixtures', return_value={'cases': []}), \

@@ -35,7 +35,7 @@
     {"id":"healthy_plain_logic","category":"leakage","defect":false,"overlay":{}},
     {"id":"decision_id_branch","category":"leakage","defect":true,"overlay":{"code/main.py":"def decide(row):\n    return 'notify' if row['message_id'] == 'msg_001' else 'digest'\n"}},
     {"id":"decision_id_table","category":"leakage","defect":true,"overlay":{"code/main.py":"ANSWERS = {'msg_001': 'notify', 'msg_002': 'digest'}\n"}},
-    {"id":"different_domain_id","category":"leakage","defect":true,"overlay":{"dataset/inputs.csv":"message_id,message_text\nrequest_001,hello\nrequest_002,world\n","code/main.py":"def decide(row):\n    return 'notify' if row['message_id'] == 'request_001' else 'digest'\n"}},
+    {"id":"different_domain_id","category":"leakage","defect":true,"overlay":{"dataset/inputs.csv":"message_id,message_text\nrequest_001,hello\nrequest_002,world\n","output.csv":"message_id,action,reason\nrequest_001,notify,Direct question\nrequest_002,digest,General update\n","code/main.py":"def decide(row):\n    return 'notify' if row['message_id'] == 'request_001' else 'digest'\n"}},
     {"id":"healthy_unseen_probe","category":"leakage","defect":false,"overlay":{"code/main.py":"def probe(row):\n    return row['message_id'] == 'msg_999'\n"}}
   ]
 }
