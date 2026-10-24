@@ -37,8 +37,10 @@ matrix verification is pending until recorded below.
 
 The first macOS run exposed the standard /var to /private/var system-alias path
 being rejected by the older companion installer. The fix normalizes only the
-fixed macOS OS aliases, keeps custom symlink refusal, and has local companion
-regressions plus the macOS rerun as evidence. GitHub actions were also updated
+fixed macOS OS aliases and keeps custom symlink refusal. The rollback test now
+compares resolved path identity and asserts that its injected failure actually
+fired, avoiding a false test result across the /var alias. Local companion
+regressions and the macOS rerun provide evidence. GitHub actions were also updated
 to their Node 24 versions after checking their official repositories.
 
 Earlier focused checks: all five skill folders validated; new static checks
