@@ -1,0 +1,23 @@
+{
+  "id": "missing-rows",
+  "prompt": "Use the Orchestrate skill if present. Audit the existing incomplete output, repair the implementation as needed and write a complete output.csv without changing inputs. Explain which class of inputs was missed.",
+  "starter": "starters/missing-rows",
+  "expected": "expected/missing-rows.json",
+  "activation": true,
+  "protected": [
+    "AGENTS.md",
+    "problem_statement.md",
+    "dataset/input.csv"
+  ],
+  "checks": [
+    {
+      "name": "complete_coverage",
+      "type": "csv",
+      "path": "output.csv",
+      "expected_key": "output"
+    }
+  ],
+  "manual": [
+    "repair_handles_the_class_not_individual_ids"
+  ]
+}

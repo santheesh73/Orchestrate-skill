@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "orchestrate-skill-toolkit"
-version = "3.1.0"
+version = "3.2.0"
 description = "Offline, portable HackerRank Orchestrate skills, installation and evidence tooling"
 readme = "README.md"
 requires-python = ">=3.9"

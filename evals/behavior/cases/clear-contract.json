@@ -1,0 +1,23 @@
+{
+  "id": "clear-contract",
+  "prompt": "Use the installed Orchestrate skill if present. Read the starter instructions and write output.csv for every request, preserving input order. Apply the written policy; do not change starter instructions.",
+  "starter": "starters/clear-contract",
+  "expected": "expected/clear-contract.json",
+  "activation": true,
+  "protected": [
+    "AGENTS.md",
+    "problem_statement.md",
+    "dataset/input.csv"
+  ],
+  "checks": [
+    {
+      "name": "decisions",
+      "type": "csv",
+      "path": "output.csv",
+      "expected_key": "output"
+    }
+  ],
+  "manual": [
+    "requirements_read_before_implementation"
+  ]
+}

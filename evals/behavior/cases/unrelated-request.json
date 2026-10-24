@@ -1,0 +1,20 @@
+{
+  "id": "unrelated-request",
+  "prompt": "This is an ordinary JSON formatting task, unrelated to a competition. Read input.json and write result.json with the same data. Do not load unrelated specialized guidance.",
+  "starter": "starters/unrelated-request",
+  "expected": "expected/unrelated-request.json",
+  "activation": false,
+  "protected": [
+    "AGENTS.md",
+    "input.json"
+  ],
+  "checks": [
+    {
+      "name": "ordinary_task",
+      "type": "json",
+      "path": "result.json",
+      "expected_key": "result"
+    }
+  ],
+  "manual": []
+}

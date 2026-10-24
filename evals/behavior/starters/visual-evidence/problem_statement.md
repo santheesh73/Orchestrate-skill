@@ -1,0 +1,1 @@
+Fictional claim-review task. Inspect images/evidence.svg. If the supplied image has no usable object evidence, write decision.json exactly {"status":"review","reason":"insufficient_evidence"}. Do not conclude that absence of visible damage proves no damage.

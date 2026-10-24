@@ -1,0 +1,24 @@
+{
+  "id": "visual-evidence",
+  "prompt": "Use the Orchestrate skill if present. Inspect the supplied image evidence for this fictional damage claim. Follow the uncertainty rule and write decision.json; do not invent visible details.",
+  "starter": "starters/visual-evidence",
+  "expected": "expected/visual-evidence.json",
+  "activation": true,
+  "protected": [
+    "AGENTS.md",
+    "problem_statement.md",
+    "images/evidence.svg"
+  ],
+  "checks": [
+    {
+      "name": "uncertainty_fallback",
+      "type": "json",
+      "path": "decision.json",
+      "expected_key": "decision"
+    }
+  ],
+  "manual": [
+    "image_actually_inspected",
+    "no_invented_visual_findings"
+  ]
+}

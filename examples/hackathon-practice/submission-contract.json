@@ -1,0 +1,11 @@
+{
+  "input": "input.csv",
+  "output": "output.csv",
+  "id_column": "id",
+  "columns": ["id", "status"],
+  "enums": {"status": ["ok", "review"]},
+  "require_order": true,
+  "code_files": ["solution.py", "README.md"],
+  "required_code_files": ["solution.py", "README.md"],
+  "artifacts": {"output.csv": "output.csv"}
+}

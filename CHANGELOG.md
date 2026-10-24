@@ -1,5 +1,13 @@
 # Changelog
 
+## 3.2.0
+
+- Add a fifth self-contained companion for behavioral evaluation, requirement traceability and interview citation integrity. Existing skills and the original ten checker sources are preserved.
+- Add eight independently authored fictional challenge cases, matched baseline/with-skill comparisons and 24 healthy/injected grader controls. Trace records are checked for consistency; live activation and semantic judgments remain UNKNOWN without independent review.
+- Reject changed task/grader fingerprints, mismatched budgets/models, duplicate trials, reused workspace paths, invalid schemas and stale evidence. Activation is excluded from quality improvement counts.
+- Add a complete practice starter with a broken baseline, repaired solution, actual output checks, source-bound requirement/answer records and contract-driven packaging.
+- Add offline CI controls, live-verification procedures and 31 regression tests. The suite contains 262 tests. No agent model or paid API is launched by the new tooling.
+
 ## 3.1.0
 
 - Isolate each parallel hostile-output test's writable fixtures. Shared ZIP destinations caused an intermittent macOS Python 3.9 BadZipFile failure even when the other CI run passed; packaging checks remain intact.
@@ -7,7 +15,7 @@
 - Add audit-selftest: healthy, injected-defect and metamorphic controls reuse existing contract/replay validators and the new opt-in decision_ids audit. Deliberately broken-checker regressions prove the controls can fail.
 - Add a closed built-in contract-audit registry. The decision_ids policy reads actual input IDs and inspects Python decision syntax without executing source. The original broader corpus scanner and every existing skill/interface remain available.
 - Extend CI and clean-wheel verification to the public audit selftest. See docs/COMPETITIVE_BASELINE.md for measured results and limits; no overall superiority or live activation is claimed.
-- The suite contains 231 tests, including positive, negative and metamorphic audit regressions.
+- Test count at the 3.1.0 release: 231, including positive, negative and metamorphic audit regressions.
 
 ## 3.0.0
 

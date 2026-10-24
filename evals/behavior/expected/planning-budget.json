@@ -1,0 +1,6 @@
+{
+  "decision": {
+    "decision": "wait",
+    "minimum_projected_balance": 20
+  }
+}

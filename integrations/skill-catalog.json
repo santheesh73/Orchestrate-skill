@@ -11,6 +11,7 @@
     {"name": "Debugging", "skill": "hackerrank-orchestrate", "reference": "hackerrank-orchestrate/references/prompt-templates.md"},
     {"name": "Optimization", "skill": "hackerrank-orchestrate", "reference": "hackerrank-orchestrate/references/winning-approaches.md"},
     {"name": "Submission validation", "skill": "hackerrank-orchestrate-package", "reference": "skills/hackerrank-orchestrate-package/references/contract.md"},
-    {"name": "Interview preparation", "skill": "hackerrank-orchestrate-practice", "reference": "skills/hackerrank-orchestrate-practice/references/rehearsal.md"}
+    {"name": "Interview preparation", "skill": "hackerrank-orchestrate-practice", "reference": "skills/hackerrank-orchestrate-practice/references/rehearsal.md"},
+    {"name": "Behavior and evidence verification", "skill": "hackerrank-orchestrate-evidence", "reference": "skills/hackerrank-orchestrate-evidence/references/behavior-protocol.md"}
   ]
 }
