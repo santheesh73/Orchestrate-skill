@@ -2,6 +2,7 @@
 
 ## 3.1.0
 
+- Isolate each parallel hostile-output test's writable fixtures. Shared ZIP destinations caused an intermittent macOS Python 3.9 BadZipFile failure even when the other CI run passed; packaging checks remain intact.
 - Add an independent identical-input synthetic comparison with per-category false-positive/false-negative denominators, exact source revisions, hashes, timings and explicit unknown capabilities.
 - Add audit-selftest: healthy, injected-defect and metamorphic controls reuse existing contract/replay validators and the new opt-in decision_ids audit. Deliberately broken-checker regressions prove the controls can fail.
 - Add a closed built-in contract-audit registry. The decision_ids policy reads actual input IDs and inspects Python decision syntax without executing source. The original broader corpus scanner and every existing skill/interface remain available.

@@ -59,6 +59,15 @@ Python 3.9, 3.11 and 3.13. No competitor code is fetched or executed by CI.
 
 ## Boundaries
 
+Merge-readiness followup: the push matrix exposed an intermittent macOS Python
+3.9 `BadZipFile` error in the hostile-output test while the PR matrix passed.
+Both output-target variants had been executing identical packaging commands
+concurrently against one scratch directory. Each output invocation now gets
+independent writable fixtures, so another test cannot truncate its ZIP. The
+hostile-input assertions, packaging behavior and all skill sources are retained.
+The affected parallel output-path test passed twelve consecutive local runs,
+and the complete hostile-input CLI matrix passed all five test methods.
+
 This is a first verified improvement, not universal supremacy. Synthetic cases
 are small, known and not blinded; no live agent was invoked. The new policy is
 literal Python syntax analysis, not a dataflow/leakage proof. Existing execution
