@@ -22,6 +22,16 @@ guidance. It does not duplicate the instructions.
 
 ## State and trust
 
+```mermaid
+flowchart LR
+  DISCOVER --> ANALYZE --> PLAN --> BUILD --> TEST --> EVALUATE --> IMPROVE --> VALIDATE --> SUBMIT
+  IMPROVE --> BUILD
+  IMPROVE --> TEST
+```
+
+Arrows are explicit evidence-gated CLI transitions; SUBMIT is a local approved
+handoff, not an upload.
+
 `.orchestrate/install.json` tracks only generated files. Uninstall checks hashes
 before deleting owned files, preserves edits, shared files, unowned instructions,
 backups and workflow state. Empty directories can remain deliberately. Root

@@ -33,7 +33,15 @@ environment outside the checkout. The executable offline example passes.
 
 The original lexical trigger proxy is unchanged: 56 cases, precision 0.76 and
 recall 0.68. This is not model selection accuracy. Remote Windows/Linux/macOS
-matrix verification is pending until recorded below.
+matrix evidence for runtime revision `7f2e7d1` is recorded in
+[the nine-job Actions run](https://github.com/santheesh73/Orchestrate-skill/actions/runs/40062493403).
+That run's individual conclusions are authoritative; documentation-only followups
+have their own branch runs. No inference-runtime result is implied by CI.
+
+A negative control also reproduced a fixture modifying output while the same
+file was used as replay evidence. The evaluator now captures all source bindings
+before command execution, detects mutation and refuses a PASS. The focused
+evaluation and stale-workflow regressions pass with the fix.
 
 The first macOS run exposed the standard /var to /private/var system-alias path
 being rejected by the older companion installer. The fix normalizes only the

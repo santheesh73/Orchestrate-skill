@@ -13,7 +13,8 @@ contract was added to each skill; the original main rules remain in place.
 
 ## Quick start: any coding agent
 
-Python 3.9+, standard-library runtime; no API key or paid service is required:
+Python 3.9+, standard-library runtime; no API key or paid service is required.
+Use an existing challenge checkout as `../my-entry`:
 
 ```text
 python -m orchestrate_toolkit install --agent codex --project ../my-entry --dry-run

@@ -37,6 +37,13 @@ is recorded in UNIVERSAL-RELEASE-REPORT.md.
 
 ## Verification procedure and limits
 
+For Aider, the generated adapter is a routing note, not automatic file loading.
+To load the main instructions directly, run
+`aider --read .orchestrate/skills/hackerrank-orchestrate/SKILL.md` in the project,
+then explicitly `/read` the relevant reference files when needed. A plain chat
+agent similarly needs the requested skill and selected references attached or
+read with its own file tool; pointer text alone does not prove loading.
+
 After installation, open the agent in the target project and ask it to identify
 the exact skill path and the first contract check. Confirm the path in tool
 evidence, then try an unrelated request to check accidental activation. Record
