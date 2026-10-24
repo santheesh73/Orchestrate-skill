@@ -1,353 +1,345 @@
-# HackerRank Orchestrate skills and portable offline toolkit
+# HackerRank Orchestrate Skills & Offline Toolkit
 
-[![validate](https://github.com/santheesh73/Orchestrate-skill/actions/workflows/validate.yml/badge.svg)](https://github.com/santheesh73/Orchestrate-skill/actions/workflows/validate.yml)
+[![validate](https://github.com/santheesh73/Orchestrate-skill/actions/workflows/validate.yml/badge.svg?branch=main)](https://github.com/santheesh73/Orchestrate-skill/actions/workflows/validate.yml)
 
-This repository has two parts:
+**Version 3.1.0 · Python 3.9+ · Standard-library runtime · MIT**
 
-1. **A field guide to HackerRank Orchestrate** (this README): what the event is, how it is scored, and a tested way to approach the 24 hours.
-2. **`hackerrank-orchestrate/`**, a Claude skill that applies this guide during the event. It writes the prompts for your coding agent (Claude Code, Codex, Cursor, OpenCode, Antigravity), checks the reports that come back, and includes scripts that catch the mistakes that cost the most points.
+An independent toolkit for planning, building, checking and explaining a
+HackerRank Orchestrate submission. It combines a core playbook, four companion
+skills, ten original checker scripts and an offline Python CLI. Use it with your
+coding agent to turn current challenge requirements into a design, iterate with
+evidence, check artifacts and prepare for the judge interview.
 
-It now also includes an agent-neutral Python CLI and four companion skills. The
-existing skill and checker interfaces are preserved. A concise I/O/recovery
-contract was added to each skill; the original main rules remain in place.
+The core principle is **model describes, code decides**: separate model
+observations from the tested code that produces final decisions. The canonical
+[skill instructions and hard rules](hackerrank-orchestrate/SKILL.md) remain the
+playbook's source of truth. Existing skills and checker interfaces are preserved.
 
-## Quick start: any coding agent
+> **Your edition's challenge statement and starter instructions take precedence.**
+> This community project is not affiliated with HackerRank. Passing these checks
+> does not establish hidden-label accuracy, an official score or permission to
+> submit. The original strategy and historical scoring context are preserved in
+> the [hackathon field guide](docs/HACKATHON_GUIDE.md).
 
-Python 3.9+, standard-library runtime; no API key or paid service is required.
-Use an existing challenge checkout as `../my-entry`:
+## Start here
+
+- [Quick start](#quick-start)
+- [The five skills](#the-five-skills)
+- [Coding-agent compatibility](#coding-agent-compatibility)
+- [Hackathon workflow](#hackathon-workflow)
+- [Offline walkthrough and evaluation](#offline-walkthrough-and-evaluation)
+- [Commands and original checkers](#commands-and-original-checkers)
+- [Verified results](#verified-results)
+- [Readiness and limits](#readiness-and-limits)
+- [Documentation and repository layout](#documentation-and-repository-layout)
+- [Development](#development)
+- [License and credits](#license-and-credits)
+
+## Quick start
+
+Install Python 3.9 or newer and clone this repository. The CLI runs directly from
+the checkout; its runtime needs no third-party packages or API key.
+
+```text
+git clone https://github.com/santheesh73/Orchestrate-skill.git
+cd Orchestrate-skill
+python -m orchestrate_toolkit validate
+python -m orchestrate_toolkit audit-selftest
+```
+
+Use an **existing official challenge checkout** as the target project. The next
+commands assume it is a sibling folder named `my-entry`; replace that path with
+yours. Run these commands from this toolkit's repository root.
 
 ```text
 python -m orchestrate_toolkit install --agent codex --project ../my-entry --dry-run
 python -m orchestrate_toolkit install --agent codex --project ../my-entry
 python -m orchestrate_toolkit doctor --project ../my-entry
-python -m orchestrate_toolkit validate
+python -m orchestrate_toolkit compatibility --project ../my-entry
 ```
 
-Replace codex with claude, cursor, windsurf, copilot, gemini, cline, roo,
-continue, aider, opencode or portable. Use `--agent all` for project-local adapter
-generation. Native skill support, instruction files and manual loading are
-different mechanisms; see the [compatibility matrix](docs/COMPATIBILITY.md).
+Choose an agent ID from the table below. Repeat `--agent` for selected agents, or
+use `--agent all` by itself for all project-local adapters. Installation copies
+canonical skills and generates agent files. It does not launch your agent or
+prove that the skills loaded.
 
-Optional package installation: `python -m pip install .`, then use
-`orchestrate-toolkit`. This name avoids colliding with the community toolkit's
-`orchestrate` command. Existing installation tools still work.
+Open your coding agent **in the challenge project**. Ask it to identify the exact
+installed `hackerrank-orchestrate/SKILL.md` path, read the current starter rules
+and propose the next contract check. Confirm that path in its tool evidence. Try
+an unrelated request too, to check accidental activation.
 
-Read the [CLI reference](docs/CLI.md), [architecture](docs/ARCHITECTURE.md),
-[skill catalog](integrations/skill-catalog.json), [synthetic walkthrough](examples/offline/README.md),
-[contribution guide](CONTRIBUTING.md) and [security boundaries](SECURITY.md).
+Optional package installation:
 
-Run `python -m orchestrate_toolkit audit-selftest` to check that the built-in
-audits accept healthy controls and detect injected defects. Evaluation also has
-an opt-in `decision_ids` audit for literal sample IDs in declared Python decision
-logic. The broader original corpus scanner remains available. See the
-[measured comparison](docs/COMPETITIVE_BASELINE.md) and
-[reproduction instructions](benchmarks/comparison/README.md); these synthetic
-results do not establish an overall ranking or competition score.
+```text
+python -m pip install .
+orchestrate-toolkit --help
+```
 
-No automatic push, deployment, submission, paid model call or external agent
-launch is implemented. Local fixture commands need explicit `--allow-exec` and
-retain host permissions; this toolkit is not a sandbox. Live agent inference and
-hidden-label accuracy remain unverified.
+The command is `orchestrate-toolkit`; the optional community project's
+`orchestrate` command is separate. Package builds may fetch build dependencies.
+The checkout-based runtime checks above work offline after cloning.
 
-> **The live challenge page and your edition's `AGENTS.md` and `problem_statement.md` always win.** The format changes between editions. Everything here comes from public material on past editions, linked in [Sources](#sources).
+### Safe installation lifecycle
 
-Four optional companion skills now add design review, contract-driven submission
-packaging, interview practice and community toolkit integration. The original
-skill, entrypoint and checker scripts are preserved. See the
-[companion guide](docs/integrations/community-toolkit.md) and
-[installation commands](docs/INSTALL.md#optional-companion-skills).
+The universal installer refuses unowned files and user-modified installed files.
+Unchanged installs are idempotent. An owned upgrade needs `--upgrade` and creates
+a backup. Root `AGENTS.md`, `CLAUDE.md` and `GEMINI.md` are not adapter outputs.
+Earlier installation tools remain available; their files are not silently
+adopted by the ownership-aware installer.
 
----
+```text
+python -m orchestrate_toolkit install --agent codex --project ../my-entry --upgrade
+python -m orchestrate_toolkit uninstall --agent codex --project ../my-entry --dry-run
+python -m orchestrate_toolkit uninstall --agent codex --project ../my-entry
+```
 
-## Contents
+Uninstall removes unchanged owned files while preserving edits, shared files,
+backups and workflow evidence. For user-scope paths, conflict recovery, legacy
+commands and Claude.ai ZIP upload, see [INSTALL.md](docs/INSTALL.md) and the
+[CLI reference](docs/CLI.md).
 
-- [What Orchestrate is](#what-orchestrate-is)
-- [How it is scored](#how-it-is-scored)
-- [What separates the top 50](#what-separates-the-top-50)
-- [How to approach it](#how-to-approach-it)
-  - [Before the event](#before-the-event)
-  - [The first 15 minutes: read the contract](#the-first-15-minutes-read-the-contract)
-  - [Hours 0 to 3: plan and architecture](#hours-0-to-3-plan-and-architecture)
-  - [Hours 3 to 13: build and iterate with evidence](#hours-3-to-13-build-and-iterate-with-evidence)
-  - [Hours 13 to 18: output rows and self-score](#hours-13-to-18-output-rows-and-self-score)
-  - [Hours 18 to 24: interview prep, freeze, submit](#hours-18-to-24-interview-prep-freeze-submit)
-  - [The interview](#the-interview)
-- [Rules that hold up across editions](#rules-that-hold-up-across-editions)
-- [Common mistakes](#common-mistakes)
-- [Using the skill](#using-the-skill)
-- [Repository layout](#repository-layout)
-- [Sources](#sources)
-- [Caveats and license](#caveats-and-license)
-- [Credits](#credits)
+## The five skills
 
----
-
-## What Orchestrate is
-
-HackerRank Orchestrate is a recurring, global, solo hackathon for building an **AI agent** in a tight window, usually 24 hours. Each edition releases a fresh problem and an official starter repository containing:
-
-- `problem_statement.md`: the task, input files, output schema, allowed values and evaluation notes
-- `AGENTS.md`: rules for any AI coding tool working in the repo, including **mandatory session logging** to `log.txt`
-- `CLAUDE.md`: a single line, `@AGENTS.md`, so Claude Code loads those rules automatically
-- `dataset/`: inputs, a small set of solved sample rows, and a blank output template
-- `code/`: an entry point to build from
-
-You build the agent, run it over every input row, and submit three things: a **code zip**, the generated **output CSV**, and your **AI chat transcript**. After submitting you take a **live interview with an AI judge** about your solution.
-
-Problems so far have taken different shapes: support-ticket triage over a document corpus (May 2026), claim verification against images (June 2026), adversarial message routing (August 2026, as described in orchestrate-loop), and a financial "buy or wait" planner over dated records (September 2026). Expect something new each time. The reliable skills are the approach, not the domain.
-
-## How it is scored
-
-Four artifacts, 100 points:
-
-| Artifact | Points | What is judged |
+| Skill | Use it for | Instructions |
 |---|---|---|
-| **Code zip** | 30 | Agent architecture 30% · prompt and tool craft 30% · robustness 25% · engineering rigor 15% |
-| **Output CSV** | 30 | Per-row correctness against a hidden golden set, plus one 0–100 safety score for the submission as a whole |
-| **AI judge interview** | 30 | Technical depth and ownership 40% · problem understanding and judgment 25% · communication 20% · honesty 15% |
-| **Chat transcript** | 10 | Direction and architecture ownership 35% · technical specificity 25% · iteration and verification 25% · safety and edge cases 15% |
+| `hackerrank-orchestrate` | Main playbook: starter contract, architecture, iteration, output checks and interview preparation | [Core](hackerrank-orchestrate/SKILL.md) |
+| `hackerrank-orchestrate-design` | An evidence-based `DESIGN.md`, model/code boundary, failure handling and validation plan | [Design](skills/hackerrank-orchestrate-design/SKILL.md) |
+| `hackerrank-orchestrate-package` | Validate an explicit submission contract and build a fresh bundle with hashes | [Packaging](skills/hackerrank-orchestrate-package/SKILL.md) |
+| `hackerrank-orchestrate-practice` | Rehearse answers against actual code, constants, experiments and run evidence | [Practice](skills/hackerrank-orchestrate-practice/SKILL.md) |
+| `hackerrank-orchestrate-toolkit` | Use the optional community evaluator, engineering memory and heuristic review tools | [Integration](skills/hackerrank-orchestrate-toolkit/SKILL.md) |
 
-Sub-weights are from the organizer's post-mortem of the May 2026 edition. Rules worth knowing:
+The community integration is optional. The other skills and original checkers
+remain usable without that external project. References load on demand; the
+toolkit does not maintain a separate playbook for each coding agent.
 
-- **The code grader reads source only.** README claims earn nothing in the code score; design reasons belong in code comments and docstrings.
-- **A generic justification caps a row at about 70 out of 100,** even when the label is right.
-- **Escalating everything is invalid, and so is replying to everything.**
-- **Very short interview answers score low.** In the organizer's interview transcripts, its "very short answers" measure correlated with interview score at r = −0.568; total words spoken correlated positively (r = 0.615), and the number of turns only weakly negatively (no value published).
-- **Ties break on interview, then code, then output, then transcript.**
-- Since September 2026, `code.zip` must include **`evaluation/usage_report.md`** (model calls, tokens and estimated cost for the final run), and every log entry needs a valid **`tool=` line** naming your coding harness.
+Example requests after loading the relevant skill:
 
-## What separates the top 50
+```text
+Read this edition's starter rules and problem statement. Help me design the agent
+and identify which artifact checks we need before implementation.
 
-Labels: **VERIFIED** means read in the organizer's post-mortem; **INFERRED** means computed by [orchestrate-loop](https://github.com/bsrikumar855-dot/orchestrate-loop) from public leaderboard data that could not be re-checked here. The full table is in [`rubric.md`](hackerrank-orchestrate/references/rubric.md#5-what-the-leaderboards-show).
+Review my output and experiment record. Identify the weakest evidence and
+propose one measured improvement.
 
-- **Balance beats a peak.** Every top-10 finisher in May was in the top quartile on all four artifacts, and so were 37 of the May top 50, with 11 more on three of the four (VERIFIED). Most of the June and August top 50 were too (INFERRED).
-- **The output CSV is where strong teams lose.** It was the weakest stage for 49 of the June top 50 and 34 of the August top 50 (INFERRED). Great code with a mediocre CSV is the typical top-50 profile, so getting the rows right is how you separate.
-- **The transcript and interview are cheap points most people leave behind.** Across the field, the median transcript score sat roughly between 1.4 and 3.8 of 10, and the median interview score between 11 and 15 of 30, while top-50 averages were 63% to 89% of the maximum (INFERRED).
-- **Simple, explainable architectures win.** A single agent with tools held 7 of the May top 10 (VERIFIED). One June author had earlier entered with a 15-stage pipeline and placed mid-table, unable to show what any one stage added; their next, smaller design did far better (INFERRED, from that author's write-up as summarized in orchestrate-loop).
-- **Behavior beats tooling.** Claude Code was used by 44% of the May top 50 versus 14.4% of all transcripts, but the organizer credits *how* people worked: reasoning about tradeoffs, evidence, and visible ownership of decisions (VERIFIED).
-
-## How to approach it
-
-The core idea: **the model describes, code decides** (the skill's core principle in [`SKILL.md`](hackerrank-orchestrate/SKILL.md), detailed in [`winning-approaches.md`](hackerrank-orchestrate/references/winning-approaches.md) §1). The model only reports what it observed; tested code produces every final value. You get a run you can repeat from a cache, audit row by row, and defend against injected text, plus strong interview answers.
-
-### Before the event
-
-- Clone a past starter repo (for example [september26](https://github.com/interviewstreet/hackerrank-orchestrate-september26)) and do a **compressed mock run** of a few hours. The point is to rehearse the loop, not to win the old problem.
-- Set up your tools: Claude Code (or your harness of choice), an API key in an environment variable, and this skill.
-- Know the deadline in your own timezone, and when the interview window opens.
-- Plan to sleep. Rehearsing the interview while exhausted is a known failure.
-
-### The first 15 minutes: read the contract
-
-Contract misses cost points that no model quality can recover. Before any design:
-
-1. Read `AGENTS.md`, `problem_statement.md` and `README.md` **in full**, not from memory of a past edition.
-2. **Don't edit `AGENTS.md` or overwrite `CLAUDE.md`.** `AGENTS.md` is what makes the mandatory logging run (`CLAUDE.md` just imports it with `@AGENTS.md`), and your transcript is graded from that log. Send strategy as your first message, or add it below the import.
-3. Write down every MUST: output file and location, exact columns and order, allowed values and formats, one row per input id, required extra files (such as `usage_report.md`), the log format and `tool=` rule, forbidden inputs (organizer-only files, hardcoded labels), and any stated conflict-resolution or tie-break order.
-4. Compare with the last edition you know. New sections are where the new traps are.
-5. Put that MUST list into your first prompt so the build starts against it.
-
-### Hours 0 to 3: plan and architecture
-
-- **Plan out loud before any code.** State the approach, the alternatives, and why you picked one. Transcript ownership is 35% of that score and can't be added after the fact.
-- **Identify the problem's shape** (retrieval, multimodal verification, adversarial routing, simulation and planning, or something new) and start from what worked for that shape.
-- **Design one findable agent loop:** a named function or graph with an explicit step cap, a fallback, and a validated final-answer schema. A framework or the raw API both work. A hidden decision tree passed off as a "loop" does not.
-- **Draw the seam.** Decide what the model observes, what code decides, and which inputs are attacker-controlled. Fence untrusted content.
-- **Choose how rows are grouped before writing any detector** (hard rule 5).
-- **Cache every model record** by content hash and prompt version, so you can iterate on rules offline for free.
-- **Log every model call** (provider, model, tokens, row id) from the first paid call. You need this for the usage report.
-
-### Hours 3 to 13: build and iterate with evidence
-
-Every non-trivial change gets a short record:
-
-```
-CHANGE / REQUIREMENT / CEILING / CLAIM / JUSTIFICATION / METRIC /
-BASELINE / RESULT / BLAST RADIUS / COUNTERFACTUAL / VERDICT
+Prepare interview questions from my code and constants. Mark answers that cannot
+be verified from the supplied artifacts as UNKNOWN.
 ```
 
-- **Compute the ceiling first.** If a gap touches two rows, it isn't worth an hour.
-- **Diff the whole output** after every core change, not just the field you targeted. Measure the model's run-to-run noise once, so you know what size of change actually means something. With 20 to 30 labeled samples, one row is 3 to 5 points.
-- **Iterate under the hard rules** on samples, noise, counterfactuals, row safety and constants: rules 3, 4, 9, 10 and 11 in [`SKILL.md`](hackerrank-orchestrate/SKILL.md#hard-rules-canonical-copy-other-files-link-here). The decision table behind them is in [`evaluation.md`](hackerrank-orchestrate/references/evaluation.md) §4.
+## Coding-agent compatibility
 
-### Hours 13 to 18: output rows and self-score
+The registry covers twelve agent IDs through different mechanisms. Documented
+formats and simulated installation tests do **not** establish current live
+activation. The [full compatibility matrix](docs/COMPATIBILITY.md) records paths,
+activation procedures, documentation sources and version-specific caveats.
 
-- **Attack the boundary calls.** Top finishers mostly lose rows where the model's default guess sits near the line between two classes. Write resolved definitions with contrastive examples into the prompt, rather than tuning thresholds against a handful of samples.
-- **Make justifications specific:** the decision, the rule that fired, the evidence ids actually read, and the alternative that lost. If a justification would read the same on another row, it's generic.
-- **Check the adversarial rows separately,** since safety is scored on its own. Check that the output hasn't collapsed onto one value.
-- **Self-score every artifact honestly** against the rubric. Name the weakest one and spend the next block there.
+| Mechanism selected by this toolkit | Agents | CLI IDs |
+|---|---|---|
+| Documented native skill folders | OpenAI Codex, Claude Code, Gemini CLI, OpenCode | `codex`, `claude`, `gemini`, `opencode` |
+| Documented instruction/rule files | Cursor, Windsurf, GitHub Copilot, Cline, Roo Code, Continue | `cursor`, `windsurf`, `copilot`, `cline`, `roo`, `continue` |
+| Explicit CLI-assisted loading | Aider | `aider` |
+| Explicit manual reading | Other instruction-capable agents | `portable` |
 
-### Hours 18 to 24: interview prep, freeze, submit
+All twelve adapters have filesystem/lifecycle test coverage. Current live
+discovery and invocation remain **UNKNOWN**. The earlier one-run Claude Code
+smoke test covered the original core only. Antigravity and Claude.ai have legacy
+instructions in [INSTALL.md](docs/INSTALL.md), not dedicated universal CLI IDs.
+For Aider, explicitly load the main skill and selected references; a routing note
+alone does not load them automatically.
 
-- **Freeze the code early enough** to run from a fresh clone using only your README, rerun the full dataset once, and generate the usage report from that exact run.
-- **Re-derive every number** you cite (test counts especially) from the live repo. Docs drift under heavy iteration.
-- **Confirm the code zip, output CSV and log tell the same story.** No secrets, no organizer-only files, `AGENTS.md` and `CLAUDE.md` untouched.
-- **Rehearse the interview** before you're under deadline pressure.
+## Hackathon workflow
 
-### The interview
+1. **Discover the contract.** Read the actual starter files, extract requirements
+   and confirm logging and required artifacts. Use the
+   [starter-contract reference](hackerrank-orchestrate/references/starter-contract.md).
+2. **Design and build.** Choose the problem shape, write the model/code boundary
+   and produce a complete sample run. Use the design companion and
+   [architecture references](hackerrank-orchestrate/references/archetypes/index.md).
+3. **Test and improve.** Validate rows, malformed inputs and evidence; compare
+   complete outputs and keep a measured change record. Follow the
+   [evaluation policy](hackerrank-orchestrate/references/evaluation.md).
+4. **Rehearse and package.** Generate questions from your own source, check final
+   artifacts and build a fresh submission bundle from the actual contract.
 
-The judge asks about **your** code, not about agents in general. In one [first-hand September 2026 account](https://dev.to/earlgreyhot1701d/my-first-ai-judge-interview-what-could-possibly-go-wrong-22el), the questions included what value estimated variable expenses and what happened first when salary and bills landed on the same day. The author's own earlier report said debits came first, but the submitted code applied credits first. Their lesson: the real questions were more specific than anything they had prepared for.
+The CLI records an explicit resumable workflow:
 
-- **Build your question bank from your code:** every constant, threshold, sort order and gate, each answered against the line it lives on.
-- **Answer in this shape:** decision, the alternative you rejected, the evidence, the limitation. Four sentences or more, never one line.
-- **Own it precisely:** "I chose X because…", and be clear about which parts you designed and which an AI tool generated.
-- **Have these ready:** one row traced end to end, three rejected changes with the numbers that killed them, where your determinism guarantee stops, and two limitations to volunteer before you're asked.
-- **Never claim** "fully deterministic", "100%" without the set and its size, "no dataset-specific assumptions" without a test proving it, or "I wrote every line myself".
+```text
+DISCOVER → ANALYZE → PLAN → BUILD → TEST → EVALUATE → IMPROVE → VALIDATE → SUBMIT
+```
 
-## Rules that hold up across editions
+These are explicit transitions, not an autonomous build loop. Evidence gates
+check report/source hashes; failed or stale evidence blocks progress. `IMPROVE`
+can return to `BUILD` or `TEST`. `SUBMIT` records an explicitly approved local
+handoff and does not upload anything. See [workflow commands](docs/CLI.md).
 
-The skill keeps one canonical list of 14 hard rules in [`SKILL.md`](hackerrank-orchestrate/SKILL.md#hard-rules-canonical-copy-other-files-link-here), and the evaluation rules behind them in [`evaluation.md`](hackerrank-orchestrate/references/evaluation.md). They are not repeated here so the two can't drift apart. The three that cost the most points when broken: don't edit the starter's `AGENTS.md` or `CLAUDE.md`; samples motivate or falsify, but only the domain justifies a rule; one labeled row is noise.
+## Offline walkthrough and evaluation
 
-## Common mistakes
+Run from the repository root:
 
-| Mistake | Instead |
+```text
+python examples/offline/main.py
+python -m orchestrate_toolkit evaluate --project examples/offline --config evaluation.json --report evaluation/readme-demo-001.json
+python -m orchestrate_toolkit workflow init --project examples/offline
+```
+
+The synthetic example checks its configured CSV contract and keyed replay
+without a model, API key or network. Use a new report filename for another run.
+Its data and contract are not a real submission. See the
+[walkthrough](examples/offline/README.md).
+
+For your project, transcribe its current specification into an explicit contract
+using the [contract reference](skills/hackerrank-orchestrate-package/references/contract.md).
+The packager checks required files, exact CSV schema, IDs, enums, nonempty data,
+archive scope and configured hashes. It prints `PACKAGE BUILT`, not an official
+readiness verdict. The output directory must be new.
+
+### Optional literal-ID decision audit
+
+Add this field to an evaluation configuration when the policy should forbid
+literal input IDs in Python decision logic:
+
+```json
+{
+  "contract": "contract.json",
+  "contract_audits": ["decision_ids"]
+}
+```
+
+The audit reads IDs from the configured input and inspects comparisons, mapping
+keys and direct lookups in declared Python files. Comments, docstrings, isolated
+assignments and unseen probe IDs do not trigger this narrow policy. Unsupported
+source yields UNKNOWN; dynamic dataflow is outside its coverage. The original
+broader `corpus_literals.py` scanner remains available for investigation.
+
+## Commands and original checkers
+
+Run `python -m orchestrate_toolkit COMMAND --help` for exact flags.
+
+| CLI command | Purpose |
 |---|---|
-| Accepting the first architecture the AI proposes | Compare alternatives out loud and choose yourself |
-| One giant prompt that does everything | Narrow model jobs over a tested deterministic core |
-| Letting the agent run unsupervised for hours | Short cycles: plan, build, review, with a change record |
-| Testing only the happy path | Adversarial and malformed inputs before writing input handling |
-| Leaving evaluation and the CSV to the last hour | Reserve hours 13 to 18 for rows and self-scoring |
-| Explaining the design only in the README | Docstrings and comments beside the code they govern |
-| Tuning thresholds until the samples match | Domain-justified rules, checked against samples |
-| A `tool=` line holding a model name, or missing | The harness name in every log entry, checked before submitting |
-| Reconstructing token usage after the fact | Log every call from the start |
-| Rehearsing the interview at 3 AM | Rehearse once the code is frozen, then sleep |
+| `install` / `uninstall` | Preview or manage owned project/user-scope skill installations |
+| `doctor` / `compatibility` | Check installed ownership and report documented adapter capabilities |
+| `validate` | Validate all canonical skill folders |
+| `audit-selftest` | Check the audits using healthy, injected and metamorphic controls |
+| `evaluate` | Produce evidence for configured contract, replay, checks, usage and dependencies |
+| `workflow` | Initialize, inspect, advance or explicitly recover an evidence-gated checkpoint |
 
----
+Every original checker remains in `hackerrank-orchestrate/scripts/`:
 
-## Using the skill
-
-`hackerrank-orchestrate/` is a Claude skill that applies everything above during the event. By default it acts as your strategist: it writes paste-ready prompts for your coding agent, checks the report that comes back against real artifacts, and writes the next prompt. It never invents a schema, score or test count.
-
-### Install
-
-The same folder installs, unchanged, for Claude Code, Claude.ai, OpenAI Codex, OpenCode, Google Antigravity and Cursor; only the location differs. It has been run in Claude Code. For the other agents the locations come from their own docs, and whether the skill triggers there is UNKNOWN. **[docs/INSTALL.md](docs/INSTALL.md)** has the folder for each agent with its evidence label, known caveats, and a fallback opening message for when an agent does not pick the skill up.
-
-```bash
-python3 -I tools/package_skill.py --project ../my-entry --for all   # .claude/skills and .agents/skills
-python3 -I tools/package_skill.py --install ~/.claude/skills        # any one folder; add --force to replace a copy
-```
-
-Each install is a clean, validated copy. With `--force`, the new copy is built and validated beside the old one and swapped in; if anything fails, the old copy stays as it was. A plain `cp -r` also works, but it copies any `__pycache__` folders left by running the scripts.
-
-**Claude.ai:** run `python3 -I tools/package_skill.py` and upload `dist/hackerrank-orchestrate.zip` as a custom skill. The zip holds one top-level `hackerrank-orchestrate/` folder with `SKILL.md` in it, and leaves out caches, tests and fixtures. Packaging stops if the staged copy fails validation.
-
-### Example prompts
-
-```
-The Orchestrate starter repo just dropped. AGENTS.md and problem_statement.md are below. Give me the kickoff prompt for my coding agent.
-```
-
-```
-My agent just finished this round; its report is below. Check it and write my next iteration prompt.
-```
-
-```
-The output CSV is my weakest stage. Give me an output-row pass prompt.
-```
-
-```
-The interview opens in two hours. Build my drill from code/ and quiz me.
-```
-
-### Checker scripts
-
-Standard-library Python 3.9+, nothing to install, no network. Each takes paths and schemas as arguments and embeds no dataset. Bad input (non-UTF-8 files, CR-only or NUL-containing CSVs, very long fields, broken symlinks, named pipes, a malformed config) gives a one-line error and a documented exit code, not a traceback. A check that examined nothing exits 3 (UNKNOWN), never 0, and no `--out` overwrites a file the script reads. `tests/test_cli_matrix.py` runs every script and tool against every input class on each test run; `tests/test_hostile_inputs.py` holds the individual regressions.
-
-| Script | What it catches |
+| Script | Purpose |
 |---|---|
-| `selfcheck.py selfcheck.json` | Runs the checks below from one config and prints PASS, WARN, FAIL or UNKNOWN per section; a skipped check, or one that examined nothing (no data rows, no source file, no claim), is UNKNOWN, never a pass. Its `starter` section fails if `AGENTS.md` changed since kickoff or `CLAUDE.md` lost its `@AGENTS.md` line. Exit 0 PASS, 1 WARN, 2 UNKNOWN, 3 FAIL, 4 bad config |
-| `contract_extract.py starter/` and `--diff old/ new/` | The MUST, MUST NOT, required files, columns and allowed values in `AGENTS.md` and `problem_statement.md`, and what changed since the last edition (a heuristic; read the files too) |
-| `check_log.py log.txt --expect-tool "Claude Code" --profile sept-2026` (use your own harness name) | Missing, placeholder, generic or model-name `tool=` lines; empty prompt blocks; secrets; non-append-only timestamps. `--list-profiles` shows the edition formats; copy `assets/editions/template.json` for a new one |
-| `preflight.py output.csv --template dataset/output.csv --inputs dataset/<inputs>.csv --id-col <id> --enum "col=a\|b"` | Wrong or duplicate header columns, wrong order, missing or duplicate ids, off-enum values, blanks, a collapsed distribution |
-| `rerun_diff.py run1.csv run2.csv --id-col <id>` | Row and column churn between runs; your noise floor |
-| `experiment.py start NAME --output output.csv --id-col <id> --check "…" --labels dataset/output.csv`, then `finish NAME` | One change record: re-runs the checks, diffs the full output, counts labeled rows made better and worse, applies the resolution table (SHIP, REJECT, NOISE or UNKNOWN; a one-row gain is never SHIP) and appends the record. It never edits your code or data |
-| `usage_report.py usage.jsonl --run-id final --price "<model>=<in>:<out>"` | Builds `evaluation/usage_report.md` with per-model and overall totals |
-| `interview_drill.py code/ --constants CONSTANTS.md` | Interview questions from your constants, thresholds, orderings and statistics, each with `file:line`, plus constants missing from `CONSTANTS.md` |
-| `corpus_literals.py --data dataset/*.csv --code code/ --spec problem_statement.md` | Ids, strings and number combinations copied from the dataset into code (sample coupling) |
-| `claim_audit.py README.md CONSTANTS.md --repo . --csv output.csv --constants CONSTANTS.md` | Test, row and constant counts in your docs that no longer match the repo. Exit 3 when no claim could be checked, which `selfcheck.py` reports as UNKNOWN, not PASS |
+| `selfcheck.py` | Aggregate configured checks; missing evidence stays UNKNOWN |
+| `contract_extract.py` | Extract and compare starter requirements as a reading aid |
+| `check_log.py` | Check the selected log-format profile and harness naming |
+| `preflight.py` | Check CSV schema, IDs, enums, blanks and distribution hints |
+| `rerun_diff.py` | Compare complete outputs by ID |
+| `experiment.py` | Record baseline/final checks, output changes and evidence-based verdicts |
+| `usage_report.py` | Summarize supplied call records and explicitly supplied prices |
+| `interview_drill.py` | Generate source-linked questions and constants checks |
+| `corpus_literals.py` | Flag dataset literals in source for investigation |
+| `claim_audit.py` | Compare supported documentation counts with available artifacts |
 
-An example `selfcheck.json` is in `tests/fixtures/project/`. All scripts live in `hackerrank-orchestrate/scripts/`. **They check your work and are not part of your submission.** The rules require the participant to be the author.
+Exit-code conventions differ; inspect each script's `--help` before automating
+it. These checkers are not themselves the participant's competition solution.
 
-## Repository layout
+## Verified results
 
-```
-hackerrank-orchestrate/           the skill
-├── SKILL.md                      router, working style, the canonical hard rules
-├── references/
-│   ├── rubric.md                 scoring, caps, tie-breaks, leaderboard calibration
-│   ├── starter-contract.md       first-15-minutes checklist, tool= rule, usage report
-│   ├── archetypes/               one page per problem shape seen so far
-│   ├── loop-patterns.md          agent loop, change-record loop, relay, per-row safety, phase gates
-│   ├── evaluation.md             generalization policy, anti-overfitting, resolution table, noise floor
-│   ├── output-csv.md             boundary calls, justifications, safety rows
-│   ├── interview.md              question bank, answer shape, ownership, hour-before checklist
-│   ├── self-score.md             gate 7, with or without the community toolkit
-│   ├── winning-approaches.md     cross-cutting patterns from top finishers
-│   ├── prompt-templates.md       kickoff, iteration, audit, output-row pass, freeze
-│   ├── behind-schedule.md        which depth to cut, gate by gate, when time runs short
-│   ├── edition-update.md         how to update the skill after each edition closes
-│   └── kit-repo.md               optional community toolkit digest
-├── scripts/                      the ten checkers above
-└── assets/                       change record, decision log, CONSTANTS.md, usage-log schema
-    └── editions/                 log-format profiles per edition, plus a template
-docs/COVERAGE.md                  rubric criteria and orchestrate-loop capabilities mapped to guidance and checks
-docs/INSTALL.md                   install folder per agent (Claude Code, Claude.ai, Codex, OpenCode, Antigravity, Cursor), with evidence labels
-evals/triggers.json               56 prompts that should (28) and should not (28) trigger the skill
-tests/                            script and tool tests, hostile inputs, golden outputs on small fixtures
-tools/validate_skill.py           structure, policy and context-budget check, run in CI
-tools/package_skill.py            builds dist/hackerrank-orchestrate.zip; installs a clean copy into a folder or a project (--for claude, agents, all)
-tools/footprint.py                always-loaded and on-demand size of the skill, against budgets
-tools/run_trigger_evals.py        trigger evals: offline proxy, or opt-in live run
-VERSION, CHANGELOG.md             release version and history
-dist/                             build output from package_skill.py (git-ignored)
-```
+The suite contains **231 tests**. CI covers Windows, Linux and macOS with Python
+3.9, 3.11 and 3.13: **nine configurations**. At revision `72f4981`, all eighteen
+checks across the push and pull-request runs passed. See the
+[push run](https://github.com/santheesh73/Orchestrate-skill/actions/runs/40066689590)
+and [pull-request run](https://github.com/santheesh73/Orchestrate-skill/actions/runs/40066693106).
+This is pinned historical evidence; the badge links to subsequent main-branch runs.
 
-Development:
+- **Audit controls:** seven healthy examples, ten injected defects and four
+  metamorphic checks. Deliberately broken-checker regressions prove the selftest
+  can reject an audit that always passes or always fails.
+- **Installation and packaging:** conflicts, ownership, shared files, rollback,
+  backups and clean-wheel operation outside the checkout are exercised.
+- **Trigger evaluation:** the existing offline lexical proxy measures precision
+  0.76 and recall 0.68 over its 56 prompts. It is not live model behavior.
 
-```bash
+The independent comparison uses identical synthetic inputs and requirements.
+For common supported interfaces:
+
+| Shared fixture check | This toolkit with optional `decision_ids` | Reviewed community toolkit |
+|---|---|---|
+| Packaging defects blocked | 12/12 | 10/12 |
+| Healthy packages accepted | 4/4 | 4/4 |
+| Literal-ID decision defects detected | 3/3 | 2/3 |
+| Benign source cases kept quiet | 5/5 | 4/5 |
+
+Unsupported policies are N/A and excluded from common-interface denominators;
+unexecuted checks are UNKNOWN. These small, known fixtures do not establish
+overall superiority, real-world error rates or competition scores. The broader
+original scanner has a different purpose and flags one benign fixture under the
+narrow policy. Read the [full comparison](docs/COMPETITIVE_BASELINE.md),
+[reports and reproduction instructions](benchmarks/comparison/README.md), and
+[release evidence](docs/V2_RELEASE_EVIDENCE.md).
+
+## Readiness and limits
+
+**Ready to use as a preparation and artifact-checking toolkit.** Before relying
+on it during an event, verify loading in your chosen coding agent, complete one
+end-to-end practice run and review the current edition's actual contract.
+Toolkit validation and submission readiness are separate judgments.
+
+- PASS means the configured check passed; it does not prove correct contract
+  transcription or that every required check was configured.
+- WARN needs review, FAIL needs correction and UNKNOWN means evidence is missing
+  or unsupported. Workflow evaluation gates require PASS evidence. A passing
+  `audit-selftest` tests the audits and cannot replace participant evaluation.
+- Fixture commands need explicit `--allow-exec`. Executed code retains host
+  permissions; this toolkit is not an OS sandbox. Nothing is submitted, deployed
+  or uploaded automatically; no paid model call is made implicitly.
+- Live agent activation, hidden-label accuracy and official scoring outcomes
+  remain unverified. Check historical rubric weights and edition-specific log
+  profiles against the actual event.
+
+See [SECURITY.md](SECURITY.md) for trust boundaries and
+[the field guide](docs/HACKATHON_GUIDE.md) for historical scoring and interview
+preparation.
+
+## Documentation and repository layout
+
+| Location | What to read or use |
+|---|---|
+| `hackerrank-orchestrate/` | Core skill, references, ten checkers and templates |
+| `skills/` | Four companions and the contract-driven submission packager |
+| `orchestrate_toolkit/` | CLI, adapters, installer, evaluation, audits and workflow |
+| [CLI.md](docs/CLI.md) | Exact commands, configuration, exit codes and recovery |
+| [INSTALL.md](docs/INSTALL.md) / [COMPATIBILITY.md](docs/COMPATIBILITY.md) | Installation, activation procedures and evidence labels |
+| [HACKATHON_GUIDE.md](docs/HACKATHON_GUIDE.md) | Preserved strategy, historical rubric, interviews and sources |
+| [ARCHITECTURE.md](docs/ARCHITECTURE.md) / [COVERAGE.md](docs/COVERAGE.md) | Component boundaries and capability coverage |
+| `integrations/` | Skill catalog, upstream revisions and compatibility metadata |
+| `examples/offline/` | Executable synthetic walkthrough |
+| `benchmarks/comparison/` | Identical-input fixtures, runner and measured reports |
+| `tests/`, `evals/`, `tools/` | Regressions, trigger proxy, validators and packaging utilities |
+| [CHANGELOG.md](CHANGELOG.md) / [CONTRIBUTING.md](CONTRIBUTING.md) | Release history and contribution checks |
+
+## Development
+
+```text
 python tools/validate_skill.py
+python tools/static_check.py
+python -m orchestrate_toolkit audit-selftest
 python -W error -m unittest discover -s tests -v
-python tools/run_trigger_evals.py --offline
-python hackerrank-orchestrate/scripts/selfcheck.py tests/fixtures/project/selfcheck.json
-python hackerrank-orchestrate/scripts/selfcheck.py selfcheck.json   # claims check on this repo; other sections UNKNOWN
-python tools/package_skill.py --out /tmp/dist   # build and validate the upload zip
-python tools/footprint.py --summary             # context footprint against budgets
-
-# Opt-in, needs ANTHROPIC_API_KEY, makes network calls, never run in CI:
-python tools/run_trigger_evals.py --live --model <model-id>
+python tools/run_trigger_evals.py --offline --min-precision 0.6 --min-recall 0.5
+python tools/ci_check.py
+python tools/wheel_smoke.py
 ```
 
-## Sources
+The wheel check needs locally installed pip, setuptools and wheel; its build and
+temporary install use `--no-index`. Paid/live trigger evaluations are opt-in and
+never run in CI. For their flags, use `tools/run_trigger_evals.py --help`.
+See [CONTRIBUTING.md](CONTRIBUTING.md) before changing canonical skills or adapters.
 
-- [HackerRank: Behind the Scenes of Orchestrate](https://www.hackerrank.com/blog/behind-the-scenes-of-hackerrank-orchestrate/): organizer post-mortem with sub-rubrics, caps, tie-breaks and what top finishers did
-- [May 2026 #1 repository](https://github.com/saai-syvendra/hackerrank-orchestrate) and [write-up](https://saai.syvendra.com/myspace/hackerrank-orchestrate)
-- Official starter repos: [june26](https://github.com/interviewstreet/hackerrank-orchestrate-june26), [september26](https://github.com/interviewstreet/hackerrank-orchestrate-september26)
-- [A first-hand September 2026 AI-judge interview](https://dev.to/earlgreyhot1701d/my-first-ai-judge-interview-what-could-possibly-go-wrong-22el)
-- [A practitioner's guide across three editions](https://medium.com/@shreesh.exe22/hackerrank-orchestrate-3268f0d710a5)
-- Public leaderboards for the May, June and August 2026 editions (per-stage percentages computed secondhand from that data; INFERRED)
-- [October 2026 challenge page](https://www.hackerrank.com/hackerrank-orchestrate-october26)
+## License and credits
 
-The links above were reviewed on 2026-10-13. The community
-[hackerrank-orchestrate-skills toolkit](https://github.com/NITISH-R-G/hackerrank-orchestrate-skills)
-was inspected directly on 2026-10-24 at the revision recorded in
-[`integrations/upstreams.json`](integrations/upstreams.json).
-
-## Caveats and license
-
-- Scoring sub-weights come from the May 2026 post-mortem, and later editions may reweight. Check the live page.
-- Patterns come from the few public top-finisher repos and write-ups that were reachable. They describe what top finishers did, not proof of what caused their rank.
-- **Trigger accuracy against a live model: UNKNOWN.** `tools/run_trigger_evals.py --live` exists but has not been run, because no API key was available where this was built. What *was* measured is an offline lexical-overlap proxy over the 56 cases in `evals/triggers.json` (28 should trigger, 28 should not; 12 of them phrased as Codex, Cursor, OpenCode and Antigravity users): precision 0.76, recall 0.68 at threshold 0.3 (MEASURED, proxy only; it is not model behavior). In Claude Code the skill was invoked for one Orchestrate question and not for one near miss (VERIFIED, one run each; see [docs/INSTALL.md](docs/INSTALL.md)).
-- **Leaderboard per-stage figures in `references/rubric.md` are INFERRED.** They were computed by orchestrate-loop from public leaderboard data; the leaderboard API was not reachable here to re-derive them.
-- **Toolkit integration is optional.** Its commands were checked against the pinned source; help and selftest were exercised. Its edition-specific audits and heuristic scores cannot establish official readiness or predict a score.
-- The suite contains 231 tests in `tests/`. CI targets Windows, Linux and macOS with Python 3.9, 3.11 and 3.13; inspect the Actions run for the actual result. Fixtures are small and synthetic. Log profiles cover only the reviewed editions; each states its provenance. Live model selection and real hidden-label accuracy remain UNKNOWN.
-- **Context footprint is ESTIMATED** by `tools/footprint.py` as characters / 4, not by a tokenizer. The budgets in `tools/validate_skill.py` are the measured sizes plus about 10%.
-- Not affiliated with or endorsed by HackerRank.
-
-MIT licensed. See [LICENSE](LICENSE).
-
-## Credits
-
-- Ideas, structure and the first set of lessons came from [orchestrate-loop](https://github.com/bsrikumar855-dot/orchestrate-loop), an earlier Orchestrate skill. That repository has no license, so its prose is not copied here; this repository is an independent rewrite that credits it as a source of ideas. What it shares with orchestrate-loop is factual: the leaderboard figures in `references/rubric.md` (labeled INFERRED, with this credit), the toolkit's command lines, and file and rule names.
-- The optional toolkit integration now references its actual source and inspected revision. Credit for its methods belongs to its authors. New companions are independently implemented; attribution and the upstream MIT notice are in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). No unlicensed loop prose or upstream implementation is bundled.
-- Neither project is affiliated with this one, and none of them is affiliated with or endorsed by HackerRank.
+[MIT license](LICENSE). The playbook independently restates ideas credited to
+[Orchestrate-loop](https://github.com/bsrikumar855-dot/Orchestrate-loop); its
+unlicensed prose is not copied. The optional
+[community toolkit](https://github.com/NITISH-R-G/hackerrank-orchestrate-skills)
+remains a separate project. Attribution and the upstream MIT notice are in
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). No upstream implementation is
+vendored. Historical organizer material and sources remain in the
+[field guide](docs/HACKATHON_GUIDE.md#sources).
