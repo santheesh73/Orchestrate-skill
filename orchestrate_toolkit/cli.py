@@ -43,6 +43,7 @@ def parser():
             s.add_argument('--scope', choices=['project', 'user'], default='project')
             s.add_argument('--home', type=Path)
     commands.add_parser('validate', help='validate all canonical skill folders without running target code')
+    commands.add_parser('audit-selftest', help='prove built-in audits accept healthy controls and catch injected defects')
     e = commands.add_parser('evaluate')
     e.add_argument('--project', default='.')
     e.add_argument('--config', required=True)
@@ -62,8 +63,12 @@ def parser():
 def main(argv=None):
     args = parser().parse_args(argv)
     try:
-        if args.command == 'validate':
-            result = validate_sources()
+        if args.command in ('validate', 'audit-selftest'):
+            if args.command == 'audit-selftest':
+                from . import selftest
+                result = selftest.run()
+            else:
+                result = validate_sources()
             code = 0 if result['overall'] == 'PASS' else 1
         else:
             if getattr(args, 'scope', 'project') == 'user':
@@ -93,7 +98,7 @@ def main(argv=None):
                 result = evaluation.evaluate(root, args.config, args.allow_exec, args.pass_env)
                 target.parent.mkdir(parents=True, exist_ok=True)
                 write_new(target, json_bytes(result))
-                code = {'PASS': 0, 'FAIL': 1, 'UNKNOWN': 3}[result['overall']]
+                code = {'PASS': 0, 'FAIL': 1, 'WARN': 3, 'UNKNOWN': 3}[result['overall']]
                 print(json_bytes(result).decode('utf-8'), end='')
                 return code
             elif args.command == 'workflow':

@@ -15,6 +15,7 @@ Development checks:
 python tools/validate_skill.py
 python tools/package_addons.py --validate-only
 python tools/static_check.py
+python -m orchestrate_toolkit audit-selftest
 python -W error -m unittest discover -s tests -v
 python tools/ci_check.py
 python tools/wheel_smoke.py
@@ -32,3 +33,10 @@ failure; avoid tests that merely assert headings or mirror implementation lines.
 Use small commits. Record deliberate skill-contract changes in upstreams.json
 without relaxing tests that protect original rules. Update current test counts
 and render historical changelog counts as historical facts.
+
+For built-in contract audits, add an explicit name to the closed registry and
+provide healthy, injected-defect and unsupported-input controls. Prove the
+selftest rejects a deliberately broken checker. Do not import participant code.
+Comparisons must keep identical fixture bytes and requirements for both tools,
+report UNKNOWN/N/A honestly and disclose heuristic differences. See
+benchmarks/comparison/README.md. Do not tune an audit to hide a benchmark miss.

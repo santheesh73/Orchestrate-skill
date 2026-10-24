@@ -55,7 +55,7 @@ Weights are from the May 2026 post-mortem (VERIFIED; see `hackerrank-orchestrate
 
 | Addition | Failure it prevents |
 |---|---|
-| `hackerrank-orchestrate/scripts/` (10 checkers) and `tests/` (219 tests) | Rules that nobody can run; regressions in the checkers and optional companions |
+| `hackerrank-orchestrate/scripts/` (10 checkers) and `tests/` (231 tests) | Rules that nobody can run; regressions in the checkers and optional companions |
 | `hackerrank-orchestrate/assets/editions/` | A log checker that rejects another edition's format |
 | `tools/validate_skill.py` | Structure and policy drift (dates in the trigger, restated rules, missing scripts) |
 | `tools/package_skill.py` | A rejected upload, or dev files shipped inside the skill |
@@ -117,3 +117,13 @@ synthetic filesystem/subprocess scenarios. `tools/wheel_smoke.py` exercises a
 temporary wheel installation outside the checkout, including the console command.
 `tools/static_check.py` covers new source syntax and prohibited shell invocation.
 See `docs/COMPATIBILITY.md`, `docs/CLI.md` and `docs/UNIVERSAL-AUDIT-PLAN.md`.
+
+## 8. Comparative audit evidence
+
+`benchmarks/comparison/` runs identical synthetic artifacts through both reviewed
+repositories and separates unsupported policies from common-interface error
+rates. `tests/test_v2_evidence.py` covers healthy/injected/metamorphic controls,
+deliberately broken checkers, unknown coverage, the opt-in decision-ID policy,
+evidence-kind separation and shared fixture fingerprints. `audit-selftest`
+reuses contract/replay validators without executing participant code.
+See `docs/COMPETITIVE_BASELINE.md` for measurements and their limits.

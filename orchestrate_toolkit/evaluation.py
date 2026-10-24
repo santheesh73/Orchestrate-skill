@@ -118,20 +118,24 @@ def requirements(root, name):
 
 
 def worst(statuses):
-    return 'FAIL' if 'FAIL' in statuses else 'UNKNOWN' if 'UNKNOWN' in statuses else 'PASS'
+    return ('FAIL' if 'FAIL' in statuses else 'UNKNOWN' if 'UNKNOWN' in statuses
+            else 'WARN' if 'WARN' in statuses else 'PASS')
 
 
 def evaluate(root, config_name, allow_exec=False, pass_env=()):
     start = time.perf_counter()
     config = read_json(confined(root, config_name))
     allowed = {'contract', 'authority', 'baseline', 'replay', 'checks', 'usage', 'prices',
-               'run_id', 'requirements', 'estimate_text'}
+               'run_id', 'requirements', 'estimate_text', 'contract_audits'}
     if not isinstance(config, dict) or set(config) - allowed:
         raise ToolkitError('unknown evaluation configuration keys')
     checks = {}
     contract, data = None, {}
     checks['contract'], contract, data = contract_check(root, config['contract']) if config.get('contract') else (
         {'status': 'UNKNOWN', 'classification': 'contract_not_configured'}, None, {})
+    from . import audits
+    for name, result in audits.run(config.get('contract_audits', []), contract, data).items():
+        checks['audit_' + name] = result
     if config.get('authority'):
         checks['authority'] = {'status': 'PASS', 'sha256': digest(read_bytes(confined(root, config['authority']))),
                                'note': 'Human-supplied specification; rules were not inferred as official scores.'}
