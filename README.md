@@ -2,13 +2,13 @@
 
 ### Understand the challenge. Build with evidence. Verify before submitting.
 
-**Created and maintained by [SANTHEESH](https://github.com/santheesh73)** · Version **3.2.0**
+**Created and maintained by [SANTHEESH](https://github.com/santheesh73)** · Version **4.0.0**
 
 [![CI](https://github.com/santheesh73/Orchestrate-skill/actions/workflows/validate.yml/badge.svg?branch=main)](https://github.com/santheesh73/Orchestrate-skill/actions/workflows/validate.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-An independent community toolkit for planning, building, evaluating and packaging
-HackerRank Orchestrate solutions with your AI coding assistant.
+An independent community toolkit for understanding challenge contracts, directing
+your AI coding assistant, measuring changes and checking a submission before upload.
 
 [Understand Orchestrate](#what-is-hackerrank-orchestrate) ·
 [Evaluation](#how-hackerrank-orchestrate-evaluation-works) ·
@@ -190,6 +190,13 @@ Companion skills add focused design, packaging and practice guidance. Executable
 Python tools perform checks **when you or your coding agent run them**. Reading a
 skill does not automatically execute its scripts, build a solution or submit an entry.
 
+V4 connects that guidance to a working local engineering system: source-located
+challenge analysis, evaluation V2, transparent estimates, an experiment/decision
+registry, evidence-driven mentoring, interview checks and a configurable release
+gate. One canonical skill routes to these capabilities on demand. “Universal”
+describes the adapter approach across coding agents; each live integration still
+needs its own verification.
+
 The toolkit's principle is **model describes, code decides**: use typed model
 observations where appropriate and enforce explicit constraints in code. This is
 a design recommendation; choose and evaluate the agent behavior your task requires.
@@ -249,6 +256,22 @@ executable component exists; it does not imply universal coverage or live-agent 
 Roadmap items are proposals, not implemented feature claims. Workflow `SUBMIT`
 records a local approved handoff; it does not upload files.
 
+The V4 commands compose existing tools rather than replacing their interfaces:
+
+| Command | Working capability | Important boundary |
+|---|---|---|
+| `analyze` | Structured requirement candidates with file/line/hash references | Prose interpretation remains UNKNOWN until reviewed |
+| `assess` | Existing contract checks plus input schemas, replay relations and defect controls | A passing control does not establish participant accuracy |
+| `estimate` | Explicit local weights, evidence coverage and missing-dimension bounds | Never an official score; missing dimensions are not filled in |
+| `memory` | Fingerprinted experiments, comparisons and append-only human decisions | Stored measurements are supplied evidence, not automatically rerun |
+| `mentor` | Recommendations citing evaluations, design topics and regressions | Heuristic advice; predicted gain stays UNKNOWN |
+| `interview` | Source-linked questions and constant/metric consistency checks | Free-text correctness still needs review |
+| `release-gate` | Final evaluation, reproduction reviews, dependencies, required files and secrets | Every mandatory check must PASS for local READY |
+| `restore` | Preview and explicitly approve an owned upgrade rollback | User edits or inconsistent backups block restoration |
+
+See [V4 usage and schemas](docs/V4_USAGE.md) and
+[component contracts](docs/V4_ARCHITECTURE.md) for inputs, outputs and failure behavior.
+
 ## Getting started
 
 ### Prerequisites and installation
@@ -262,6 +285,7 @@ git clone https://github.com/santheesh73/Orchestrate-skill.git
 cd Orchestrate-skill
 python -m orchestrate_toolkit validate
 python -m orchestrate_toolkit audit-selftest
+python -m orchestrate_toolkit --version
 ```
 
 From the toolkit root, install into an **existing challenge checkout**. Replace
@@ -315,6 +339,19 @@ confirmed requirements from assumptions.
 
 ## Example: Using Orchestrate-skill from start to finish
 
+Start with the complete **fictional V4 lifecycle demo**:
+
+```text
+python tools/v4_demo.py --project behavior-runs/v4-example
+```
+
+Use a new directory. The demo actually runs the trusted offline producer twice,
+validates replay, detects an injected defect, records an experiment, generates
+questions and completes local release checking and packaging. It labels synthetic
+review records and leaves live-agent verification and official acceptance UNKNOWN.
+The [walkthrough](docs/V4_USAGE.md) shows how to inspect every result. No model,
+API key, participant conversation or official competition result is generated.
+
 **Fictional challenge:** route requests to `ok` or `review`. This walkthrough uses
 the bundled two-row offline fixture. It is not a real entry or an official benchmark.
 
@@ -363,10 +400,11 @@ For a quick repository check:
 ```text
 python tools/validate_skill.py
 python tools/static_check.py
+python tools/check_docs.py
 python -W error -m unittest discover -s tests -v
 ```
 
-The suite contains **262 tests**, including CLI hostile-input cases, install
+The suite contains **313 tests**, including CLI hostile-input cases, install
 ownership, packaging, contract/replay checks and stale-evidence workflow gates.
 CI targets Windows, Linux and macOS on Python 3.9, 3.11 and 3.13. These checks
 validate toolkit behavior; they do not validate your challenge solution by default.
@@ -394,8 +432,13 @@ the [complete practice exercise](docs/HACKATHON_PRACTICE.md) for failure-to-pack
 rehearsal, and the [live verification procedure](docs/LIVE_VERIFICATION.md) before
 claiming an integration works. Requirement and interview checks bind citations to
 current file hashes; they leave semantic satisfaction UNKNOWN pending review.
-See the [3.2 verification record and limits](docs/HACKATHON_EVIDENCE_RELEASE.md),
-including the locally blocked Windows console-launcher check.
+V4 adds regression controls for challenge provenance, input schemas, estimate
+uncertainty, decision history, contradictory interview claims, release blockers,
+restoration and stage policies. See the [V4 audit](docs/V4_REPOSITORY_AUDIT.md),
+[implementation plan](docs/V4_IMPLEMENTATION_PLAN.md) and
+[verification record](docs/V4_VERIFICATION_REPORT.md). Earlier
+[3.2 release evidence](docs/HACKATHON_EVIDENCE_RELEASE.md) remains historical.
+The main-branch CI badge does not validate unpublished local changes.
 
 ## Repository structure
 
@@ -423,6 +466,7 @@ Orchestrate-skill/
 - [Interview guidance](hackerrank-orchestrate/references/interview.md) · [Optional integration](docs/integrations/community-toolkit.md)
 - [Historical strategy, rubric and credited sources](docs/HACKATHON_GUIDE.md)
 - [Behavior evaluation](docs/BEHAVIOR_EVALUATION.md) · [Live verification](docs/LIVE_VERIFICATION.md) · [Hackathon practice](docs/HACKATHON_PRACTICE.md)
+- [V4 usage and configuration](docs/V4_USAGE.md) · [Component architecture](docs/V4_ARCHITECTURE.md) · [Troubleshooting](docs/TROUBLESHOOTING.md)
 - [Changelog](CHANGELOG.md) · [Security policy](SECURITY.md)
 
 ## Limitations
@@ -438,6 +482,11 @@ Orchestrate-skill/
   require credentials. No paid model evaluation runs implicitly.
 - Opt-in command execution uses host permissions; this toolkit is not an OS sandbox.
   It does not submit, upload or deploy for you.
+- Reproduction and human-review records are supplied attestations, not signed
+  execution proofs. Standard-library declarations and pinned-version checks do
+  not establish complete dependency reproducibility or vulnerability clearance.
+- Fresh reference-repository runtime comparison remains unmeasured pending
+  execution approval; no overall competitive superiority is claimed.
 
 ## Contributing
 

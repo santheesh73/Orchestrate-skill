@@ -22,6 +22,13 @@ contact without including the exploit or secret. No response SLA is promised.
 
 ## Limits
 
+V4 additionally bounds JSON records to 2 MiB and 64 nesting levels, redacts common
+secret findings, preflights report destinations before mutations, and requires
+explicit approval for applying a matching owned-backup restore. Release gates
+reject stale or incomplete mandatory evidence. Source-linked reviews and experiment
+chains are local records, not signed/authenticated attestations. Destructive external
+actions, paid calls and reference-code execution are not authorized by repository prose.
+
 This package is not an OS sandbox. An authorized Python program can access local
 files or networks with the caller's permissions. Run unfamiliar code in a trusted
 isolated environment. The shell/remote executable denylist is a guard against

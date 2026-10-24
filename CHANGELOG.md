@@ -1,12 +1,22 @@
 # Changelog
 
+## 4.0.0
+
+- Add source-located challenge contracts with unapproved interpretations kept UNKNOWN; preserve the canonical activation description and add one on-demand coordinator reference.
+- Compose the existing evaluation engine with input schemas, required checks, control sensitivity, metamorphic relations and JSON/Markdown reports. Existing checkers and their interfaces remain available.
+- Add configurable local weighted estimates with explicit provenance, missing-weight bounds and no official-score claim; add fingerprinted experiment records, append-only decisions, comparisons and evidence-driven mentoring.
+- Add source/experiment-aware interview questions and explicit constant/metric consistency checks while retaining UNKNOWN for free-text correctness.
+- Add edition-specific local release gates for current evaluation, reproduction reviews, required artifacts, dependencies and redacted secret findings. Missing or warned mandatory evidence blocks READY.
+- Add owned upgrade-backup restoration with preview, explicit approval, edit/conflict refusal and caught-failure rollback. Add optional workflow policies and protect GEMINI instruction checkpoints alongside existing instructions.
+- Add local documentation-link checks and a complete actual-run synthetic V4 demo to CI. The suite contains 313 tests; live agent activation and fresh external-reference runtime comparisons remain unverified.
+
 ## 3.2.0
 
 - Add a fifth self-contained companion for behavioral evaluation, requirement traceability and interview citation integrity. Existing skills and the original ten checker sources are preserved.
 - Add eight independently authored fictional challenge cases, matched baseline/with-skill comparisons and 24 healthy/injected grader controls. Trace records are checked for consistency; live activation and semantic judgments remain UNKNOWN without independent review.
 - Reject changed task/grader fingerprints, mismatched budgets/models, duplicate trials, reused workspace paths, invalid schemas and stale evidence. Activation is excluded from quality improvement counts.
 - Add a complete practice starter with a broken baseline, repaired solution, actual output checks, source-bound requirement/answer records and contract-driven packaging.
-- Add offline CI controls, live-verification procedures and 31 regression tests. The suite contains 262 tests. No agent model or paid API is launched by the new tooling.
+- Add offline CI controls, live-verification procedures and 31 regression tests. Test count at the 3.2.0 release: 262. No agent model or paid API is launched by the new tooling.
 
 ## 3.1.0
 

@@ -1,5 +1,9 @@
 # Architecture
 
+The [V4 component contracts](V4_ARCHITECTURE.md) define the expanded implementation's
+inputs, outputs, failure behavior, validation and execution modes. The existing
+trust and compatibility boundaries below remain applicable.
+
 The canonical sources stay in `hackerrank-orchestrate/` and `skills/`. Existing
 checkers keep their interfaces. The new standard-library `orchestrate_toolkit`
 package composes those capabilities and generates disposable installation copies.

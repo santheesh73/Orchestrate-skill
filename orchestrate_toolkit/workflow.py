@@ -16,7 +16,7 @@ def load(root):
             or type(state.get('recoveries')) is not int or not 0 <= state['recoveries'] <= 3
             or state.get('project_id') != digest(str(root).encode('utf-8'))):
         raise ToolkitError('invalid or foreign workflow checkpoint')
-    if set(state['starter_sha256']) - {'AGENTS.md', 'CLAUDE.md', 'problem_statement.md'}:
+    if set(state['starter_sha256']) - {'AGENTS.md', 'CLAUDE.md', 'GEMINI.md', 'problem_statement.md'}:
         raise ToolkitError('unexpected starter checkpoint path')
     if any(not isinstance(event, dict) for event in state['history']):
         raise ToolkitError('invalid workflow audit event')
@@ -29,21 +29,59 @@ def save(root, state):
     atomic_replace(confined(root, STATE_FILE), json_bytes(state))
 
 
-def init(root):
+def init(root, policy=None):
     with operation(root):
         path = confined(root, STATE_FILE)
         if path.exists():
-            return load(root)
+            existing = load(root)
+            if policy and existing.get('policy', {}).get('path') != policy:
+                raise ToolkitError('existing checkpoint has another/no policy; preserve it and start a reviewed new run')
+            return existing
         snapshots = {}
-        for name in ('AGENTS.md', 'CLAUDE.md', 'problem_statement.md'):
+        for name in ('AGENTS.md', 'CLAUDE.md', 'GEMINI.md', 'problem_statement.md'):
             source = confined(root, name)
             if source.exists():
                 snapshots[name] = digest(read_bytes(source))
         state = {'schema_version': 1, 'state': 'DISCOVER', 'project_id': digest(str(root).encode('utf-8')),
                  'starter_sha256': snapshots, 'failures': 0, 'recoveries': 0,
                  'history': [{'at': now(), 'event': 'initialized', 'state': 'DISCOVER'}]}
+        if policy:
+            state['policy'] = {'path': policy, 'sha256': digest(read_bytes(confined(root, policy)))}
+            policy_config(root, state['policy'])
         atomic_replace(path, json_bytes(state))
         return state
+
+
+def policy_config(root, binding):
+    from . import records
+    records.schema(binding, ('path', 'sha256'))
+    if digest(read_bytes(confined(root, binding['path']))) != binding['sha256']:
+        raise ToolkitError('workflow policy changed after checkpointing')
+    config = records.schema(records.load(root, binding['path']), ('schema_version', 'required_files', 'release_gate'))
+    if type(config['schema_version']) is not int or config['schema_version'] != 1 or not isinstance(config['required_files'], dict):
+        raise ToolkitError('invalid workflow policy')
+    for stage, names in config['required_files'].items():
+        if stage not in STATES[1:]:
+            raise ToolkitError('policy has unsupported transition stage')
+        for name in records.sequence(names):
+            confined(root, name)
+    confined(root, records.text(config['release_gate']))
+    return config
+
+
+def check_policy(root, state, target):
+    if 'policy' not in state:
+        return
+    config = policy_config(root, state['policy'])
+    for name in config['required_files'].get(target, []):
+        path = confined(root, name)
+        if not path.is_file() or not read_bytes(path).strip():
+            raise ToolkitError('mandatory stage artifact missing or empty')
+    if target in ('VALIDATE', 'SUBMIT'):
+        from .release import gate
+        report = gate(root, config['release_gate'])
+        if report['readiness'] != 'READY':
+            raise ToolkitError('configured V4 release gate is blocked')
 
 
 def bindings(root, hashes):
@@ -104,6 +142,7 @@ def advance(root, target, evidence, approve_submit=False):
         if state['failures'] >= 3:
             raise ToolkitError('failure bound reached; inspect and explicitly recover before continuing')
         try:
+            check_policy(root, state, target)
             for name, expected in state['starter_sha256'].items():
                 if digest(read_bytes(confined(root, name))) != expected:
                     raise ToolkitError('competition instruction/spec checkpoint changed')

@@ -1,5 +1,14 @@
 # CLI reference
 
+## V4 additions
+
+The existing interfaces below remain supported. New analyze, assess, estimate,
+memory, mentor, interview, release-gate, security and restore commands are
+documented with actual schemas and runnable synthetic examples in
+[V4 usage](V4_USAGE.md). All support --help, project scoping, new report files and
+JSON/Markdown output. The CLI remains orchestrate-toolkit, not the external
+community toolkit's orchestrate command.
+
 ## Audit controls and optional decision policy
 
 ```text

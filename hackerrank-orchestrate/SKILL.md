@@ -29,6 +29,7 @@ A playbook for one event: HackerRank Orchestrate. Each edition ships a fresh sta
 | Self-scoring, with or without the community toolkit | `references/self-score.md` and `scripts/selfcheck.py` |
 | Behind schedule | `references/behind-schedule.md` |
 | An edition has ended; updating this skill | `references/edition-update.md` |
+| V4 CLI, memory, mentor or release gates | `references/v4-workflow.md` |
 
 Templates live in `assets/`: `change_record.md`, `decision_log.md`, `CONSTANTS.md`, `usage_log_schema.md`.
 

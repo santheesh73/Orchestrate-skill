@@ -23,7 +23,7 @@
   ],
   "hash_normalization": "UTF-8 source bytes with CRLF normalized to LF",
   "preserved_core_sha256": {
-    "hackerrank-orchestrate/SKILL.md": "d519306de637533436e580a1a011297e768e199f0db952a53b502135e93c763e",
+    "hackerrank-orchestrate/SKILL.md": "ba48485246efb46eefe65b2c3f59e6afc43a24f78156c26b9e46317a711c244c",
     "hackerrank-orchestrate/scripts/check_log.py": "d8426acab8d084da57fbd73ffbcc3f6157b174bcbbe81c05ce5e63d8fa9af4cb",
     "hackerrank-orchestrate/scripts/claim_audit.py": "dba8dc19d55a425a07fde82b976525f43ca6f8d1043de67a420ad5cf80d6aa3f",
     "hackerrank-orchestrate/scripts/contract_extract.py": "a3df021480051c4b3669cc82c6360e85631de21deef5ce9841b5a8e5de3d6649",
@@ -41,6 +41,12 @@
       "before_sha256": "c96a26daafaae42feb14c60baaaf2ca388d8f1127d06701ba69b3cae94531652",
       "after_sha256": "d519306de637533436e580a1a011297e768e199f0db952a53b502135e93c763e",
       "reason": "Add explicit inputs, outputs and recovery; preserve all existing rules, workflow and trigger."
+    },
+    {
+      "path": "hackerrank-orchestrate/SKILL.md",
+      "before_sha256": "d519306de637533436e580a1a011297e768e199f0db952a53b502135e93c763e",
+      "after_sha256": "ba48485246efb46eefe65b2c3f59e6afc43a24f78156c26b9e46317a711c244c",
+      "reason": "V4 request: add one progressive-disclosure coordinator reference; preserve activation description, all canonical rules and original checker interfaces."
     }
   ]
 }
