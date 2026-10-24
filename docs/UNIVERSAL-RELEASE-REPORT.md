@@ -35,6 +35,12 @@ The original lexical trigger proxy is unchanged: 56 cases, precision 0.76 and
 recall 0.68. This is not model selection accuracy. Remote Windows/Linux/macOS
 matrix verification is pending until recorded below.
 
+The first macOS run exposed the standard /var to /private/var system-alias path
+being rejected by the older companion installer. The fix normalizes only the
+fixed macOS OS aliases, keeps custom symlink refusal, and has local companion
+regressions plus the macOS rerun as evidence. GitHub actions were also updated
+to their Node 24 versions after checking their official repositories.
+
 Earlier focused checks: all five skill folders validated; new static checks
 reported zero errors. Adapter lifecycle simulation passed for every registered
 category. Source-grounded workflow, consent, usage and regression checks passed
