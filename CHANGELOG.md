@@ -1,11 +1,32 @@
 # Changelog
 
+## 2.5.0
+
+### Added
+- Four self-contained companion skills under `skills/`: design, submission packaging, interview practice and optional community toolkit integration. The original main SKILL.md, name and ten checker scripts remain unchanged.
+- A standard-library submission packager with an explicit JSON contract, exact archive allowlist, required usage/artifact checks, nonempty CSV coverage, input/output hashes, deterministic archive metadata and a new staged output directory. It never claims official readiness or runs target code.
+- `tools/package_addons.py`: validate/package/install companions without replacing any existing skill or archive, with rollback for new files on failure and notices in each archive.
+- Pinned upstream provenance and core-content hashes in `integrations/upstreams.json`; source/license notices and integration documentation. No upstream code or unlicensed loop prose is vendored.
+- Behavioral packaging and preservation regressions in `tests/test_submission_package.py` and `tests/test_addons.py`.
+- The suite contains 199 tests; platform-specific skips are reported in each run.
+
+### Fixed
+- Windows hostile-input setup no longer tries to create a forbidden newline filename; other hostile cases still run.
+- LF checkout attributes prevent CRLF conversion from changing golden log results while preserving byte-sensitive AGENTS fixtures.
+- CI now covers Windows and Linux. A Python smoke runner checks subprocess statuses, fixtures, repository claims, original/companion installed copies and context budgets without shell-specific pipes.
+- Toolkit references now identify the actual repository and reviewed revision. Edition-specific audit assumptions, Python minimum, optional installation and estimated-score limits are explicit.
+
+### Preserved and limited
+- Existing install commands, original scripts, original trigger description and evaluation policy remain available. New companions do not expand the core context budget.
+- Repository selfcheck scans current README, coverage and changelog claims; older changelog counts retain their historical release wording.
+- No paid model evaluations, automatic competition uploads or external dependency installation occur in CI. See the Actions run for platform results; real multi-skill routing and hidden-grader performance remain UNKNOWN.
+
 ## 2.4.0
 
 An adversarial audit: every hard rule, script, archetype page, template, edition profile and tool was mutated to see whether a test notices, and the scripts were attacked with hostile input. Results and evidence are in `docs/AUDIT.md`. Figures are MEASURED in this repository on 2026-10-13 unless labeled otherwise. No hard rule, rubric weight or the model-describes-code-decides principle changed meaning, with one exception, recorded under Changed: the resolution table's one-row and mixed cases, which contradicted hard rule 4.
 
 ### Fixed
-- Vacuous passes. Five scripts exited 0 (clean) after examining nothing, and `selfcheck.py` printed PASS for them: `preflight.py` on a header-only output ("0 rows checked"), `rerun_diff.py` on two empty runs ("identical"), `corpus_literals.py` with no source file or no dataset value, `interview_drill.py` on a folder with no source file, `contract_extract.py` with no requirement line. Each now exits 3, and selfcheck reports UNKNOWN for the output, constants (also with zero named constants) and corpus_literals sections. Tests: `NothingExaminedIsUnknown`.
+- Vacuous passes. Five scripts exited 0 (clean) after examining nothing, and `selfcheck.py` printed PASS for them: `preflight.py` on a header-only output (zero data rows checked), `rerun_diff.py` on two empty runs ("identical"), `corpus_literals.py` with no source file or no dataset value, `interview_drill.py` on a folder with no source file, `contract_extract.py` with no requirement line. Each now exits 3, and selfcheck reports UNKNOWN for the output, constants (also with zero named constants) and corpus_literals sections. Tests: `NothingExaminedIsUnknown`.
 - The documented `usage_report.py --out code/evaluation/usage_report.md` failed with exit 2 on a fresh tree, because the folder did not exist. `--out` now creates missing parent folders in `contract_extract.py`, `interview_drill.py` and `usage_report.py`; a parent that is a file is still exit 2. Tests: `UnwritableOut`, `DryRun`.
 - `--out` onto an input overwrote it with exit 0: `contract_extract.py --out starter/AGENTS.md` (the file hard rule 1 protects), a source file or `CONSTANTS.md` for `interview_drill.py`, the usage log for `usage_report.py`. Each now refuses with exit 2. `package_skill.py --install` onto the source's parent with `--force` replaced the source folder and deleted what packaging excludes; an `--install` or `--out` that overlaps the source is now exit 2. Tests: `OutputNeverOverwritesInput`.
 - A named pipe given as an input path hung 18 invocations across eight scripts and `run_trigger_evals.py`. Every bundled script and `run_trigger_evals.py` now refuse one with exit 2, and selfcheck treats one in its config as missing. Test: the `fifo` class in `tests/test_cli_matrix.py`.
@@ -17,10 +38,10 @@ An adversarial audit: every hard rule, script, archetype page, template, edition
 - `selfcheck.py` `starter` section for hard rule 1, which had no check: it fails when `AGENTS.md` differs from the sha256 recorded at kickoff or `CLAUDE.md` lost its `@AGENTS.md` line, and prints the hash to record when none is set. Tests: `StarterIntact`.
 - `docs/AUDIT.md`: one row per rule, script, archetype page, template, profile and tool, with where it is enforced, the test that fails when it is broken, and the verdict before and after; the seven loops; the claims re-read against their sources; six behavioral scenarios; five hostile-input rounds.
 - `tests/test_audit.py`: the hard rules' meaning-carrying clauses and the core principle are pinned, templates must agree with the rules and with each other, every path in `docs/AUDIT.md` must exist, and the whole loop runs end to end on `tests/fixtures/edition_synth/`, an invented edition.
-- Six hostile input classes in `tests/test_cli_matrix.py`: named pipe, UTF-16, duplicate and blank header cells, 20,000 columns, an open quote. 175 tests.
+- Six hostile input classes in `tests/test_cli_matrix.py`: named pipe, UTF-16, duplicate and blank header cells, 20,000 columns, an open quote. Test count at the 2.4.0 release: 175.
 
 ### Changed
-- `references/evaluation.md` §4, the resolution table. Defect reproduced in the dry run: a one-row labeled gain matched "Clean, Up: keep", which contradicts hard rule 4 ("never accept or reject on a one-row difference"), and a change that made 3 rows better and 2 worse matched "Up: keep" while hard rule 4 says to revert it. The table now counts better (B) and worse (W) rows against the noise floor (N) and is applied first match: A a failing check REJECT; B nothing measured UNKNOWN; C two or more unexplained worse rows REJECT; D B minus W at most max(1, N) NOISE; E otherwise SHIP. Rows C to E follow hard rule 4's wording.
+- `references/evaluation.md` §4, the resolution table. Defect reproduced in the dry run: a one-row labeled gain matched "Clean, Up: keep", which contradicts hard rule 4 ("never accept or reject on a one-row difference"), and a change that made three rows better and two worse matched "Up: keep" while hard rule 4 says to revert it. The table now counts better (B) and worse (W) rows against the noise floor (N) and is applied first match: A a failing check REJECT; B nothing measured UNKNOWN; C two or more unexplained worse rows REJECT; D B minus W at most max(1, N) NOISE; E otherwise SHIP. Rows C to E follow hard rule 4's wording.
 - `references/loop-patterns.md` §3 no longer keeps a copy of the change record (it had lost the CEILING line); it lists the fields of `assets/change_record.md` in order, and a test keeps the two equal.
 - Footprint budget for on-demand files raised from 167,000 to 200,000 characters. On-demand went from 165,077 to 198,315 (+33,238): `experiment.py` is 20,579, the exit-3, `--out` and named-pipe guards across the other nine scripts add about 11,800 (selfcheck 2,747, interview_drill 2,084, contract_extract 1,729, the rest under 1,300 each), and references about 900. The SKILL.md body went from 7,049 to 7,214 (one script row) and always-loaded from 7,867 to 8,032, both inside unchanged budgets. The description is unchanged (818), so the trigger proxy is unchanged: n=56, precision 0.76, recall 0.68.
 

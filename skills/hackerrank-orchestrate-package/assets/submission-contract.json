@@ -1,0 +1,13 @@
+{
+  "input": "dataset/requests.csv",
+  "output": "output.csv",
+  "id_column": "request_id",
+  "columns": ["request_id", "decision", "reason"],
+  "enums": {"decision": ["accept", "review"]},
+  "allow_blank": [],
+  "require_order": false,
+  "code_files": ["code/main.py", "README.md", "evaluation/usage_report.md"],
+  "required_code_files": ["evaluation/usage_report.md"],
+  "artifacts": {"output.csv": "output.csv", "log.txt": "log.txt", "README.md": "README.md"},
+  "hashes": {}
+}

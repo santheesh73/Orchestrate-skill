@@ -42,4 +42,4 @@ Name the weakest artifact and spend the next block of time there.
 
 ## Path B: community toolkit (optional)
 
-If the user has the community `hackerrank-orchestrate-skills` toolkit installed, also run its gates (`orchestrate evaluate .`, `orchestrate mentor "<proposal>"`, and `orchestrate release .` at freeze). See `kit-repo.md`. Its scores reflect how the work is structured; they say nothing about correctness and are not HackerRank scores; never quote them as predictions. If it is not installed, Path A is the complete gate; do not block on the toolkit.
+If the community toolkit is installed, optionally run its gates (`python -m orchestrate_kit evaluate .`, `python -m orchestrate_kit mentor "<proposal>" --repo .`, and `python -m orchestrate_kit release .` at freeze). See `kit-repo.md` for the inspected source and applicability. Inspect audits run/skipped, not just a summary. Its scores are heuristics, not HackerRank predictions. If absent, Path A is the complete gate. Existing evaluation policy governs conflicts; a demonstrated contract defect must be fixed even when it affects one row.

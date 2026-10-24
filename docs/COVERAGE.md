@@ -43,7 +43,7 @@ Weights are from the May 2026 post-mortem (VERIFIED; see `hackerrank-orchestrate
 | Winning approaches | `hackerrank-orchestrate/references/winning-approaches.md`; `hackerrank-orchestrate/references/archetypes/index.md` | Per-edition patterns split into archetype pages |
 | Leaderboard readings | `hackerrank-orchestrate/references/rubric.md` §5 | Labeled INFERRED (secondhand) |
 | Evaluation and anti-overfitting | `hackerrank-orchestrate/references/evaluation.md` | Its two contradictions are resolved; this file wins any conflict |
-| Toolkit digest | `hackerrank-orchestrate/references/kit-repo.md`; `hackerrank-orchestrate/references/self-score.md` § Path B | Optional; never a dependency; labeled secondhand |
+| Toolkit digest | `hackerrank-orchestrate/references/kit-repo.md`; `hackerrank-orchestrate/references/self-score.md` § Path B | Optional; pinned source inspected directly; command availability separated from behavioral verification |
 | Toolkit judge prep | `hackerrank-orchestrate/references/interview.md` | Drill generated from your own code |
 | Toolkit time budget | `hackerrank-orchestrate/references/loop-patterns.md` §7 | Same budget, plus `hackerrank-orchestrate/references/behind-schedule.md` |
 | Hard rules | `hackerrank-orchestrate/SKILL.md` § Hard rules | One canonical copy; validator rejects restatements |
@@ -55,7 +55,7 @@ Weights are from the May 2026 post-mortem (VERIFIED; see `hackerrank-orchestrate
 
 | Addition | Failure it prevents |
 |---|---|
-| `hackerrank-orchestrate/scripts/` (10 checkers) and `tests/` (175 tests) | Rules that nobody can run; regressions in the checkers |
+| `hackerrank-orchestrate/scripts/` (10 checkers) and `tests/` (199 tests) | Rules that nobody can run; regressions in the checkers and optional companions |
 | `hackerrank-orchestrate/assets/editions/` | A log checker that rejects another edition's format |
 | `tools/validate_skill.py` | Structure and policy drift (dates in the trigger, restated rules, missing scripts) |
 | `tools/package_skill.py` | A rejected upload, or dev files shipped inside the skill |
@@ -89,3 +89,21 @@ The skill is one folder whose `SKILL.md` frontmatter holds only `name` and `desc
 | `tests/test_tools.py` (`ProjectInstall`, `PortabilitySmoke`) | A layout that installs differently from the other, or an installed copy whose scripts need the repository, the network or the caller's working directory |
 | `evals/triggers.json` cases phrased by Codex, Cursor, OpenCode and Antigravity users | A trigger that only fires for people who say "Claude" |
 | Hard rule 1 in `hackerrank-orchestrate/SKILL.md` | Editing the starter's `AGENTS.md`, the contract every agent's log is graded against |
+
+## 6. Optional companions
+
+The original main skill and ten original checker scripts are preserved; their
+canonical content hashes are checked against `integrations/upstreams.json`.
+
+| Companion | Added evidence and checks |
+|---|---|
+| hackerrank-orchestrate-design | Adaptable design contract, typed seam, failure and evaluation template |
+| hackerrank-orchestrate-package | Exact archive allowlist, required files, CSV validation, hash manifest and atomic new bundle |
+| hackerrank-orchestrate-practice | Source-grounded rehearsal and authentic transcript review |
+| hackerrank-orchestrate-toolkit | Pinned optional CLI integration, applicability and estimate boundaries |
+
+`tests/test_submission_package.py` covers failure controls and distinct synthetic
+schemas. `tests/test_addons.py` checks preservation, standalone installed use,
+refusal to overwrite and rollback. `tools/ci_check.py` validates copied packages
+on each configured platform; `tools/package_addons.py` leaves the original skill
+untouched. See `docs/integrations/community-toolkit.md` for scope and limits.

@@ -72,3 +72,32 @@ py -3 -I .agents\skills\hackerrank-orchestrate\scripts\preflight.py --help
 ```
 
 `HARNESS` is the exact name your agent writes on its `tool=` line; see `references/starter-contract.md` in the skill.
+
+## Optional companion skills
+
+The original install command above is unchanged. Validate or package the four
+additions separately:
+
+```text
+python tools/package_addons.py --validate-only
+python tools/package_addons.py --all --out dist/companions
+python tools/package_addons.py --skill hackerrank-orchestrate-design --out dist/design
+```
+
+Add `--install <skill-directory>` to install the selected companions into the
+same directory used by the original skill. For example:
+
+```text
+python tools/package_addons.py --all --out dist/companions --install ../my-entry/.agents/skills
+python tools/package_addons.py --all --out dist/companions-claude --install ../my-entry/.claude/skills
+```
+
+Both archives and installed folders must be new. There is no overwrite flag;
+every existing skill, including the original, is left intact. On Windows, use
+`py -3` when needed. For Claude.ai, upload a companion's individual zip. Each
+companion is self-contained and includes license/source notices. CLI package
+installation is a separate optional operation documented in the toolkit
+companion; installing skills does not install any external dependency.
+
+Invoke the companion by its exact name if automatic selection is ambiguous.
+Multi-skill routing in each harness has not been behaviorally measured.

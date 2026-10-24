@@ -1,2 +1,3 @@
+* text=auto eol=lf
 tests/fixtures/project/AGENTS.md -text
 tests/fixtures/edition_synth/starter/AGENTS.md -text
