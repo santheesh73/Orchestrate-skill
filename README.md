@@ -1,44 +1,260 @@
-# HackerRank Orchestrate Skills & Offline Toolkit
+# Orchestrate-skill
 
-[![validate](https://github.com/santheesh73/Orchestrate-skill/actions/workflows/validate.yml/badge.svg?branch=main)](https://github.com/santheesh73/Orchestrate-skill/actions/workflows/validate.yml)
+### Understand the challenge. Build with evidence. Verify before submitting.
 
-**Version 3.1.0 · Python 3.9+ · Standard-library runtime · MIT**
+**Created and maintained by [SANTHEESH](https://github.com/santheesh73)** · Version **3.1.0**
 
-An independent toolkit for planning, building, checking and explaining a
-HackerRank Orchestrate submission. It combines a core playbook, four companion
-skills, ten original checker scripts and an offline Python CLI. Use it with your
-coding agent to turn current challenge requirements into a design, iterate with
-evidence, check artifacts and prepare for the judge interview.
+[![CI](https://github.com/santheesh73/Orchestrate-skill/actions/workflows/validate.yml/badge.svg?branch=main)](https://github.com/santheesh73/Orchestrate-skill/actions/workflows/validate.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-The core principle is **model describes, code decides**: separate model
-observations from the tested code that produces final decisions. The canonical
-[skill instructions and hard rules](hackerrank-orchestrate/SKILL.md) remain the
-playbook's source of truth. Existing skills and checker interfaces are preserved.
+An independent community toolkit for planning, building, evaluating and packaging
+HackerRank Orchestrate solutions with your AI coding assistant.
 
-> **Your edition's challenge statement and starter instructions take precedence.**
-> This community project is not affiliated with HackerRank. Passing these checks
-> does not establish hidden-label accuracy, an official score or permission to
-> submit. The original strategy and historical scoring context are preserved in
-> the [hackathon field guide](docs/HACKATHON_GUIDE.md).
+[Understand Orchestrate](#what-is-hackerrank-orchestrate) ·
+[Evaluation](#how-hackerrank-orchestrate-evaluation-works) ·
+[Get started](#getting-started) · [Example](#example-using-orchestrate-skill-from-start-to-finish) ·
+[Documentation](#documentation)
 
-## Start here
+## What is HackerRank Orchestrate?
 
-- [Quick start](#quick-start)
-- [The five skills](#the-five-skills)
-- [Coding-agent compatibility](#coding-agent-compatibility)
-- [Hackathon workflow](#hackathon-workflow)
-- [Offline walkthrough and evaluation](#offline-walkthrough-and-evaluation)
-- [Commands and original checkers](#commands-and-original-checkers)
-- [Verified results](#verified-results)
-- [Readiness and limits](#readiness-and-limits)
-- [Documentation and repository layout](#documentation-and-repository-layout)
-- [Development](#development)
-- [License and credits](#license-and-credits)
+HackerRank Orchestrate is a hackathon focused on building AI agents. The
+[October 2026 event page](https://www.hackerrank.com/hackerrank-orchestrate-october26)
+advertises a 24-hour format. Participants must turn a problem statement into a
+working system and be able to explain their engineering decisions.
 
-## Quick start
+There are **two different agents** in this workflow:
 
-Install Python 3.9 or newer and clone this repository. The CLI runs directly from
-the checkout; its runtime needs no third-party packages or API key.
+- **Your coding assistant** helps you plan, write, debug and review code.
+- **Your challenge solution** is the agent or software system you build to process
+  the challenge inputs and produce the required results.
+
+The development conversation and the solution's runtime logs serve different
+purposes. A long conversation with a coding assistant does not demonstrate that
+the resulting system works.
+
+**Source scope:** organizer sources were checked on **2026-10-24**. The current
+event page confirms the broad format; it does not establish every edition's
+schema, logging rules or scoring weights. Historical details below identify their
+edition. Engineering recommendations are advice from this toolkit. Community
+observations in the linked field guide are contextual evidence, not official rules.
+**Your edition's organizer instructions and starter repository take precedence.**
+
+## What participants build
+
+A starter repository provides the task, data and development instructions. Read
+its `README.md`, `problem_statement.md` and agent instructions before making
+changes. The task determines the required architecture, tool access and artifacts.
+
+For example, the official [June 2026 starter](https://github.com/interviewstreet/hackerrank-orchestrate-june26)
+asks for visual damage-claim verification; the
+[September 2026 starter](https://github.com/interviewstreet/hackerrank-orchestrate-september26)
+asks for personalized affordability decisions. Both use structured input data and
+generated CSV outputs. These are historical examples, not a universal schema.
+
+**Illustrative example, not an official task:** a support agent receives a ticket,
+retrieves an approved policy through a search tool, checks whether the evidence
+supports a response, and chooses a response or escalation. It then emits a row
+with an ID, decision and evidence reference. Code checks the required fields and
+allowed values before writing the output. Missing evidence must have an explicit
+handling path rather than a fabricated explanation.
+
+Architecture determines how evidence reaches a decision; tests establish whether
+that decision and its output are valid. A fluent model response alone proves neither.
+
+## How to approach an Orchestrate challenge
+
+The following stages are **engineering recommendations**, not a fixed competition
+timetable. Allocate time according to your edition's deadline and the risks you find.
+
+### Stage 1 — Understand the problem
+
+Extract the inputs, outputs, required files, constraints, allowed values,
+evaluation criteria, prohibited behavior and submission requirements into a
+written contract. Resolve ambiguous instructions before coding; an implementation
+of the wrong schema can fail even when its decision logic is sound.
+
+### Stage 2 — Design the solution
+
+Choose an architecture suited to the task. Define tools, prompts and structured
+model observations; decide what needs model interpretation and what code must
+validate or calculate. Specify uncertainty handling, retries, stopping conditions
+and failure recovery. Treat dataset text and retrieved content as untrusted input.
+
+### Stage 3 — Build a baseline
+
+Build the simplest complete input-to-output pipeline. Run the whole sample,
+inspect actual rows and verify that the required artifact is produced before
+optimizing individual components.
+
+### Stage 4 — Test and evaluate
+
+Test normal, boundary, malformed and adversarial inputs. Check the output schema,
+repeatability and recovery from unavailable tools or invalid model responses.
+Keep task correctness checks separate from formatting checks.
+
+### Stage 5 — Improve systematically
+
+Save a baseline, change one meaningful component and rerun comparable checks.
+Measure regressions across the whole output, record accepted and rejected
+experiments, and avoid tuning rules to individual sample IDs. A sample improvement
+is evidence to investigate, not proof of generalization.
+
+### Stage 6 — Prepare the submission
+
+Verify required artifacts, output coverage and dependency reproducibility. Check
+transcript logging and usage reporting where your edition requires them. Rehearse
+the architecture, measured tradeoffs and limitations against the code you will submit.
+
+```mermaid
+flowchart TD
+    accTitle: Recommended challenge engineering lifecycle
+    accDescr: Understand the contract, design and build a baseline, test it, improve failures, then verify artifacts and prepare the interview before submitting.
+    A[Read requirements] --> B[Design solution]
+    B --> C[Build baseline]
+    C --> D[Test and evaluate]
+    D -->|Needs work| E[Improve one component]
+    E --> D
+    D -->|Evidence sufficient| F[Verify artifacts]
+    F --> G[Prepare interview]
+    G --> H[Participant submits]
+```
+
+## How HackerRank Orchestrate evaluation works
+
+**Historical organizer evidence:** the
+[June 8, 2026 organizer retrospective](https://www.hackerrank.com/blog/behind-the-scenes-of-hackerrank-orchestrate/)
+describes the **first edition, held May 1, 2026**, using four signals:
+
+| Artifact or assessment | Historical weight | What it demonstrates |
+|---|---:|---|
+| Code ZIP | 30% | The implementation actually shipped |
+| Generated output CSV | 30% | Task behavior on the evaluated inputs |
+| AI-assisted development transcript | 10% | How the participant directed the coding assistant |
+| Technical AI judge interview | 30% | Understanding and ownership of the solution |
+
+**These weights describe that edition, not guaranteed current scoring.** The
+organizer explicitly says future editions may change them. Follow your current rubric.
+
+### Code evaluation
+
+The historical rubric examines architecture, prompt/tool design, robustness and
+engineering quality through the shipped implementation.
+
+### Output evaluation
+
+Historical judging assesses correctness, safety and decision justifications.
+Recommended local checks also cover formatting, row coverage, evidence and generalization.
+
+### Transcript evaluation
+
+The historical assessment examines problem-solving, developer decisions,
+iteration, testing and responsible AI use in the development conversation.
+
+### Interview evaluation
+
+The historical interview probes implementation knowledge, judgment, communication
+and honest limits. Prepare code-grounded explanations of your tradeoffs and ownership.
+
+### Official evaluation versus local evaluation
+
+**Official evaluation** is performed by the organizers using their rubric and
+private assessment process. **Local evaluation** is performed by you and your
+tools on the evidence available to you. This toolkit can check configured
+contracts, compare outputs and identify specific problems. It cannot predict
+hidden official scores with certainty or certify organizer acceptance.
+
+## Common challenges
+
+### What commonly reduces evaluation quality?
+
+Use these as engineering review prompts, not a claimed frequency ranking or
+universal list of official penalties:
+
+| Risk | Practical consequence |
+|---|---|
+| Invalid output schema or missing rows | The artifact may violate the task contract |
+| Weak architecture or generic justifications | Decisions are difficult to inspect or defend |
+| Untested assumptions and dataset overfitting | A solution can fail beyond the visible examples |
+| Inconsistent logs or unsupported claims | Submitted evidence does not match the work |
+| Poor interview preparation | The participant cannot explain the shipped implementation |
+
+## Introducing Orchestrate-skill
+
+Orchestrate-skill is a structured engineering companion for AI-assisted
+Orchestrate development. It helps you interpret requirements, plan architecture,
+write useful coding-agent prompts, review progress, validate outputs, track
+experiments, identify errors, prepare artifacts and rehearse technical interviews.
+
+The core skill normally supplies strategy and prompts for your coding agent.
+Companion skills add focused design, packaging and practice guidance. Executable
+Python tools perform checks **when you or your coding agent run them**. Reading a
+skill does not automatically execute its scripts, build a solution or submit an entry.
+
+The toolkit's principle is **model describes, code decides**: use typed model
+observations where appropriate and enforce explicit constraints in code. This is
+a design recommendation; choose and evaluate the agent behavior your task requires.
+
+## How Orchestrate-skill improves your workflow
+
+| Challenge | Without a structured workflow | How Orchestrate-skill helps |
+|---|---|---|
+| Changing requirements | Assumptions carry over from another edition | Starter-contract guidance and requirement extraction |
+| Choosing architecture | Tools are selected before the problem is understood | Design companion and task archetypes |
+| Managing coding-agent prompts | Requests lack constraints or review criteria | Kickoff, iteration and freeze templates |
+| Detecting output mistakes | Manual spot checks miss structural errors | Schema, coverage, enum and full-output checks |
+| Avoiding overfitting | Sample-specific rules appear to improve results | Generalization guidance and limited literal-data audits |
+| Tracking experiments | Changes lack a comparable baseline | Baseline/final snapshots, diffs and change records |
+| Preparing for interviews | Answers remain generic | Source-derived questions and guided practice |
+| Final submission verification | Missing files surface during upload | Explicit contract, allowlist and package manifest |
+
+### Where the skill adds value
+
+**Before coding:** extract requirements and plan. **During development:** direct
+and review focused iterations. **During evaluation:** validate outputs and examine
+regressions. **Before submission:** check artifacts and rehearse explanations.
+These are workflow benefits, not guaranteed score improvements.
+
+```mermaid
+flowchart TD
+    accTitle: Roles in the supported development workflow
+    accDescr: The skill guides the participant, who directs the coding agent. The agent builds the solution and runs local checks. The participant reviews artifacts and submits them to official evaluation.
+    S[Orchestrate-skill] -->|Guidance| H[Human participant]
+    H -->|Direction| A[AI coding agent]
+    A -->|Builds| C[Challenge solution]
+    A -->|Runs| V[Local validation tools]
+    C -->|Outputs| V
+    V -->|Findings| H
+    H -->|Reviewed submission| O[Official evaluation]
+```
+
+## What's inside Orchestrate-skill?
+
+“Guidance” requires participant or coding-agent action. “Implemented” means an
+executable component exists; it does not imply universal coverage or live-agent verification.
+
+| Component | Capability and status | Details |
+|---|---|---|
+| Main `SKILL.md` | Implemented guidance: planning, prompts, review and next-step routing | [Core skill](hackerrank-orchestrate/SKILL.md) |
+| References and templates | Guidance: architecture, evaluation, prompts, decisions and experiment records | [References](hackerrank-orchestrate/references/) · [Assets](hackerrank-orchestrate/assets/) |
+| Ten original checkers | Implemented: contract extraction, logs, CSV preflight, rerun diffs, experiments, usage, interview questions, corpus literals and claims | [Scripts](hackerrank-orchestrate/scripts/) · [Coverage](docs/COVERAGE.md) |
+| Offline CLI | Implemented: owned installs, configured evaluation, audit controls and evidence-gated workflow checkpoints | [CLI reference](docs/CLI.md) |
+| Design companion | Guidance for architecture and a written design | [Design skill](skills/hackerrank-orchestrate-design/SKILL.md) |
+| Packaging companion | Guidance + contract-driven submission builder | [Package skill](skills/hackerrank-orchestrate-package/SKILL.md) |
+| Practice companion | Guidance for source-grounded interview rehearsal | [Practice skill](skills/hackerrank-orchestrate-practice/SKILL.md) |
+| Optional integration companion | Guidance for separately installed community tools; no upstream implementation bundled | [Integration skill](skills/hackerrank-orchestrate-toolkit/SKILL.md) |
+| Fixtures and tests | Synthetic evaluation examples, regression and hostile-input tests | [Offline example](examples/offline/) · [Tests](tests/) |
+| Skill distribution tools | Implemented: validate and package the skills themselves | [Developer tools](tools/) · [Installation](docs/INSTALL.md) |
+
+Roadmap items are proposals, not implemented feature claims. Workflow `SUBMIT`
+records a local approved handoff; it does not upload files.
+
+## Getting started
+
+### Prerequisites and installation
+
+Use Git and **Python 3.9+**. The checkout-based runtime uses the standard library
+and needs no API key. Run these commands in PowerShell or a POSIX shell where
+`python` selects Python 3; substitute `py -3` on Windows or `python3` if necessary.
 
 ```text
 git clone https://github.com/santheesh73/Orchestrate-skill.git
@@ -47,299 +263,186 @@ python -m orchestrate_toolkit validate
 python -m orchestrate_toolkit audit-selftest
 ```
 
-Use an **existing official challenge checkout** as the target project. The next
-commands assume it is a sibling folder named `my-entry`; replace that path with
-yours. Run these commands from this toolkit's repository root.
+From the toolkit root, install into an **existing challenge checkout**. Replace
+`../my-entry` with your project path. The first command previews the changes.
 
 ```text
 python -m orchestrate_toolkit install --agent codex --project ../my-entry --dry-run
 python -m orchestrate_toolkit install --agent codex --project ../my-entry
 python -m orchestrate_toolkit doctor --project ../my-entry
-python -m orchestrate_toolkit compatibility --project ../my-entry
 ```
 
-Choose an agent ID from the table below. Repeat `--agent` for selected agents, or
-use `--agent all` by itself for all project-local adapters. Installation copies
-canonical skills and generates agent files. It does not launch your agent or
-prove that the skills loaded.
+Optional: `python -m pip install .` provides the `orchestrate-toolkit` console
+command; build dependencies may need downloading. Manual installation, supported
+user-scope installs and removal are documented in [INSTALL.md](docs/INSTALL.md).
+The owned installer refuses unowned or edited files; owned upgrades require
+`--upgrade` and create backups. It does not replace root agent instructions.
 
-Open your coding agent **in the challenge project**. Ask it to identify the exact
-installed `hackerrank-orchestrate/SKILL.md` path, read the current starter rules
-and propose the next contract check. Confirm that path in its tool evidence. Try
-an unrelated request too, to check accidental activation.
+### Coding-agent compatibility
 
-Optional package installation:
+Statuses describe the evidence available in this repository, not a promise about
+all product versions. Filesystem lifecycle tests do not prove live activation.
 
-```text
-python -m pip install .
-orchestrate-toolkit --help
-```
-
-The command is `orchestrate-toolkit`; the optional community project's
-`orchestrate` command is separate. Package builds may fetch build dependencies.
-The checkout-based runtime checks above work offline after cloning.
-
-### Safe installation lifecycle
-
-The universal installer refuses unowned files and user-modified installed files.
-Unchanged installs are idempotent. An owned upgrade needs `--upgrade` and creates
-a backup. Root `AGENTS.md`, `CLAUDE.md` and `GEMINI.md` are not adapter outputs.
-Earlier installation tools remain available; their files are not silently
-adopted by the ownership-aware installer.
-
-```text
-python -m orchestrate_toolkit install --agent codex --project ../my-entry --upgrade
-python -m orchestrate_toolkit uninstall --agent codex --project ../my-entry --dry-run
-python -m orchestrate_toolkit uninstall --agent codex --project ../my-entry
-```
-
-Uninstall removes unchanged owned files while preserving edits, shared files,
-backups and workflow evidence. For user-scope paths, conflict recovery, legacy
-commands and Claude.ai ZIP upload, see [INSTALL.md](docs/INSTALL.md) and the
-[CLI reference](docs/CLI.md).
-
-## The five skills
-
-| Skill | Use it for | Instructions |
+| Agent or route | Installation | Evidence status |
 |---|---|---|
-| `hackerrank-orchestrate` | Main playbook: starter contract, architecture, iteration, output checks and interview preparation | [Core](hackerrank-orchestrate/SKILL.md) |
-| `hackerrank-orchestrate-design` | An evidence-based `DESIGN.md`, model/code boundary, failure handling and validation plan | [Design](skills/hackerrank-orchestrate-design/SKILL.md) |
-| `hackerrank-orchestrate-package` | Validate an explicit submission contract and build a fresh bundle with hashes | [Packaging](skills/hackerrank-orchestrate-package/SKILL.md) |
-| `hackerrank-orchestrate-practice` | Rehearse answers against actual code, constants, experiments and run evidence | [Practice](skills/hackerrank-orchestrate-practice/SKILL.md) |
-| `hackerrank-orchestrate-toolkit` | Use the optional community evaluator, engineering memory and heuristic review tools | [Integration](skills/hackerrank-orchestrate-toolkit/SKILL.md) |
+| Claude Code, original core | Historical native-skill smoke test | **VERIFIED**, 2026-10-13 only; current universal adapter remains unverified |
+| Codex, Claude Code, Gemini CLI, OpenCode | `--agent codex`, `claude`, `gemini`, `opencode`; native folders | **DOCUMENTED BUT UNVERIFIED** for current live adapters |
+| Cursor, Copilot, Windsurf, Cline, Roo Code, Continue | `--agent cursor`, `copilot`, `windsurf`, `cline`, `roo`, `continue`; rule/instruction adapters | **DOCUMENTED BUT UNVERIFIED**; surface-dependent |
+| Aider; other instruction-capable agents | `--agent aider` or `--agent portable`; explicitly load guidance | **MANUAL** |
+| Google Antigravity | Legacy manual instructions; no CLI agent ID | **MANUAL**, not live-verified |
+| Unknown CLI agent IDs or guessed global rule paths | No supported installation route | **UNSUPPORTED** |
 
-The community integration is optional. The other skills and original checkers
-remain usable without that external project. References load on demand; the
-toolkit does not maintain a separate playbook for each coding agent.
+See the [full compatibility matrix](docs/COMPATIBILITY.md) for paths, evidence and
+invocation procedures. Do not assume automatic activation. Confirm the actual
+skill file read in the coding assistant's tool evidence; Aider needs explicit loading.
 
-Example requests after loading the relevant skill:
+### First invocation
+
+Open your coding assistant in the challenge checkout and send:
 
 ```text
-Read this edition's starter rules and problem statement. Help me design the agent
-and identify which artifact checks we need before implementation.
-
-Review my output and experiment record. Identify the weakest evidence and
-propose one measured improvement.
-
-Prepare interview questions from my code and constants. Mark answers that cannot
-be verified from the supplied artifacts as UNKNOWN.
+Use hackerrank-orchestrate. The Orchestrate starter repository is available.
+Read its instructions, extract the requirements, identify evaluation risks,
+and help me plan a reliable implementation before writing code.
+Identify the installed skill file you read and flag missing evidence.
 ```
 
-## Coding-agent compatibility
+A useful response should identify the governing files, required artifacts and
+output schema; propose an architecture and baseline; list evaluation risks,
+unresolved questions and the next verifiable action. It should distinguish
+confirmed requirements from assumptions.
 
-The registry covers twelve agent IDs through different mechanisms. Documented
-formats and simulated installation tests do **not** establish current live
-activation. The [full compatibility matrix](docs/COMPATIBILITY.md) records paths,
-activation procedures, documentation sources and version-specific caveats.
+## Example: Using Orchestrate-skill from start to finish
 
-| Mechanism selected by this toolkit | Agents | CLI IDs |
+**Fictional challenge:** route requests to `ok` or `review`. This walkthrough uses
+the bundled two-row offline fixture. It is not a real entry or an official benchmark.
+
+| Step | Participant and coding-agent work | Skill contribution |
 |---|---|---|
-| Documented native skill folders | OpenAI Codex, Claude Code, Gemini CLI, OpenCode | `codex`, `claude`, `gemini`, `opencode` |
-| Documented instruction/rule files | Cursor, Windsurf, GitHub Copilot, Cline, Roo Code, Continue | `cursor`, `windsurf`, `copilot`, `cline`, `roo`, `continue` |
-| Explicit CLI-assisted loading | Aider | `aider` |
-| Explicit manual reading | Other instruction-capable agents | `portable` |
+| 1. Receive starter | Inspect instructions, data and templates | Points to the contract check |
+| 2. Read requirements | Write down IDs, allowed statuses and required files | Extraction helper and contract guidance |
+| 3. Select architecture | Define parsing, decisions and validation boundaries | Design companion |
+| 4. Build baseline | Implement the complete producer | Focused kickoff prompt and baseline discipline |
+| 5. Run tests | Exercise normal and malformed requests | Test-plan guidance and local checkers |
+| 6. Detect failure | Suppose an empty request causes a missing row | Coverage checking exposes the gap when configured |
+| 7. Improve | Apply the fictional task's fallback rule; rerun all cases | Change record and regression review |
+| 8. Validate outputs | Inspect exact schema, IDs and replay results | Configured evaluation report |
+| 9. Prepare artifacts | Review the real contract, package and rehearse | Packaging and practice companions |
 
-All twelve adapters have filesystem/lifecycle test coverage. Current live
-discovery and invocation remain **UNKNOWN**. The earlier one-run Claude Code
-smoke test covered the original core only. Antigravity and Claude.ai have legacy
-instructions in [INSTALL.md](docs/INSTALL.md), not dedicated universal CLI IDs.
-For Aider, explicitly load the main skill and selected references; a routing note
-alone does not load them automatically.
-
-## Hackathon workflow
-
-1. **Discover the contract.** Read the actual starter files, extract requirements
-   and confirm logging and required artifacts. Use the
-   [starter-contract reference](hackerrank-orchestrate/references/starter-contract.md).
-2. **Design and build.** Choose the problem shape, write the model/code boundary
-   and produce a complete sample run. Use the design companion and
-   [architecture references](hackerrank-orchestrate/references/archetypes/index.md).
-3. **Test and improve.** Validate rows, malformed inputs and evidence; compare
-   complete outputs and keep a measured change record. Follow the
-   [evaluation policy](hackerrank-orchestrate/references/evaluation.md).
-4. **Rehearse and package.** Generate questions from your own source, check final
-   artifacts and build a fresh submission bundle from the actual contract.
-
-The CLI records an explicit resumable workflow:
-
-```text
-DISCOVER → ANALYZE → PLAN → BUILD → TEST → EVALUATE → IMPROVE → VALIDATE → SUBMIT
-```
-
-These are explicit transitions, not an autonomous build loop. Evidence gates
-check report/source hashes; failed or stale evidence blocks progress. `IMPROVE`
-can return to `BUILD` or `TEST`. `SUBMIT` records an explicitly approved local
-handoff and does not upload anything. See [workflow commands](docs/CLI.md).
-
-## Offline walkthrough and evaluation
-
-Run from the repository root:
+The missing-row failure and repair above are illustrative, not a claimed measured
+experiment. Run the working offline example from the toolkit root:
 
 ```text
 python examples/offline/main.py
 python -m orchestrate_toolkit evaluate --project examples/offline --config evaluation.json --report evaluation/readme-demo-001.json
-python -m orchestrate_toolkit workflow init --project examples/offline
 ```
 
-The synthetic example checks its configured CSV contract and keyed replay
-without a model, API key or network. Use a new report filename for another run.
-Its data and contract are not a real submission. See the
-[walkthrough](examples/offline/README.md).
+The bundled configuration checks its contract and keyed replay. A PASS does not
+establish semantic correctness. Inspect the report and use a new report filename
+each time; reports are not overwritten.
 
-For your project, transcribe its current specification into an explicit contract
-using the [contract reference](skills/hackerrank-orchestrate-package/references/contract.md).
-The packager checks required files, exact CSV schema, IDs, enums, nonempty data,
-archive scope and configured hashes. It prints `PACKAGE BUILT`, not an official
-readiness verdict. The output directory must be new.
+For your **prepared challenge project**, first create its contract using the
+[contract format](skills/hackerrank-orchestrate-package/references/contract.md).
+The following command checks the files without building a bundle:
 
-### Optional literal-ID decision audit
-
-Add this field to an evaluation configuration when the policy should forbid
-literal input IDs in Python decision logic:
-
-```json
-{
-  "contract": "contract.json",
-  "contract_audits": ["decision_ids"]
-}
+```text
+python skills/hackerrank-orchestrate-package/scripts/package_submission.py --repo ../my-entry --contract ../my-entry/submission-contract.json --out submission-final --check-only
 ```
 
-The audit reads IDs from the configured input and inspects comparisons, mapping
-keys and direct lookups in declared Python files. Comments, docstrings, isolated
-assignments and unseen probe IDs do not trigger this narrow policy. Unsupported
-source yields UNKNOWN; dynamic dataflow is outside its coverage. The original
-broader `corpus_literals.py` scanner remains available for investigation.
+After reviewing findings, omit `--check-only` to build into a new output directory.
+Inspect the manifest and archive before uploading through the organizer's process.
+`PACKAGE BUILT` is a local result, not an official readiness verdict. Include the
+edition's required logs, usage records and evaluation evidence; rehearse the actual
+implementation rather than invented scores.
 
-## Commands and original checkers
+## Validation and testing
 
-Run `python -m orchestrate_toolkit COMMAND --help` for exact flags.
-
-| CLI command | Purpose |
-|---|---|
-| `install` / `uninstall` | Preview or manage owned project/user-scope skill installations |
-| `doctor` / `compatibility` | Check installed ownership and report documented adapter capabilities |
-| `validate` | Validate all canonical skill folders |
-| `audit-selftest` | Check the audits using healthy, injected and metamorphic controls |
-| `evaluate` | Produce evidence for configured contract, replay, checks, usage and dependencies |
-| `workflow` | Initialize, inspect, advance or explicitly recover an evidence-gated checkpoint |
-
-Every original checker remains in `hackerrank-orchestrate/scripts/`:
-
-| Script | Purpose |
-|---|---|
-| `selfcheck.py` | Aggregate configured checks; missing evidence stays UNKNOWN |
-| `contract_extract.py` | Extract and compare starter requirements as a reading aid |
-| `check_log.py` | Check the selected log-format profile and harness naming |
-| `preflight.py` | Check CSV schema, IDs, enums, blanks and distribution hints |
-| `rerun_diff.py` | Compare complete outputs by ID |
-| `experiment.py` | Record baseline/final checks, output changes and evidence-based verdicts |
-| `usage_report.py` | Summarize supplied call records and explicitly supplied prices |
-| `interview_drill.py` | Generate source-linked questions and constants checks |
-| `corpus_literals.py` | Flag dataset literals in source for investigation |
-| `claim_audit.py` | Compare supported documentation counts with available artifacts |
-
-Exit-code conventions differ; inspect each script's `--help` before automating
-it. These checkers are not themselves the participant's competition solution.
-
-## Verified results
-
-The suite contains **231 tests**. CI covers Windows, Linux and macOS with Python
-3.9, 3.11 and 3.13: **nine configurations**. At revision `72f4981`, all eighteen
-checks across the push and pull-request runs passed. See the
-[push run](https://github.com/santheesh73/Orchestrate-skill/actions/runs/40066689590)
-and [pull-request run](https://github.com/santheesh73/Orchestrate-skill/actions/runs/40066693106).
-This is pinned historical evidence; the badge links to subsequent main-branch runs.
-
-- **Audit controls:** seven healthy examples, ten injected defects and four
-  metamorphic checks. Deliberately broken-checker regressions prove the selftest
-  can reject an audit that always passes or always fails.
-- **Installation and packaging:** conflicts, ownership, shared files, rollback,
-  backups and clean-wheel operation outside the checkout are exercised.
-- **Trigger evaluation:** the existing offline lexical proxy measures precision
-  0.76 and recall 0.68 over its 56 prompts. It is not live model behavior.
-
-The independent comparison uses identical synthetic inputs and requirements.
-For common supported interfaces:
-
-| Shared fixture check | This toolkit with optional `decision_ids` | Reviewed community toolkit |
-|---|---|---|
-| Packaging defects blocked | 12/12 | 10/12 |
-| Healthy packages accepted | 4/4 | 4/4 |
-| Literal-ID decision defects detected | 3/3 | 2/3 |
-| Benign source cases kept quiet | 5/5 | 4/5 |
-
-Unsupported policies are N/A and excluded from common-interface denominators;
-unexecuted checks are UNKNOWN. These small, known fixtures do not establish
-overall superiority, real-world error rates or competition scores. The broader
-original scanner has a different purpose and flags one benign fixture under the
-narrow policy. Read the [full comparison](docs/COMPETITIVE_BASELINE.md),
-[reports and reproduction instructions](benchmarks/comparison/README.md), and
-[release evidence](docs/V2_RELEASE_EVIDENCE.md).
-
-## Readiness and limits
-
-**Ready to use as a preparation and artifact-checking toolkit.** Before relying
-on it during an event, verify loading in your chosen coding agent, complete one
-end-to-end practice run and review the current edition's actual contract.
-Toolkit validation and submission readiness are separate judgments.
-
-- PASS means the configured check passed; it does not prove correct contract
-  transcription or that every required check was configured.
-- WARN needs review, FAIL needs correction and UNKNOWN means evidence is missing
-  or unsupported. Workflow evaluation gates require PASS evidence. A passing
-  `audit-selftest` tests the audits and cannot replace participant evaluation.
-- Fixture commands need explicit `--allow-exec`. Executed code retains host
-  permissions; this toolkit is not an OS sandbox. Nothing is submitted, deployed
-  or uploaded automatically; no paid model call is made implicitly.
-- Live agent activation, hidden-label accuracy and official scoring outcomes
-  remain unverified. Check historical rubric weights and edition-specific log
-  profiles against the actual event.
-
-See [SECURITY.md](SECURITY.md) for trust boundaries and
-[the field guide](docs/HACKATHON_GUIDE.md) for historical scoring and interview
-preparation.
-
-## Documentation and repository layout
-
-| Location | What to read or use |
-|---|---|
-| `hackerrank-orchestrate/` | Core skill, references, ten checkers and templates |
-| `skills/` | Four companions and the contract-driven submission packager |
-| `orchestrate_toolkit/` | CLI, adapters, installer, evaluation, audits and workflow |
-| [CLI.md](docs/CLI.md) | Exact commands, configuration, exit codes and recovery |
-| [INSTALL.md](docs/INSTALL.md) / [COMPATIBILITY.md](docs/COMPATIBILITY.md) | Installation, activation procedures and evidence labels |
-| [HACKATHON_GUIDE.md](docs/HACKATHON_GUIDE.md) | Preserved strategy, historical rubric, interviews and sources |
-| [ARCHITECTURE.md](docs/ARCHITECTURE.md) / [COVERAGE.md](docs/COVERAGE.md) | Component boundaries and capability coverage |
-| `integrations/` | Skill catalog, upstream revisions and compatibility metadata |
-| `examples/offline/` | Executable synthetic walkthrough |
-| `benchmarks/comparison/` | Identical-input fixtures, runner and measured reports |
-| `tests/`, `evals/`, `tools/` | Regressions, trigger proxy, validators and packaging utilities |
-| [CHANGELOG.md](CHANGELOG.md) / [CONTRIBUTING.md](CONTRIBUTING.md) | Release history and contribution checks |
-
-## Development
+For a quick repository check:
 
 ```text
 python tools/validate_skill.py
 python tools/static_check.py
-python -m orchestrate_toolkit audit-selftest
 python -W error -m unittest discover -s tests -v
-python tools/run_trigger_evals.py --offline --min-precision 0.6 --min-recall 0.5
-python tools/ci_check.py
-python tools/wheel_smoke.py
 ```
 
-The wheel check needs locally installed pip, setuptools and wheel; its build and
-temporary install use `--no-index`. Paid/live trigger evaluations are opt-in and
-never run in CI. For their flags, use `tools/run_trigger_evals.py --help`.
-See [CONTRIBUTING.md](CONTRIBUTING.md) before changing canonical skills or adapters.
+The suite contains **231 tests**, including CLI hostile-input cases, install
+ownership, packaging, contract/replay checks and stale-evidence workflow gates.
+CI targets Windows, Linux and macOS on Python 3.9, 3.11 and 3.13. These checks
+validate toolkit behavior; they do not validate your challenge solution by default.
 
-## License and credits
+The public audit selftest exercises **7 healthy, 10 injected-defect and 4
+metamorphic controls**. Its passing report cannot substitute for participant
+submission evaluation. See [release evidence](docs/V2_RELEASE_EVIDENCE.md) for
+version-specific records; the badge reflects CI on main, not local README edits.
 
-[MIT license](LICENSE). The playbook independently restates ideas credited to
-[Orchestrate-loop](https://github.com/bsrikumar855-dot/Orchestrate-loop); its
-unlicensed prose is not copied. The optional
-[community toolkit](https://github.com/NITISH-R-G/hackerrank-orchestrate-skills)
-remains a separate project. Attribution and the upstream MIT notice are in
-[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). No upstream implementation is
-vendored. Historical organizer material and sources remain in the
-[field guide](docs/HACKATHON_GUIDE.md#sources).
+Local reports distinguish **PASS**, **WARN**, **FAIL** and **UNKNOWN**. Missing or
+unsupported evidence must remain visible. Exit codes differ by tool; consult the
+[CLI reference](docs/CLI.md) or each script's `--help`. Formatting and literal-ID
+checks cannot prove decision accuracy, safety or generalization.
+
+## Repository structure
+
+```text
+Orchestrate-skill/
+├── hackerrank-orchestrate/   Main skill, references, checker scripts and assets
+├── skills/                  Four companion skills
+├── orchestrate_toolkit/     Offline CLI and implementation
+├── integrations/            Agent integration resources
+├── examples/offline/        Runnable synthetic example
+├── tests/                   Regression tests and fixtures
+├── evals/                   Trigger-evaluation cases
+├── tools/                   Skill validation, distribution and smoke tools
+├── docs/                    Installation, architecture and technical guides
+├── LICENSE
+└── THIRD_PARTY_NOTICES.md
+```
+
+## Documentation
+
+- [Installation and recovery](docs/INSTALL.md) · [Compatibility evidence](docs/COMPATIBILITY.md)
+- [CLI commands and configuration](docs/CLI.md) · [Architecture and trust boundaries](docs/ARCHITECTURE.md)
+- [Evaluation policy](hackerrank-orchestrate/references/evaluation.md) · [Capability coverage](docs/COVERAGE.md)
+- [Prompt templates](hackerrank-orchestrate/references/prompt-templates.md) · [Task archetypes](hackerrank-orchestrate/references/archetypes/index.md)
+- [Interview guidance](hackerrank-orchestrate/references/interview.md) · [Optional integration](docs/integrations/community-toolkit.md)
+- [Historical strategy, rubric and credited sources](docs/HACKATHON_GUIDE.md)
+- [Changelog](CHANGELOG.md) · [Security policy](SECURITY.md)
+
+## Limitations
+
+- Current official rules supersede historical profiles and community guidance.
+- No local check, heuristic score or synthetic fixture guarantees hidden-grader
+  performance, interview results, organizer acceptance or a prize.
+- Current universal adapters lack live invocation verification. Offline trigger
+  proxies are not evidence of live model behavior.
+- Literal-data audits have limited scope and are not dataflow analysis or proof
+  against overfitting. Configuration accuracy remains the participant's responsibility.
+- Optional external tools and live model evaluations need separate setup and may
+  require credentials. No paid model evaluation runs implicitly.
+- Opt-in command execution uses host permissions; this toolkit is not an OS sandbox.
+  It does not submit, upload or deploy for you.
+
+## Contributing
+
+Read [CONTRIBUTING.md](CONTRIBUTING.md) before proposing changes. Include evidence
+for new capabilities, preserve existing skills and label historical observations
+and unverified integrations. Use synthetic fixtures without secrets. Run the
+validation commands above and explain what changed, how it was checked and its limits.
+
+## Creator and acknowledgments
+
+**Created and maintained by SANTHEESH** — [GitHub profile](https://github.com/santheesh73).
+
+Orchestrate-skill is independently maintained. Third-party authors retain credit
+for their material and methods; applicable source revisions, acknowledgments and
+license notices are preserved in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+Organizer documentation and historical sources are credited where used and in the
+field guide. This project's authorship does not imply authorship of those sources.
+
+## License and unofficial disclaimer
+
+[MIT License](LICENSE), copyright © 2026 santheesh73. Preserve the license and
+applicable third-party notices when redistributing or adapting the project.
+
+**Orchestrate-skill is an independent, unofficial community project. It is not affiliated with, sponsored by, or endorsed by HackerRank.**
+
+HackerRank and related trademarks belong to their respective owners.
