@@ -1,0 +1,4 @@
+{
+  "contract": "contract.json",
+  "replay": "output.csv"
+}

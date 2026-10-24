@@ -1,4 +1,4 @@
-# HackerRank Orchestrate: how to approach it, and a Claude skill to help
+# HackerRank Orchestrate skills and portable offline toolkit
 
 [![validate](https://github.com/santheesh73/Orchestrate-skill/actions/workflows/validate.yml/badge.svg)](https://github.com/santheesh73/Orchestrate-skill/actions/workflows/validate.yml)
 
@@ -6,6 +6,39 @@ This repository has two parts:
 
 1. **A field guide to HackerRank Orchestrate** (this README): what the event is, how it is scored, and a tested way to approach the 24 hours.
 2. **`hackerrank-orchestrate/`**, a Claude skill that applies this guide during the event. It writes the prompts for your coding agent (Claude Code, Codex, Cursor, OpenCode, Antigravity), checks the reports that come back, and includes scripts that catch the mistakes that cost the most points.
+
+It now also includes an agent-neutral Python CLI and four companion skills. The
+existing skill and checker interfaces are preserved. A concise I/O/recovery
+contract was added to each skill; the original main rules remain in place.
+
+## Quick start: any coding agent
+
+Python 3.9+, standard-library runtime; no API key or paid service is required:
+
+```text
+python -m orchestrate_toolkit install --agent codex --project ../my-entry --dry-run
+python -m orchestrate_toolkit install --agent codex --project ../my-entry
+python -m orchestrate_toolkit doctor --project ../my-entry
+python -m orchestrate_toolkit validate
+```
+
+Replace codex with claude, cursor, windsurf, copilot, gemini, cline, roo,
+continue, aider, opencode or portable. Use `--agent all` for project-local adapter
+generation. Native skill support, instruction files and manual loading are
+different mechanisms; see the [compatibility matrix](docs/COMPATIBILITY.md).
+
+Optional package installation: `python -m pip install .`, then use
+`orchestrate-toolkit`. This name avoids colliding with the community toolkit's
+`orchestrate` command. Existing installation tools still work.
+
+Read the [CLI reference](docs/CLI.md), [architecture](docs/ARCHITECTURE.md),
+[skill catalog](integrations/skill-catalog.json), [synthetic walkthrough](examples/offline/README.md),
+[contribution guide](CONTRIBUTING.md) and [security boundaries](SECURITY.md).
+
+No automatic push, deployment, submission, paid model call or external agent
+launch is implemented. Local fixture commands need explicit `--allow-exec` and
+retain host permissions; this toolkit is not a sandbox. Live agent inference and
+hidden-label accuracy remain unverified.
 
 > **The live challenge page and your edition's `AGENTS.md` and `problem_statement.md` always win.** The format changes between editions. Everything here comes from public material on past editions, linked in [Sources](#sources).
 
@@ -298,7 +331,7 @@ was inspected directly on 2026-10-24 at the revision recorded in
 - **Trigger accuracy against a live model: UNKNOWN.** `tools/run_trigger_evals.py --live` exists but has not been run, because no API key was available where this was built. What *was* measured is an offline lexical-overlap proxy over the 56 cases in `evals/triggers.json` (28 should trigger, 28 should not; 12 of them phrased as Codex, Cursor, OpenCode and Antigravity users): precision 0.76, recall 0.68 at threshold 0.3 (MEASURED, proxy only; it is not model behavior). In Claude Code the skill was invoked for one Orchestrate question and not for one near miss (VERIFIED, one run each; see [docs/INSTALL.md](docs/INSTALL.md)).
 - **Leaderboard per-stage figures in `references/rubric.md` are INFERRED.** They were computed by orchestrate-loop from public leaderboard data; the leaderboard API was not reachable here to re-derive them.
 - **Toolkit integration is optional.** Its commands were checked against the pinned source; help and selftest were exercised. Its edition-specific audits and heuristic scores cannot establish official readiness or predict a score.
-- The suite contains 199 tests in `tests/`. CI targets Windows and Linux with Python 3.9, 3.11 and 3.13; inspect the Actions run for the actual result. Fixtures are small and synthetic. Log profiles cover only the reviewed editions; each states its provenance. Live model selection and real hidden-label accuracy remain UNKNOWN.
+- The suite contains 219 tests in `tests/`. CI targets Windows, Linux and macOS with Python 3.9, 3.11 and 3.13; inspect the Actions run for the actual result. Fixtures are small and synthetic. Log profiles cover only the reviewed editions; each states its provenance. Live model selection and real hidden-label accuracy remain UNKNOWN.
 - **Context footprint is ESTIMATED** by `tools/footprint.py` as characters / 4, not by a tokenizer. The budgets in `tools/validate_skill.py` are the measured sizes plus about 10%.
 - Not affiliated with or endorsed by HackerRank.
 
