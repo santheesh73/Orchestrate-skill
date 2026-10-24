@@ -43,8 +43,11 @@ checkout passes, including audit-selftest and all adapter lifecycle operations.
 The lexical trigger proxy remains precision 0.76, recall 0.68 on its existing
 fixture set; it is not live activation evidence.
 
-Remote CI results are recorded after the branch is pushed. The matrix runs the
-full suite, public selftest, static/source validation, offline trigger proxy,
+Remote execution of the pushed implementation is recorded in
+[the nine-job Actions run](https://github.com/santheesh73/Orchestrate-skill/actions/runs/40064979317).
+Its per-job conclusions are authoritative; documentation followups have their
+own branch runs. The matrix runs the full suite, public selftest,
+static/source validation, offline trigger proxy,
 existing packaging smoke and clean-wheel checks on Windows/Linux/macOS with
 Python 3.9, 3.11 and 3.13. No competitor code is fetched or executed by CI.
 
