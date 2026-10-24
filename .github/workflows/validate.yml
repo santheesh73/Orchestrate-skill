@@ -29,6 +29,8 @@ jobs:
         run: |
           python -m orchestrate_toolkit audit-selftest
           python benchmarks/comparison/run.py --own-leakage-audit decision_ids --report comparison-ci.json
+      - name: Behavior grader controls (offline, no agent invocation)
+        run: python tools/evaluate_behavior.py selftest --suite evals/behavior
       - name: Trigger evals, offline proxy only (never --live in CI)
         run: python tools/run_trigger_evals.py --offline --min-precision 0.6 --min-recall 0.5
       - name: Installed packages, selfchecks, CLI help and footprint

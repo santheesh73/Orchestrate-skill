@@ -1,0 +1,23 @@
+{
+  "id": "planning-budget",
+  "prompt": "Use the Orchestrate skill if present. Evaluate the fictional expense across the complete forecast, including recurring costs and minimum balance. Write decision.json using the stated rule and explain the worst point in the forecast.",
+  "starter": "starters/planning-budget",
+  "expected": "expected/planning-budget.json",
+  "activation": true,
+  "protected": [
+    "AGENTS.md",
+    "problem_statement.md",
+    "events.json"
+  ],
+  "checks": [
+    {
+      "name": "forecast_decision",
+      "type": "json",
+      "path": "decision.json",
+      "expected_key": "decision"
+    }
+  ],
+  "manual": [
+    "full_forecast_reasoning_explained"
+  ]
+}

@@ -2,7 +2,7 @@
 
 ### Understand the challenge. Build with evidence. Verify before submitting.
 
-**Created and maintained by [SANTHEESH](https://github.com/santheesh73)** · Version **3.1.0**
+**Created and maintained by [SANTHEESH](https://github.com/santheesh73)** · Version **3.2.0**
 
 [![CI](https://github.com/santheesh73/Orchestrate-skill/actions/workflows/validate.yml/badge.svg?branch=main)](https://github.com/santheesh73/Orchestrate-skill/actions/workflows/validate.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
@@ -241,6 +241,7 @@ executable component exists; it does not imply universal coverage or live-agent 
 | Design companion | Guidance for architecture and a written design | [Design skill](skills/hackerrank-orchestrate-design/SKILL.md) |
 | Packaging companion | Guidance + contract-driven submission builder | [Package skill](skills/hackerrank-orchestrate-package/SKILL.md) |
 | Practice companion | Guidance for source-grounded interview rehearsal | [Practice skill](skills/hackerrank-orchestrate-practice/SKILL.md) |
+| Evidence companion | Implemented behavior grading, paired comparisons, requirement links and interview citation checks; semantic/live review remains separate | [Evidence skill](skills/hackerrank-orchestrate-evidence/SKILL.md) |
 | Optional integration companion | Guidance for separately installed community tools; no upstream implementation bundled | [Integration skill](skills/hackerrank-orchestrate-toolkit/SKILL.md) |
 | Fixtures and tests | Synthetic evaluation examples, regression and hostile-input tests | [Offline example](examples/offline/) · [Tests](tests/) |
 | Skill distribution tools | Implemented: validate and package the skills themselves | [Developer tools](tools/) · [Installation](docs/INSTALL.md) |
@@ -365,7 +366,7 @@ python tools/static_check.py
 python -W error -m unittest discover -s tests -v
 ```
 
-The suite contains **231 tests**, including CLI hostile-input cases, install
+The suite contains **262 tests**, including CLI hostile-input cases, install
 ownership, packaging, contract/replay checks and stale-evidence workflow gates.
 CI targets Windows, Linux and macOS on Python 3.9, 3.11 and 3.13. These checks
 validate toolkit behavior; they do not validate your challenge solution by default.
@@ -380,17 +381,33 @@ unsupported evidence must remain visible. Exit codes differ by tool; consult the
 [CLI reference](docs/CLI.md) or each script's `--help`. Formatting and literal-ID
 checks cannot prove decision accuracy, safety or generalization.
 
+For hackathon practice and skill effectiveness work, the new evidence companion
+adds **eight fictional cases** and **24 healthy/injected behavior-grader controls**:
+
+```text
+python tools/evaluate_behavior.py selftest --suite evals/behavior
+```
+
+These are offline grader checks, not live coding-agent trials. Follow the
+[behavior evaluation guide](docs/BEHAVIOR_EVALUATION.md) for paired experiments,
+the [complete practice exercise](docs/HACKATHON_PRACTICE.md) for failure-to-package
+rehearsal, and the [live verification procedure](docs/LIVE_VERIFICATION.md) before
+claiming an integration works. Requirement and interview checks bind citations to
+current file hashes; they leave semantic satisfaction UNKNOWN pending review.
+See the [3.2 verification record and limits](docs/HACKATHON_EVIDENCE_RELEASE.md),
+including the locally blocked Windows console-launcher check.
+
 ## Repository structure
 
 ```text
 Orchestrate-skill/
 ├── hackerrank-orchestrate/   Main skill, references, checker scripts and assets
-├── skills/                  Four companion skills
+├── skills/                  Five companion skills
 ├── orchestrate_toolkit/     Offline CLI and implementation
 ├── integrations/            Agent integration resources
-├── examples/offline/        Runnable synthetic example
+├── examples/                Offline example and complete hackathon practice
 ├── tests/                   Regression tests and fixtures
-├── evals/                   Trigger-evaluation cases
+├── evals/                   Trigger and behavioral evaluation cases
 ├── tools/                   Skill validation, distribution and smoke tools
 ├── docs/                    Installation, architecture and technical guides
 ├── LICENSE
@@ -405,6 +422,7 @@ Orchestrate-skill/
 - [Prompt templates](hackerrank-orchestrate/references/prompt-templates.md) · [Task archetypes](hackerrank-orchestrate/references/archetypes/index.md)
 - [Interview guidance](hackerrank-orchestrate/references/interview.md) · [Optional integration](docs/integrations/community-toolkit.md)
 - [Historical strategy, rubric and credited sources](docs/HACKATHON_GUIDE.md)
+- [Behavior evaluation](docs/BEHAVIOR_EVALUATION.md) · [Live verification](docs/LIVE_VERIFICATION.md) · [Hackathon practice](docs/HACKATHON_PRACTICE.md)
 - [Changelog](CHANGELOG.md) · [Security policy](SECURITY.md)
 
 ## Limitations

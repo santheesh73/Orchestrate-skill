@@ -15,6 +15,7 @@ Development checks:
 python tools/validate_skill.py
 python tools/package_addons.py --validate-only
 python tools/static_check.py
+python tools/evaluate_behavior.py selftest --suite evals/behavior
 python -m orchestrate_toolkit audit-selftest
 python -W error -m unittest discover -s tests -v
 python tools/ci_check.py
@@ -40,3 +41,8 @@ selftest rejects a deliberately broken checker. Do not import participant code.
 Comparisons must keep identical fixture bytes and requirements for both tools,
 report UNKNOWN/N/A honestly and disclose heuristic differences. See
 benchmarks/comparison/README.md. Do not tune an audit to hide a benchmark miss.
+
+Behavior cases, protocol and run formats are documented in docs/BEHAVIOR_EVALUATION.md.
+Preserve live/synthetic origin distinctions and missing semantic reviews. Never
+include model-generated tool events as evidence of an actual invocation. Behavior
+controls and source hashes test the grader; they do not certify agent effectiveness.

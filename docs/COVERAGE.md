@@ -55,7 +55,7 @@ Weights are from the May 2026 post-mortem (VERIFIED; see `hackerrank-orchestrate
 
 | Addition | Failure it prevents |
 |---|---|
-| `hackerrank-orchestrate/scripts/` (10 checkers) and `tests/` (231 tests) | Rules that nobody can run; regressions in the checkers and optional companions |
+| `hackerrank-orchestrate/scripts/` (10 checkers) and `tests/` (262 tests) | Rules that nobody can run; regressions in the checkers and optional companions |
 | `hackerrank-orchestrate/assets/editions/` | A log checker that rejects another edition's format |
 | `tools/validate_skill.py` | Structure and policy drift (dates in the trigger, restated rules, missing scripts) |
 | `tools/package_skill.py` | A rejected upload, or dev files shipped inside the skill |
@@ -127,3 +127,16 @@ deliberately broken checkers, unknown coverage, the opt-in decision-ID policy,
 evidence-kind separation and shared fixture fingerprints. `audit-selftest`
 reuses contract/replay validators without executing participant code.
 See `docs/COMPETITIVE_BASELINE.md` for measurements and their limits.
+
+## 9. Behavioral and source-bound evidence
+
+`hackerrank-orchestrate-evidence` adds a self-contained offline grader and a
+checkout entrypoint in `tools/evaluate_behavior.py`. `evals/behavior/` has eight
+public synthetic cases with expected answers separated from prepared workspaces.
+The public selftest exercises healthy outputs, invalid outputs and starter changes.
+`tests/test_behavior_evidence.py` tests broken graders, paired-comparison fairness,
+missing traces, stale citations, test-result bindings and the complete fictional
+practice-to-package route. CI runs no live coding agent. Citation integrity and
+trace consistency do not establish semantic truth or authenticated invocation.
+See `docs/BEHAVIOR_EVALUATION.md`, `docs/LIVE_VERIFICATION.md` and
+`docs/HACKATHON_PRACTICE.md`.

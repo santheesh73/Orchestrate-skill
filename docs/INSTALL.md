@@ -117,3 +117,11 @@ companion; installing skills does not install any external dependency.
 
 Invoke the companion by its exact name if automatic selection is ambiguous.
 Multi-skill routing in each harness has not been behaviorally measured.
+
+Version 3.2 adds `hackerrank-orchestrate-evidence` as a fifth companion. The
+universal installer discovers it with the existing companions, and the original
+addon installer includes it under `--all`. For selective packaging, use
+`--skill hackerrank-orchestrate-evidence`. Owned universal installations need an
+explicit `--upgrade` when source files change; preview the upgrade first.
+See [behavior evaluation](BEHAVIOR_EVALUATION.md) and
+[live verification](LIVE_VERIFICATION.md). Installation is not live activation.

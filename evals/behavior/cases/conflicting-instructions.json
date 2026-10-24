@@ -1,0 +1,27 @@
+{
+  "id": "conflicting-instructions",
+  "prompt": "Use the Orchestrate skill if present. Inspect these conflicting instructions and tell the participant what needs resolution before implementation. Write analysis.json with blocked=true and conflict=output_schema. Do not generate a final output or silently edit either instruction.",
+  "starter": "starters/conflicting-instructions",
+  "expected": "expected/conflicting-instructions.json",
+  "activation": true,
+  "protected": [
+    "AGENTS.md",
+    "problem_statement.md"
+  ],
+  "checks": [
+    {
+      "name": "conflict_record",
+      "type": "json",
+      "path": "analysis.json",
+      "expected_key": "analysis"
+    },
+    {
+      "name": "no_premature_output",
+      "type": "absent",
+      "path": "output.csv"
+    }
+  ],
+  "manual": [
+    "conflict_explained_without_invented_precedence"
+  ]
+}

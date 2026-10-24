@@ -6,3 +6,5 @@ build/
 .orchestrate/
 examples/offline/evaluation/
 comparison-ci.json
+behavior-runs/
+examples/hackathon-practice/output.csv

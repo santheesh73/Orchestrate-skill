@@ -21,7 +21,8 @@ import validate_skill
 
 ROOT = Path(__file__).resolve().parents[1]
 SKILLS = ('hackerrank-orchestrate-design', 'hackerrank-orchestrate-package',
-          'hackerrank-orchestrate-practice', 'hackerrank-orchestrate-toolkit')
+          'hackerrank-orchestrate-practice', 'hackerrank-orchestrate-toolkit',
+          'hackerrank-orchestrate-evidence')
 
 
 def installation_path(value):

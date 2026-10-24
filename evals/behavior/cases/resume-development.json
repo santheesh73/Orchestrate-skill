@@ -1,0 +1,24 @@
+{
+  "id": "resume-development",
+  "prompt": "Use the Orchestrate skill if present. Resume this interrupted task from the actual files, check the existing checkpoint against the specification, and produce output.csv. Preserve the checkpoint as historical evidence.",
+  "starter": "starters/resume-development",
+  "expected": "expected/resume-development.json",
+  "activation": true,
+  "protected": [
+    "AGENTS.md",
+    "problem_statement.md",
+    "dataset/input.csv",
+    "checkpoint.json"
+  ],
+  "checks": [
+    {
+      "name": "resumed_output",
+      "type": "csv",
+      "path": "output.csv",
+      "expected_key": "output"
+    }
+  ],
+  "manual": [
+    "stale_checkpoint_assumption_checked"
+  ]
+}
