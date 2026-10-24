@@ -55,7 +55,7 @@ Weights are from the May 2026 post-mortem (VERIFIED; see `hackerrank-orchestrate
 
 | Addition | Failure it prevents |
 |---|---|
-| `hackerrank-orchestrate/scripts/` (10 checkers) and `tests/` (262 tests) | Rules that nobody can run; regressions in the checkers and optional companions |
+| `hackerrank-orchestrate/scripts/` (10 checkers) and `tests/` (313 tests) | Rules that nobody can run; regressions in the checkers and optional companions |
 | `hackerrank-orchestrate/assets/editions/` | A log checker that rejects another edition's format |
 | `tools/validate_skill.py` | Structure and policy drift (dates in the trigger, restated rules, missing scripts) |
 | `tools/package_skill.py` | A rejected upload, or dev files shipped inside the skill |
@@ -140,3 +140,16 @@ practice-to-package route. CI runs no live coding agent. Citation integrity and
 trace consistency do not establish semantic truth or authenticated invocation.
 See `docs/BEHAVIOR_EVALUATION.md`, `docs/LIVE_VERIFICATION.md` and
 `docs/HACKATHON_PRACTICE.md`.
+
+## 10. V4 component verification
+
+`tests/test_v4_core.py` covers provenance, bounded records, input schemas, relations,
+controls and documentation links. `tests/test_v4_memory.py` covers weighted uncertainty,
+experiment fingerprints/decisions/comparisons, mentor evidence and secret redaction.
+`tests/test_v4_release.py` covers missing/stale reproduction and manual evidence,
+secret blockers, source questions and factual-claim consistency.
+`tests/test_v4_integration.py` covers CLI dispatch, restore previews/conflicts/
+rollback, official-file preservation, stage policies and the full synthetic demo.
+The new controls supplement existing mutation, metamorphic, hostile-input and
+cross-platform tests. See `docs/V4_VERIFICATION_REPORT.md` for actual results and
+unmeasured acceptance criteria.

@@ -57,6 +57,9 @@ def parser():
     w.add_argument('--evidence')
     w.add_argument('--reason')
     w.add_argument('--approve-submit', action='store_true')
+    w.add_argument('--policy', help='edition-specific V4 workflow policy, only when initializing a new checkpoint')
+    from . import v4_cli
+    v4_cli.register(commands)
     return p
 
 
@@ -77,6 +80,9 @@ def main(argv=None):
                 if getattr(args, 'home', None):
                     raise ToolkitError('--home requires --scope user')
                 root = project(args.project)
+            from . import v4_cli
+            if args.command in v4_cli.COMMANDS:
+                return v4_cli.handle(root, args)
             if args.command == 'install':
                 result = installer.install(root, args.agent, args.scope, args.dry_run, args.upgrade)
             elif args.command == 'uninstall':
@@ -103,7 +109,7 @@ def main(argv=None):
                 return code
             elif args.command == 'workflow':
                 if args.action == 'init':
-                    result = workflow.init(root)
+                    result = workflow.init(root, args.policy)
                 elif args.action == 'status':
                     result = workflow.load(root)
                 elif args.action == 'advance':

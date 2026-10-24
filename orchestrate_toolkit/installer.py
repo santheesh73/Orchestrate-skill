@@ -1,12 +1,13 @@
 """Owned-file installation and removal; user/competition instructions are never replaced."""
 
 import os
+import re
 import sys
 import uuid
 
 from .adapters import AGENTS, capability_report, render
 from .common import (ToolkitError, atomic_replace, confined, digest, json_bytes,
-                     now, operation, read_bytes, read_json, sha_string)
+                     now, operation, read_bytes, read_json, sha_string, write_new)
 
 LEDGER = '.orchestrate/install.json'
 
@@ -15,7 +16,11 @@ def load(root, scope):
     path = confined(root, LEDGER)
     if not path.exists():
         return {'schema_version': 1, 'scope': scope, 'agents': [], 'files': {}, 'history': []}
-    value = read_json(path)
+    return validate_ledger(root, read_json(path), scope)
+
+
+def validate_ledger(root, value, scope):
+    """Validate restored state against the same ownership boundaries as current state."""
     if (not isinstance(value, dict) or set(value) != {'schema_version', 'scope', 'agents', 'files', 'history'}
             or value['schema_version'] != 1 or value['scope'] != scope
             or not isinstance(value['agents'], list)
@@ -82,7 +87,7 @@ def install(root, agents, scope='project', dry_run=False, upgrade=False):
             path = confined(root, name)
             if path.exists():
                 previous[name] = read_bytes(path)
-        if previous:
+        if previous or ledger['agents'] and changes:
             backup = '.orchestrate/backups/' + uuid.uuid4().hex
             for name, content in previous.items():
                 path = confined(root, backup + '/' + name)
@@ -106,6 +111,10 @@ def install(root, agents, scope='project', dry_run=False, upgrade=False):
                    'files': {n: {'sha256': digest(b), 'owners': owners[n]} for n, b in data.items()},
                    'history': (ledger['history'] + [{'at': now(), 'action': 'install',
                                                     'agents': agents, 'backup': backup}])[-1000:]}
+            if backup:
+                manifest = {'schema_version': 1, 'scope': scope, 'previous_ledger': ledger,
+                            'expected_ledger_sha256': digest(json_bytes(new)), 'previous_files': sorted(previous)}
+                write_new(confined(root, backup + '/restore.json'), json_bytes(manifest))
             target = confined(root, LEDGER)
             atomic_replace(target, json_bytes(new))
         except (OSError, ToolkitError):
@@ -118,6 +127,68 @@ def install(root, agents, scope='project', dry_run=False, upgrade=False):
             raise
     return {'action': 'install', 'status': 'installed', 'agents': selected,
             'files_written': len(changes), 'backup': backup}
+
+
+def restore(root, backup_id, scope='project', dry_run=False, approve=False):
+    """Restore only a matching owned upgrade; edits/conflicts block the whole operation."""
+    if not isinstance(backup_id, str) or not re.fullmatch('[a-f0-9]{32}', backup_id):
+        raise ToolkitError('backup ID must be the 32-character ID returned by install')
+    if not dry_run and not approve:
+        raise ToolkitError('applying a restore needs explicit --approve-restore; preview with --dry-run')
+    backup = '.orchestrate/backups/' + backup_id
+
+    def plan():
+        current = load(root, scope)
+        manifest = read_json(confined(root, backup + '/restore.json'))
+        if (not isinstance(manifest, dict) or set(manifest) != {'schema_version', 'scope', 'previous_ledger', 'expected_ledger_sha256', 'previous_files'}
+                or manifest['schema_version'] != 1 or manifest['scope'] != scope
+                or manifest['expected_ledger_sha256'] != digest(json_bytes(current))):
+            raise ToolkitError('backup does not match the current owned installation')
+        previous = validate_ledger(root, manifest['previous_ledger'], scope)
+        names = manifest['previous_files']
+        if not isinstance(names, list) or len(names) != len(set(names)) or set(names) - set(previous['files']):
+            raise ToolkitError('invalid backup member list')
+        for name, record in current['files'].items():
+            if digest(read_bytes(confined(root, name))) != record['sha256']:
+                raise ToolkitError('modified installation blocks restoration')
+        prior_bytes = {name: read_bytes(confined(root, backup + '/' + name)) for name in names}
+        for name, record in previous['files'].items():
+            data = prior_bytes.get(name)
+            if data is None:
+                if name not in current['files']:
+                    raise ToolkitError('backup cannot reconstruct prior owned file')
+                data = read_bytes(confined(root, name))
+            if digest(data) != record['sha256']:
+                raise ToolkitError('backup contents do not reconstruct prior installation')
+        remove = sorted(set(current['files']) - set(previous['files']))
+        return current, previous, prior_bytes, remove
+
+    current, previous, prior_bytes, remove = plan()
+    if dry_run:
+        return {'action': 'restore', 'dry_run': True, 'files_to_restore': sorted(prior_bytes), 'files_to_remove': remove}
+    with operation(root):
+        current, previous, prior_bytes, remove = plan()
+        snapshots = {name: read_bytes(confined(root, name)) for name in set(prior_bytes) | set(remove)}
+        touched = []
+        try:
+            for name, data in prior_bytes.items():
+                atomic_replace(confined(root, name), data)
+                touched.append(name)
+            for name in remove:
+                confined(root, name).unlink()
+                touched.append(name)
+            previous['history'] = (previous['history'] + [{'at': now(), 'action': 'restore', 'backup': backup}])[-1000:]
+            atomic_replace(confined(root, LEDGER), json_bytes(previous))
+        except OSError:
+            for name in reversed(touched):
+                target = confined(root, name)
+                if target.exists():
+                    atomic_replace(target, snapshots[name])
+                else:
+                    write_new(target, snapshots[name])
+            raise
+    return {'action': 'restore', 'status': 'restored', 'agents': previous['agents'],
+            'backup': backup, 'note': 'Only owned installation files changed; backup and project evidence retained.'}
 
 
 def uninstall(root, agents, scope='project', dry_run=False):

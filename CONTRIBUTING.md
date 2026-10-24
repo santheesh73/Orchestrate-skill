@@ -15,6 +15,8 @@ Development checks:
 python tools/validate_skill.py
 python tools/package_addons.py --validate-only
 python tools/static_check.py
+python tools/check_docs.py
+python tools/v4_demo.py
 python tools/evaluate_behavior.py selftest --suite evals/behavior
 python -m orchestrate_toolkit audit-selftest
 python -W error -m unittest discover -s tests -v
@@ -46,3 +48,9 @@ Behavior cases, protocol and run formats are documented in docs/BEHAVIOR_EVALUAT
 Preserve live/synthetic origin distinctions and missing semantic reviews. Never
 include model-generated tool events as evidence of an actual invocation. Behavior
 controls and source hashes test the grader; they do not certify agent effectiveness.
+
+V4 schemas, component contracts and the candidate verification record live in
+docs/V4_USAGE.md, docs/V4_ARCHITECTURE.md and docs/V4_VERIFICATION_REPORT.md. Keep
+source-bound estimates honest about missing weight; preserve manual and execution
+boundaries. Use the own-only synthetic benchmark when reference execution is not
+authorized. Never treat a source-based capability comparison as a live measurement.

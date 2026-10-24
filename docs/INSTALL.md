@@ -1,5 +1,10 @@
 # Installing the skill in each coding agent
 
+For V4, the standard-library CLI adds owned upgrade restoration and optional
+edition workflow policies. See [V4 usage](V4_USAGE.md) and
+[troubleshooting](TROUBLESHOOTING.md). Existing installation routes and agent IDs
+are retained; a source upgrade is not a live-activation verification.
+
 `hackerrank-orchestrate/` is one canonical folder with `SKILL.md`, references,
 scripts and assets. Native skill loaders can read that format; instruction-file
 adapters point to installed canonical guidance. These are different mechanisms.
