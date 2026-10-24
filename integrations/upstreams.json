@@ -23,7 +23,7 @@
   ],
   "hash_normalization": "UTF-8 source bytes with CRLF normalized to LF",
   "preserved_core_sha256": {
-    "hackerrank-orchestrate/SKILL.md": "c96a26daafaae42feb14c60baaaf2ca388d8f1127d06701ba69b3cae94531652",
+    "hackerrank-orchestrate/SKILL.md": "d519306de637533436e580a1a011297e768e199f0db952a53b502135e93c763e",
     "hackerrank-orchestrate/scripts/check_log.py": "d8426acab8d084da57fbd73ffbcc3f6157b174bcbbe81c05ce5e63d8fa9af4cb",
     "hackerrank-orchestrate/scripts/claim_audit.py": "dba8dc19d55a425a07fde82b976525f43ca6f8d1043de67a420ad5cf80d6aa3f",
     "hackerrank-orchestrate/scripts/contract_extract.py": "a3df021480051c4b3669cc82c6360e85631de21deef5ce9841b5a8e5de3d6649",
@@ -34,5 +34,13 @@
     "hackerrank-orchestrate/scripts/rerun_diff.py": "0327e9135b7604e86d4210db5056323bfb934f0e922ff482cc56adc5355ae2ef",
     "hackerrank-orchestrate/scripts/selfcheck.py": "632de76e3910804b3f3e221408f2f1b73aac2e6f709b6c99b15e562efc545cbf",
     "hackerrank-orchestrate/scripts/usage_report.py": "535723e26069d51a40c3329854d56aa505dd7c6574233dff21feeb38491ef441"
-  }
+  },
+  "approved_additions": [
+    {
+      "path": "hackerrank-orchestrate/SKILL.md",
+      "before_sha256": "c96a26daafaae42feb14c60baaaf2ca388d8f1127d06701ba69b3cae94531652",
+      "after_sha256": "d519306de637533436e580a1a011297e768e199f0db952a53b502135e93c763e",
+      "reason": "Add explicit inputs, outputs and recovery; preserve all existing rules, workflow and trigger."
+    }
+  ]
 }

@@ -9,6 +9,8 @@ Use `references/rehearsal.md` to run a short evidence-based interview. The origi
 
 ## Workflow
 
+Inputs: implementation, constants, run evidence and optional transcript. Outputs: source-checked feedback and next questions. Missing source leaves a claim UNKNOWN; request the artifact rather than inventing an answer.
+
 - Read the current problem, implementation, constants and run evidence. Identify unknowns when access is incomplete.
 - Ask one concrete mechanism or tradeoff question at a time. Follow up on an unexplained constant, a failure path or an apparent contradiction.
 - Check answers against code and real measurements. Separate factual accuracy, explanation quality and limitations. Never invent a score or claim the simulator predicts the organizer's judge.

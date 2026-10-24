@@ -9,6 +9,8 @@ Keep the current challenge statement authoritative. Read it and starter instruct
 
 ## Workflow
 
+Inputs: project, explicit contract and final artifacts. Outputs: a new bundle and manifest, or validation findings. On failure preserve inputs and prior bundles, fix the producer/configuration and retry after the failing check is resolved.
+
 1. Confirm the final output came from the intended code/run. Complete existing preflight, selfcheck and human review. Record unresolved quality checks honestly.
 2. Create the explicit contract from the current challenge. List the files to include in code.zip, required archive files, copied artifacts, CSV fields/enums and row-order requirement.
 3. Run `scripts/package_submission.py --repo PROJECT --contract CONTRACT --out NEW_DIRECTORY --check-only` to validate inputs without writing.

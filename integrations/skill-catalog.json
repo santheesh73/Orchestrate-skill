@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "canonical_sources": ["hackerrank-orchestrate", "skills"],
+  "capabilities": [
+    {"name": "Problem analysis", "skill": "hackerrank-orchestrate", "reference": "hackerrank-orchestrate/references/starter-contract.md"},
+    {"name": "Planning and architecture", "skill": "hackerrank-orchestrate-design", "reference": "skills/hackerrank-orchestrate-design/assets/DESIGN.md"},
+    {"name": "Agent implementation", "skill": "hackerrank-orchestrate", "reference": "hackerrank-orchestrate/references/archetypes/index.md"},
+    {"name": "Tool and API integration", "skill": "hackerrank-orchestrate", "reference": "hackerrank-orchestrate/references/loop-patterns.md"},
+    {"name": "Testing", "skill": "hackerrank-orchestrate", "reference": "hackerrank-orchestrate/references/evaluation.md"},
+    {"name": "Evaluation", "skill": "hackerrank-orchestrate", "reference": "hackerrank-orchestrate/references/self-score.md"},
+    {"name": "Debugging", "skill": "hackerrank-orchestrate", "reference": "hackerrank-orchestrate/references/prompt-templates.md"},
+    {"name": "Optimization", "skill": "hackerrank-orchestrate", "reference": "hackerrank-orchestrate/references/winning-approaches.md"},
+    {"name": "Submission validation", "skill": "hackerrank-orchestrate-package", "reference": "skills/hackerrank-orchestrate-package/references/contract.md"},
+    {"name": "Interview preparation", "skill": "hackerrank-orchestrate-practice", "reference": "skills/hackerrank-orchestrate-practice/references/rehearsal.md"}
+  ]
+}
