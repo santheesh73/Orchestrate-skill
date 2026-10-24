@@ -9,6 +9,12 @@ This repository has two parts:
 
 > **The live challenge page and your edition's `AGENTS.md` and `problem_statement.md` always win.** The format changes between editions. Everything here comes from public material on past editions, linked in [Sources](#sources).
 
+Four optional companion skills now add design review, contract-driven submission
+packaging, interview practice and community toolkit integration. The original
+skill, entrypoint and checker scripts are preserved. See the
+[companion guide](docs/integrations/community-toolkit.md) and
+[installation commands](docs/INSTALL.md#optional-companion-skills).
+
 ---
 
 ## Contents
@@ -280,7 +286,10 @@ python tools/run_trigger_evals.py --live --model <model-id>
 - Public leaderboards for the May, June and August 2026 editions (per-stage percentages computed secondhand from that data; INFERRED)
 - [October 2026 challenge page](https://www.hackerrank.com/hackerrank-orchestrate-october26)
 
-Every link above was fetched on 2026-10-13 and loaded. The community `hackerrank-orchestrate-skills` toolkit could not be located, so it is not linked.
+The links above were reviewed on 2026-10-13. The community
+[hackerrank-orchestrate-skills toolkit](https://github.com/NITISH-R-G/hackerrank-orchestrate-skills)
+was inspected directly on 2026-10-24 at the revision recorded in
+[`integrations/upstreams.json`](integrations/upstreams.json).
 
 ## Caveats and license
 
@@ -288,8 +297,8 @@ Every link above was fetched on 2026-10-13 and loaded. The community `hackerrank
 - Patterns come from the few public top-finisher repos and write-ups that were reachable. They describe what top finishers did, not proof of what caused their rank.
 - **Trigger accuracy against a live model: UNKNOWN.** `tools/run_trigger_evals.py --live` exists but has not been run, because no API key was available where this was built. What *was* measured is an offline lexical-overlap proxy over the 56 cases in `evals/triggers.json` (28 should trigger, 28 should not; 12 of them phrased as Codex, Cursor, OpenCode and Antigravity users): precision 0.76, recall 0.68 at threshold 0.3 (MEASURED, proxy only; it is not model behavior). In Claude Code the skill was invoked for one Orchestrate question and not for one near miss (VERIFIED, one run each; see [docs/INSTALL.md](docs/INSTALL.md)).
 - **Leaderboard per-stage figures in `references/rubric.md` are INFERRED.** They were computed by orchestrate-loop from public leaderboard data; the leaderboard API was not reachable here to re-derive them.
-- **The toolkit digest in `references/kit-repo.md` is secondhand.** The toolkit repository could not be located, so its commands are unverified.
-- **Script behavior is MEASURED** by the 175 tests in `tests/`, run on Python 3.9, 3.11 and 3.13 (CI matrix). The fixtures are small and synthetic; real starter repos may differ, and the log-format profiles cover only the editions whose starters were public. Each profile states its provenance: `sept-2026` and `june-2026` are VERIFIED against the official starters' `AGENTS.md`, except that `june-2026`'s strict tool-name checks are INFERRED from September; `template` is UNKNOWN until filled.
+- **Toolkit integration is optional.** Its commands were checked against the pinned source; help and selftest were exercised. Its edition-specific audits and heuristic scores cannot establish official readiness or predict a score.
+- The suite contains 199 tests in `tests/`. CI targets Windows and Linux with Python 3.9, 3.11 and 3.13; inspect the Actions run for the actual result. Fixtures are small and synthetic. Log profiles cover only the reviewed editions; each states its provenance. Live model selection and real hidden-label accuracy remain UNKNOWN.
 - **Context footprint is ESTIMATED** by `tools/footprint.py` as characters / 4, not by a tokenizer. The budgets in `tools/validate_skill.py` are the measured sizes plus about 10%.
 - Not affiliated with or endorsed by HackerRank.
 
@@ -298,5 +307,5 @@ MIT licensed. See [LICENSE](LICENSE).
 ## Credits
 
 - Ideas, structure and the first set of lessons came from [orchestrate-loop](https://github.com/bsrikumar855-dot/orchestrate-loop), an earlier Orchestrate skill. That repository has no license, so its prose is not copied here; this repository is an independent rewrite that credits it as a source of ideas. What it shares with orchestrate-loop is factual: the leaderboard figures in `references/rubric.md` (labeled INFERRED, with this credit), the toolkit's command lines, and file and rule names.
-- The optional toolkit digest summarizes the community `hackerrank-orchestrate-skills` toolkit, as described secondhand in orchestrate-loop. Credit for that method belongs to its authors.
+- The optional toolkit integration now references its actual source and inspected revision. Credit for its methods belongs to its authors. New companions are independently implemented; attribution and the upstream MIT notice are in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). No unlicensed loop prose or upstream implementation is bundled.
 - Neither project is affiliated with this one, and none of them is affiliated with or endorsed by HackerRank.

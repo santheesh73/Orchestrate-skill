@@ -2,18 +2,17 @@
 
 `hackerrank-orchestrate-skills` is a community repository (not affiliated with HackerRank or with this skill) with auto-triggering skills and a zero-dependency Python CLI that audits a submission repo. **This skill never depends on it:** `self-score.md` Path A and `scripts/selfcheck.py` are a complete gate without it.
 
-**Secondhand digest.** The toolkit repository could not be located from here on 2026-10-13. This page restates, in its own words, the toolkit as described by [orchestrate-loop](https://github.com/bsrikumar855-dot/orchestrate-loop), which read it at one specific commit (its second development phase, which added an experiment tracker). Commands may have changed; trust the toolkit's own `--help` over this page.
+**Source inspected 2026-10-24:** [NITISH-R-G/hackerrank-orchestrate-skills](https://github.com/NITISH-R-G/hackerrank-orchestrate-skills), MIT, revision `ccb175f8717f67fd084c57d853076f0b95636980`. Commands were checked against its parser; help and selftest were run. Other command behavior on a real submission is not verified here. Trust the installed revision's help.
 
-## Install (if the user has it)
+## Optional install
 
 ```bash
-cd hackerrank-orchestrate-skills
-pip install -e .
-python -m orchestrate_kit memory seed
+python -m pip install "git+https://github.com/NITISH-R-G/hackerrank-orchestrate-skills.git@ccb175f8717f67fd084c57d853076f0b95636980"
+python -m orchestrate_kit --help
 python -m orchestrate_kit selftest
 ```
 
-`python -m orchestrate_kit` works without PATH changes. Don't copy its skills next to this one unless the user wants both; overlapping triggers compete.
+Use a separate Python 3.10+ environment; the core remains standard-library Python 3.9+. Do not run the upstream bulk skill installer: it replaces matching folders. Keep memory and histories project-local.
 
 ## CLI
 
@@ -61,3 +60,5 @@ Paraphrased by theme, numbered as in the toolkit.
 - What it scores is how the work is structured. It cannot judge correctness and it is not a HackerRank score. Never quote them as predictions.
 - Its case-study numbers come from a different edition and dataset; treat them as method examples.
 - Where its playbook and this skill differ, `evaluation.md` is canonical.
+- Its message-router plugin assumes specific columns and `dataset/messages.csv`; another edition needs independent contract checks. Inspect skipped audits; a summary cannot replace them.
+- The upstream packager reported READY for empty data and a missing required usage file in synthetic probes. Use a contract-driven builder and manual review. Toolkit experiments measure heuristic score changes; our experiment script measures actual output differences.

@@ -86,7 +86,7 @@ INPUTS = {
     "very_long_path": lambda d: os.path.join(d, *(["x" * 200] * 25), "f.csv"),
     "unicode_content": lambda d: _write(os.path.join(d, "uni.csv"), "id,status\n1,\u2212\u65e5\u672c\U0001f600\n2,ok\n"),
     "deep_json": lambda d: _write(os.path.join(d, "deep.json"), "[" * 100000 + "]" * 100000),
-    "newline_in_name": lambda d: _write(os.path.join(d, "new\nline.csv"), "id,status\n1,ok\n"),
+    "newline_in_name": lambda d: None if os.name == "nt" else _write(os.path.join(d, "new\nline.csv"), "id,status\n1,ok\n"),
     "dash_name": lambda d: _write(os.path.join(d, "-dash.csv"), "id,status\n1,ok\n"),
     "symlink_to_dir": lambda d: _symlink(d, "dirlink", d),
     "dev_null": lambda d: os.devnull if os.name != "nt" else None,

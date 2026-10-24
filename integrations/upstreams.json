@@ -1,0 +1,38 @@
+{
+  "reviewed_on": "2026-10-24",
+  "sources": [
+    {
+      "repository": "https://github.com/santheesh73/Orchestrate-skill",
+      "revision": "921a1ffadf9bf7489bcb818a922e932e15fafe06",
+      "role": "preserved core"
+    },
+    {
+      "repository": "https://github.com/NITISH-R-G/hackerrank-orchestrate-skills",
+      "revision": "ccb175f8717f67fd084c57d853076f0b95636980",
+      "license": "MIT",
+      "imported_files": [],
+      "policy": "Optional external CLI and independently implemented companions; no implementation vendored."
+    },
+    {
+      "repository": "https://github.com/bsrikumar855-dot/Orchestrate-loop",
+      "revision": "2f6dcbeef984016d1b42db7dba6b0f1c610905d2",
+      "license": "No license file found",
+      "imported_files": [],
+      "policy": "No prose or skill files copied; independently restated ideas retain existing credits."
+    }
+  ],
+  "hash_normalization": "UTF-8 source bytes with CRLF normalized to LF",
+  "preserved_core_sha256": {
+    "hackerrank-orchestrate/SKILL.md": "c96a26daafaae42feb14c60baaaf2ca388d8f1127d06701ba69b3cae94531652",
+    "hackerrank-orchestrate/scripts/check_log.py": "d8426acab8d084da57fbd73ffbcc3f6157b174bcbbe81c05ce5e63d8fa9af4cb",
+    "hackerrank-orchestrate/scripts/claim_audit.py": "dba8dc19d55a425a07fde82b976525f43ca6f8d1043de67a420ad5cf80d6aa3f",
+    "hackerrank-orchestrate/scripts/contract_extract.py": "a3df021480051c4b3669cc82c6360e85631de21deef5ce9841b5a8e5de3d6649",
+    "hackerrank-orchestrate/scripts/corpus_literals.py": "992f39cb2e548901f102e0ceb39fcefe2de4e82baeec589167b7aaa860ebfb50",
+    "hackerrank-orchestrate/scripts/experiment.py": "53768955b15cb330f5f8814bd8dc36f2c563f3f907ff3076ada84698d26d8c9e",
+    "hackerrank-orchestrate/scripts/interview_drill.py": "18718246bb7c523d073db3211887e1fce6ba4301051e74937376a10ac9d5e05c",
+    "hackerrank-orchestrate/scripts/preflight.py": "1b6d2551a6e8014ffa354d2e3106882eb4a82f35a8419922361b0350eb6d1ec8",
+    "hackerrank-orchestrate/scripts/rerun_diff.py": "0327e9135b7604e86d4210db5056323bfb934f0e922ff482cc56adc5355ae2ef",
+    "hackerrank-orchestrate/scripts/selfcheck.py": "632de76e3910804b3f3e221408f2f1b73aac2e6f709b6c99b15e562efc545cbf",
+    "hackerrank-orchestrate/scripts/usage_report.py": "535723e26069d51a40c3329854d56aa505dd7c6574233dff21feeb38491ef441"
+  }
+}
