@@ -21,14 +21,14 @@ fifth companion. No official score or improved live-agent outcome is claimed.
 
 The full regression suite passed: **262 tests in 481.122 seconds, two
 platform-specific skips**. After final JSON/schema and macOS-path refinements,
-all **31 focused evidence tests** passed again in 7.111 seconds. Those tests cover
+all **31 focused evidence tests** passed again in 8.022 seconds. Those tests cover
 positive/injected controls, always-pass/always-fail checker mutations, malformed
 records, comparison mismatches, stale evidence, semantic uncertainty and the
 practice-to-package route.
 
 Canonical validation, the skill-creator validator, static Python checks and the
 existing installed-package smoke checks passed. Documentation verification found
-57 valid local links/anchors and exercised 21 commands in isolated projects,
+58 valid local links/anchors and exercised 21 commands in isolated projects,
 including intentional failure/UNKNOWN exits, repeatable repaired output,
 source-bound evidence and package creation. All 24 behavior-grader controls passed.
 
