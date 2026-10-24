@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=68,<81", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "orchestrate-skill-toolkit"
+version = "3.0.0"
+description = "Offline, portable HackerRank Orchestrate skills, installation and evidence tooling"
+readme = "README.md"
+requires-python = ">=3.9"
+license = {text = "MIT"}
+dependencies = []
+
+[project.scripts]
+orchestrate-toolkit = "orchestrate_toolkit.cli:main"
+
+[project.urls]
+Repository = "https://github.com/santheesh73/Orchestrate-skill"
+
+[tool.setuptools.packages.find]
+include = ["orchestrate_toolkit*"]

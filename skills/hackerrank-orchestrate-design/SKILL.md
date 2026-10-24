@@ -11,6 +11,8 @@ Use `assets/DESIGN.md` as an adaptable template. Draft a prompt when the user as
 
 ## Workflow
 
+Inputs: current spec, starter rules and any existing design. Outputs: a design or requested prompt with unresolved decisions. If the contract is missing, mark the design provisional and request the missing authority; never invent it.
+
 - Map every required output field to an observation, deterministic calculation or rule. Keep exact identifiers, enums, separators and ordering requirements.
 - Define the typed observations the model returns and the code that validates and consumes them. Use a bounded agent loop only when the task benefits from tool selection; explain the architecture against the current rubric.
 - Choose grouping keys before statistics or detectors. Record each constant's provenance: SPEC, MEASURED, STANDARD, BOUND or JUDGEMENT.

@@ -32,6 +32,10 @@ A playbook for one event: HackerRank Orchestrate. Each edition ships a fresh sta
 
 Templates live in `assets/`: `change_record.md`, `decision_log.md`, `CONSTANTS.md`, `usage_log_schema.md`.
 
+## Inputs, outputs and recovery
+
+Inputs: current spec, starter rules, artifacts and requested mode. Output: a checked plan, prompt or evidence report. Missing evidence stays UNKNOWN; request blocking inputs. Validate with the relevant bundled checks before claiming completion.
+
 ## Core principle
 
 **Model describes, code decides.** The model reads messages, documents and images and returns a typed record of observations. Plain, unit-tested code turns that record into every number, label and plan. This makes the run repeatable from a cache, auditable per row, and injection-resistant by structure. State the boundary: "deterministic given the cached model record", never "deterministic" alone.

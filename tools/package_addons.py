@@ -24,6 +24,18 @@ SKILLS = ('hackerrank-orchestrate-design', 'hackerrank-orchestrate-package',
           'hackerrank-orchestrate-practice', 'hackerrank-orchestrate-toolkit')
 
 
+def installation_path(value):
+    """Normalize macOS's fixed OS aliases, while refusing user-created links below them."""
+    path = value.expanduser().absolute()
+    if sys.platform == 'darwin':
+        for name in ('var', 'tmp', 'etc'):
+            alias, actual = Path('/') / name, Path('/private') / name
+            if (path == alias or alias in path.parents) and alias.is_symlink() and alias.resolve() == actual:
+                path = actual / path.relative_to(alias)
+                break
+    return path
+
+
 def validate(root=ROOT):
     errors = []
     for name in SKILLS:
@@ -54,7 +66,7 @@ def main(argv=None):
             print('Validated %d companion skills; core unchanged' % len(selected))
             return 0
         out = args.out.expanduser().resolve()
-        install = args.install.expanduser().absolute() if args.install else None
+        install = installation_path(args.install) if args.install else None
         # Avoid following a user-selected installation link or polluting source folders.
         if install and any(p.is_symlink() for p in [install] + list(install.parents)):
             raise ValueError('install path contains a symlink')

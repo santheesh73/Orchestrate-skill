@@ -9,6 +9,8 @@ The existing hackerrank-orchestrate skill remains the main playbook. This compan
 
 ## Workflow
 
+Inputs: requested operation, project path and toolkit availability. Outputs: command evidence, applicability and findings. If the toolkit is absent, use the core checks and report the optional operation UNKNOWN; do not install it implicitly.
+
 1. Determine the requested operation and project. Prefer an existing compatible toolkit environment. Check `python -m orchestrate_kit --help` there; an absent tool is UNKNOWN, not a release failure by itself.
 2. If installation is requested, use a separate Python 3.10+ environment pinned to the revision in the reference. Do not install upstream skills in bulk or replace any existing skill folders.
 3. Run the relevant command against the explicit project path. Inspect applicability, skipped audits and individual findings before interpreting a summary.

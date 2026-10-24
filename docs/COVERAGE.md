@@ -55,7 +55,7 @@ Weights are from the May 2026 post-mortem (VERIFIED; see `hackerrank-orchestrate
 
 | Addition | Failure it prevents |
 |---|---|
-| `hackerrank-orchestrate/scripts/` (10 checkers) and `tests/` (199 tests) | Rules that nobody can run; regressions in the checkers and optional companions |
+| `hackerrank-orchestrate/scripts/` (10 checkers) and `tests/` (219 tests) | Rules that nobody can run; regressions in the checkers and optional companions |
 | `hackerrank-orchestrate/assets/editions/` | A log checker that rejects another edition's format |
 | `tools/validate_skill.py` | Structure and policy drift (dates in the trigger, restated rules, missing scripts) |
 | `tools/package_skill.py` | A rejected upload, or dev files shipped inside the skill |
@@ -92,8 +92,8 @@ The skill is one folder whose `SKILL.md` frontmatter holds only `name` and `desc
 
 ## 6. Optional companions
 
-The original main skill and ten original checker scripts are preserved; their
-canonical content hashes are checked against `integrations/upstreams.json`.
+The original rules and ten checker scripts are preserved. The main skill gains
+an approved I/O/recovery paragraph; current content hashes are checked against `integrations/upstreams.json`.
 
 | Companion | Added evidence and checks |
 |---|---|
@@ -107,3 +107,13 @@ schemas. `tests/test_addons.py` checks preservation, standalone installed use,
 refusal to overwrite and rollback. `tools/ci_check.py` validates copied packages
 on each configured platform; `tools/package_addons.py` leaves the original skill
 untouched. See `docs/integrations/community-toolkit.md` for scope and limits.
+
+## 7. Universal offline facade
+
+`orchestrate_toolkit/` adds documented adapter generation, owned install/uninstall,
+doctor, checkpoints and structured evaluation without replacing the original
+scripts. `tests/test_universal.py` exercises every adapter and trust boundary with
+synthetic filesystem/subprocess scenarios. `tools/wheel_smoke.py` exercises a
+temporary wheel installation outside the checkout, including the console command.
+`tools/static_check.py` covers new source syntax and prohibited shell invocation.
+See `docs/COMPATIBILITY.md`, `docs/CLI.md` and `docs/UNIVERSAL-AUDIT-PLAN.md`.

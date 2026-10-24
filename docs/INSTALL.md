@@ -1,6 +1,18 @@
 # Installing the skill in each coding agent
 
-`hackerrank-orchestrate/` is one folder with a `SKILL.md` at its top (frontmatter `name` and `description` only) plus `references/`, `scripts/` and `assets/`. Every agent below reads that same folder unchanged; only the place you put it differs. The skill's content is agent-neutral: it drafts prompts for whichever coding agent you drive.
+`hackerrank-orchestrate/` is one canonical folder with `SKILL.md`, references,
+scripts and assets. Native skill loaders can read that format; instruction-file
+adapters point to installed canonical guidance. These are different mechanisms.
+The skill's content is agent-neutral and preserves the user's requested role.
+
+## Universal CLI
+
+Use `python -m orchestrate_toolkit install --agent NAME --project PATH --dry-run`
+to preview, then omit --dry-run to install. This ownership-aware path also offers
+doctor, backed-up owned upgrades and uninstall. See [CLI.md](CLI.md) and
+[COMPATIBILITY.md](COMPATIBILITY.md) for all adapters and evidence. Original
+packaging/install commands below remain supported; files installed by those
+older tools are unowned conflicts for the new installer, never silently adopted.
 
 Evidence labels used here:
 
@@ -10,7 +22,11 @@ Evidence labels used here:
 
 ## Where each agent looks
 
-`.agents/skills/` is the common project folder: Codex, Cursor, OpenCode and Antigravity all read it. Claude Code reads `.claude/skills/`, and Claude.ai takes a zip upload.
+The table below records the earlier installation research and historical smoke
+test. It does not establish current live inference. The universal CLI uses each
+documented mechanism rather than assuming every agent loads `.agents/skills`.
+Antigravity and Claude.ai retain their legacy documented/manual installation;
+no new live verification or dedicated universal adapter is claimed for them.
 
 | Agent | Project folder | Global folder | Evidence | Source, date read | Known caveat |
 |---|---|---|---|---|---|

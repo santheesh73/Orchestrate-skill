@@ -1,5 +1,13 @@
 # Changelog
 
+## 3.0.0
+
+- Add an offline orchestrate-toolkit CLI with documented adapters, owned installation, doctor, dry-run, backup, idempotence and safe uninstall. The community orchestrate command remains separate.
+- Add explicit resumable workflow gates and structured contract/replay/usage/dependency evaluation. Commands require execution consent and use bounded argument-array execution with minimal environment forwarding.
+- Preserve all original checker scripts and rules; add explicit inputs, outputs and recovery to existing skills. Add a canonical capability catalog and retain the original installation tools.
+- Add lifecycle simulations, negative controls, clean-wheel smoke validation and macOS CI alongside Windows/Linux. The suite contains 219 tests. Live agent inference remains UNKNOWN.
+- Add architecture, compatibility, CLI, contribution/security documentation, synthetic examples, audit plan and release report.
+
 ## 2.5.0
 
 ### Added
@@ -8,7 +16,7 @@
 - `tools/package_addons.py`: validate/package/install companions without replacing any existing skill or archive, with rollback for new files on failure and notices in each archive.
 - Pinned upstream provenance and core-content hashes in `integrations/upstreams.json`; source/license notices and integration documentation. No upstream code or unlicensed loop prose is vendored.
 - Behavioral packaging and preservation regressions in `tests/test_submission_package.py` and `tests/test_addons.py`.
-- The suite contains 199 tests; platform-specific skips are reported in each run.
+- Test count at the 2.5.0 release: 199; platform-specific skips were reported in each run.
 
 ### Fixed
 - Windows hostile-input setup no longer tries to create a forbidden newline filename; other hostile cases still run.

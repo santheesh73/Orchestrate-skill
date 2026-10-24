@@ -66,6 +66,20 @@ class Companions(unittest.TestCase):
         self.assertTrue((project / 'submission/manifest.json').is_file())
 
     def test_existing_companion_blocks_all_installs(self):
+        # Only fixed macOS OS aliases may be normalized; a user-created parent
+        # link must still be refused on every platform that permits symlinks.
+        linked = self.base / 'linked-install'
+        try:
+            import os
+            os.symlink(self.install, linked, target_is_directory=True)
+        except (OSError, NotImplementedError):
+            pass
+        else:
+            output = io.StringIO()
+            with contextlib.redirect_stdout(output), contextlib.redirect_stderr(output):
+                self.assertEqual(package_addons.main(['--all', '--out', str(self.base / 'links'),
+                                                       '--install', str(linked)]), 2)
+            self.assertFalse((self.base / 'links').exists())
         name = package_addons.SKILLS[-1]
         existing = self.install / name
         existing.mkdir()
@@ -87,15 +101,19 @@ class Companions(unittest.TestCase):
 
     def test_partial_copy_rolls_back_only_new_files(self):
         original_stage = package_addons.package_skill.stage
+        injected = []
 
         def fail_install(src, dest):
-            if str(dest).startswith(str(self.install)):
+            resolved = Path(dest).resolve()
+            if resolved == self.install.resolve() or self.install.resolve() in resolved.parents:
+                injected.append(str(resolved))
                 raise OSError('simulated disk failure')
             return original_stage(src, dest)
 
         with mock.patch.object(package_addons.package_skill, 'stage', side_effect=fail_install):
             rc, output = self.run_addons()
         self.assertEqual(rc, 2, output)
+        self.assertEqual(len(injected), 1, 'fault injection must actually reach the install destination')
         self.assertEqual(list(self.install.iterdir()), [self.core])
         self.assertFalse(list((self.base / 'dist').glob('*.zip')))
 
