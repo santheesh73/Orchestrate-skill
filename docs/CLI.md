@@ -1,5 +1,29 @@
 # CLI reference
 
+## Audit controls and optional decision policy
+
+```text
+python -m orchestrate_toolkit audit-selftest
+```
+
+Writes a JSON report to stdout; exit zero only when every positive, injected and
+metamorphic control passes. A healthy rejection or missed injected defect exits
+one. It uses synthetic temporary files, not participant code execution. This
+checks audit quality and cannot serve as participant workflow evidence.
+
+Add `"contract_audits": ["decision_ids"]` to an existing evaluate JSON config to
+declare a policy forbidding literal input IDs in comparisons, dictionary keys
+and direct lookups in its listed Python code files. It reads IDs from the current
+contract input. Comments, docstrings, isolated assignments and unseen probe IDs
+do not trigger this narrow policy. Findings include file/line and hashed IDs.
+It does not perform dataflow analysis or prove leakage/generalization. Unsupported
+source or no Python source is UNKNOWN; target code is never imported. The
+original corpus_literals checker remains available for broader investigation.
+
+Only registered built-in audit names are accepted; arbitrary plugin import paths
+are refused. Unknown evidence and WARN results cannot produce a PASS workflow
+gate. Evaluate exits three for WARN/UNKNOWN, one for FAIL, zero for PASS.
+
 Run from a checkout with `python -m orchestrate_toolkit`, or install the package
 and use `orchestrate-toolkit`. The community toolkit's `orchestrate` command is
 separate and is not shadowed. Every command accepts `--help`.

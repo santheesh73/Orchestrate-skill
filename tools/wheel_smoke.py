@@ -35,7 +35,7 @@ def main(argv=None):
         command = environment / ('Scripts/orchestrate-toolkit.exe' if windows else 'bin/orchestrate-toolkit')
         checked([str(python), '-m', 'pip', 'install', '--no-index', '--no-deps', str(wheel)], temp)
         checked([str(command), '--help'], temp)
-        for args in (['validate'], ['install', '--agent', 'all', '--project', str(target)],
+        for args in (['validate'], ['audit-selftest'], ['install', '--agent', 'all', '--project', str(target)],
                      ['doctor', '--project', str(target)],
                      ['uninstall', '--agent', 'all', '--project', str(target)]):
             checked([str(command)] + args, temp)

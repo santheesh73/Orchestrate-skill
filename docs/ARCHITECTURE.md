@@ -20,6 +20,17 @@ guidance. It does not duplicate the instructions.
    execution, supplied usage/prices, dependency presence and source bindings.
 6. CLI: explicit commands; no agent is launched, no network or paid API is needed.
 
+Optional contract audits use a closed built-in registry in `audits.py`. The first
+policy, `decision_ids`, reads IDs from the validated input and parses declared
+Python source without importing it. Unsupported source yields UNKNOWN. The
+broader original corpus heuristic remains unchanged and serves a different
+investigation purpose. No third-party plugins load from project configuration.
+
+`audit-selftest` exercises contract, decision-ID and replay audits with healthy,
+mutated and metamorphic fixtures. Its report kind is `audit_selftest`, so it cannot
+satisfy workflow gates requiring participant `evaluation` evidence. The separate
+comparison runner produces diagnostic reports, not readiness verdicts.
+
 ## State and trust
 
 ```mermaid

@@ -14,7 +14,8 @@ ROOT = Path(__file__).resolve().parents[1]
 def main(argv=None):
     argparse.ArgumentParser(description=__doc__).parse_args(argv)
     errors = []
-    paths = list((ROOT / 'orchestrate_toolkit').glob('*.py')) + list((ROOT / 'tools').glob('*.py')) + [ROOT / 'setup.py']
+    paths = (list((ROOT / 'orchestrate_toolkit').glob('*.py')) + list((ROOT / 'tools').glob('*.py'))
+             + list((ROOT / 'benchmarks/comparison').glob('*.py')) + [ROOT / 'setup.py'])
     for path in paths:
         source = path.read_text(encoding='utf-8')
         try:

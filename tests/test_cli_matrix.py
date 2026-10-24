@@ -267,8 +267,14 @@ class CliMatrix(unittest.TestCase):
     def test_unwritable_output_paths(self):
         jobs = []
         for target in OUT_TARGETS:
-            values = dict(self.fx, O=self.fx[target])
             for script, template, codes in OUT_CASES:
+                # These commands run concurrently and can write an archive before
+                # refusing an invalid install target. Shared scratch paths let
+                # one job truncate the ZIP another job is opening (BadZipFile).
+                # Keep every invocation's writable fixtures independent.
+                case_dir = tempfile.mkdtemp(prefix="output_case_", dir=self.d)
+                fixtures = _fixtures(case_dir)
+                values = dict(fixtures, O=fixtures[target])
                 jobs.append((f"{os.path.basename(script)} {' '.join(template)} [{target}]",
                              [script] + _fill(template, values), codes))
         self.check_all(jobs)

@@ -1,11 +1,20 @@
 # Changelog
 
+## 3.1.0
+
+- Isolate each parallel hostile-output test's writable fixtures. Shared ZIP destinations caused an intermittent macOS Python 3.9 BadZipFile failure even when the other CI run passed; packaging checks remain intact.
+- Add an independent identical-input synthetic comparison with per-category false-positive/false-negative denominators, exact source revisions, hashes, timings and explicit unknown capabilities.
+- Add audit-selftest: healthy, injected-defect and metamorphic controls reuse existing contract/replay validators and the new opt-in decision_ids audit. Deliberately broken-checker regressions prove the controls can fail.
+- Add a closed built-in contract-audit registry. The decision_ids policy reads actual input IDs and inspects Python decision syntax without executing source. The original broader corpus scanner and every existing skill/interface remain available.
+- Extend CI and clean-wheel verification to the public audit selftest. See docs/COMPETITIVE_BASELINE.md for measured results and limits; no overall superiority or live activation is claimed.
+- The suite contains 231 tests, including positive, negative and metamorphic audit regressions.
+
 ## 3.0.0
 
 - Add an offline orchestrate-toolkit CLI with documented adapters, owned installation, doctor, dry-run, backup, idempotence and safe uninstall. The community orchestrate command remains separate.
 - Add explicit resumable workflow gates and structured contract/replay/usage/dependency evaluation. Commands require execution consent and use bounded argument-array execution with minimal environment forwarding.
 - Preserve all original checker scripts and rules; add explicit inputs, outputs and recovery to existing skills. Add a canonical capability catalog and retain the original installation tools.
-- Add lifecycle simulations, negative controls, clean-wheel smoke validation and macOS CI alongside Windows/Linux. The suite contains 219 tests. Live agent inference remains UNKNOWN.
+- Add lifecycle simulations, negative controls, clean-wheel smoke validation and macOS CI alongside Windows/Linux. Test count at the 3.0.0 release: 219. Live agent inference remains UNKNOWN.
 - Add architecture, compatibility, CLI, contribution/security documentation, synthetic examples, audit plan and release report.
 
 ## 2.5.0
