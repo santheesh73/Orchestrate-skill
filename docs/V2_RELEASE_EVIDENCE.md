@@ -43,6 +43,12 @@ checkout passes, including audit-selftest and all adapter lifecycle operations.
 The lexical trigger proxy remains precision 0.76, recall 0.68 on its existing
 fixture set; it is not live activation evidence.
 
+Final fixture review corrected stale output IDs in the cross-domain leakage
+example. Every leakage fixture now also passes its base contract and produces
+the expected result through the complete evaluation entrypoint. The focused
+controls passed again, and both comparison reports were regenerated against
+revision `8f75f602ec74463696cdb25537f8f8964dbdf331`; detection results were unchanged.
+
 Remote execution of the pushed implementation is recorded in
 [the nine-job Actions run](https://github.com/santheesh73/Orchestrate-skill/actions/runs/40064979317).
 Its per-job conclusions are authoritative; documentation followups have their

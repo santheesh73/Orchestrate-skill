@@ -27,7 +27,7 @@ The shared runner was then executed against both reviewed checkouts. Results:
 Each JSON records the actual Git HEAD and working-tree dirtiness at execution,
 plus hashes of the exercised checker sources, fixture suite, worker and runner.
 Both reports were refreshed against committed implementation revision
-`4c4da3630be9133156289f058c96140b616d96c3`; the measured checker hashes match
+`8f75f602ec74463696cdb25537f8f8964dbdf331`; the measured checker hashes match
 that source. Creating the report files can make the working tree appear dirty.
 The packaging and original scanner hashes identify unchanged baseline sources;
 the baseline report selects the preserved scanner, even though the optional
@@ -68,8 +68,8 @@ The competitor flags the unseen probe ID and misses the other-domain input ID.
 These observations motivated a data-driven policy; no original checker was
 removed, modified or silently replaced.
 
-In the improved run, shared packaging checks took about 2.02 seconds here and
-1.52 seconds for the competitor; leakage checks took about 0.85 and 0.93 seconds.
+In the improved run, shared packaging checks took about 2.10 seconds here and
+1.56 seconds for the competitor; leakage checks took about 0.94 and 1.06 seconds.
 These are single-run totals including interpreter startup and filesystem effects.
 They do not support a performance ranking.
 
